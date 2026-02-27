@@ -2,11 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-build-a-home-dashboard-page-as-the-default-landing-screen-it-must-display-today-s-focus-top-3-tasks-from-today-s-daily-plan-this-week-a-mini-summary-of-the-current-week-s-tasks-this-month-a-count-of-goals-and-tasks-for-the-current-month-10-year-vision-progress-a-summary-card-per-category-showing-average-progress-a-daily-motivational-quote-banner-at-the-top-and-a-quick-journal-entry-button-that-opens-the-daily-planner-mini-journal-for-today",
-      "featureTitle": "Build a Home Dashboard page as the default landing screen. It must display: Today's Focus (top 3 tasks from today's daily plan), This Week (a mini summary of the current week's tasks), This Month (a count of goals and tasks for the current month), 10-Year Vision Progress (a summary card per category showing average progress %), a daily motivational quote banner at the top, and a Quick Journal Entry button that opens the Daily Planner mini journal for today.",
+      "featureId": "feature-update-the-dashboard-s-today-s-inspiration-section-to-fetch-the-daily-quote-from-the-backend-using-the-date-based-query-introduced-in-req-1-replacing-any-hardcoded-or-static-quote-the-displayed-quote-must-update-automatically-each-new-day-without-requiring-a-page-reload-mid-session-beyond-normal-daily-visits",
+      "featureTitle": "Update the Dashboard's Today's Inspiration section to fetch the daily quote from the backend using the date-based query introduced in REQ-1, replacing any hardcoded or static quote. The displayed quote must update automatically each new day without requiring a page reload mid-session beyond normal daily visits.",
       "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/pages/Dashboard.tsx"
+        "frontend/src/hooks/useQueries.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -17,91 +16,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-5"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-build-a-10-year-vision-board-page-where-users-can-create-and-manage-goals-across-all-seven-categories-each-goal-card-must-display-category-target-year-milestones-editable-list-why-this-matters-text-and-a-progress-bar-with-an-editable-percentage-slider-goals-should-be-grouped-by-category",
-      "featureTitle": "Build a 10-Year Vision Board page where users can create and manage goals across all seven categories. Each goal card must display: category, target year, milestones (editable list), 'why this matters' text, and a progress bar with an editable percentage slider. Goals should be grouped by category.",
-      "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/pages/VisionBoard.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-6"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-build-a-daily-planner-page-where-users-can-view-and-edit-the-entry-for-any-selected-date-defaulting-to-today-the-page-must-include-a-date-picker-to-navigate-between-days-a-schedule-timeline-add-time-block-items-top-3-tasks-with-checkboxes-notes-field-water-intake-counter-tap-to-increment-mood-emoji-picker-three-gratitude-input-fields-and-a-mini-journal-textarea",
-      "featureTitle": "Build a Daily Planner page where users can view and edit the entry for any selected date (defaulting to today). The page must include: a date picker to navigate between days, a schedule timeline (add time-block items), top 3 tasks with checkboxes, notes field, water intake counter (tap to increment), mood emoji picker, three gratitude input fields, and a mini journal textarea.",
-      "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/pages/DailyPlanner.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-7"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-build-a-couples-collaboration-ui-it-must-include-a-my-partner-section-in-settings-where-a-user-can-invite-a-partner-by-entering-their-principal-id-view-pending-accepted-couple-status-and-disconnect-from-a-partner-when-a-couple-is-active-the-dashboard-and-all-planner-pages-must-display-a-shared-mode-indicator-and-show-both-partners-data-together",
-      "featureTitle": "Build a Couples Collaboration UI. It must include: a 'My Partner' section in settings where a user can invite a partner by entering their principal ID, view pending/accepted couple status, and disconnect from a partner. When a couple is active, the dashboard and all planner pages must display a shared-mode indicator and show both partners' data together.",
-      "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/pages/CoupleSettings.tsx",
-        "frontend/src/pages/DailyPlanner.tsx",
-        "frontend/src/pages/Dashboard.tsx",
-        "frontend/src/pages/VisionBoard.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-8"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-apply-a-clean-warm-aesthetic-visual-theme-consistently-across-all-pages-use-soft-warm-neutrals-cream-warm-white-soft-taupe-paired-with-one-warm-accent-color-e-g-dusty-rose-or-warm-amber-typography-should-feel-editorial-and-elegant-the-layout-should-use-generous-whitespace-soft-card-shadows-and-rounded-corners-the-motivational-quote-banner-should-be-typographically-prominent",
-      "featureTitle": "Apply a clean, warm-aesthetic visual theme consistently across all pages. Use soft warm neutrals (cream, warm white, soft taupe) paired with one warm accent color (e.g., dusty rose or warm amber). Typography should feel editorial and elegant. The layout should use generous whitespace, soft card shadows, and rounded corners. The motivational quote banner should be typographically prominent.",
-      "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/index.css",
-        "frontend/tailwind.config.js"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-9"
+        "REQ-2"
       ],
       "confidence": "high"
     }

@@ -1,225 +1,27 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Decade Diary – Phase 1 Frontend Implementation",
+  "title": "Auto-rotate daily quotes in Today's Inspiration section",
   "requirements": [
     {
-      "id": "REQ-5",
-      "summary": "Build Home Dashboard page with Today's Focus, This Week, This Month, 10-Year Vision Progress, motivational quote banner, and Quick Journal Entry button",
+      "id": "REQ-2",
+      "summary": "Update Dashboard's Today's Inspiration section to fetch daily quote from backend using date-based query, replacing hardcoded quote with automatic daily rotation",
       "acceptanceCriteria": [
-        "All five dashboard sections are visible on the home screen.",
-        "The motivational quote updates each calendar day.",
-        "Clicking the Quick Journal Entry button navigates to or opens today's daily planner journal field.",
-        "10-Year Vision Progress cards show per-category average progress as a percentage bar.",
-        "Dashboard data reflects real backend state."
+        "The Today's Inspiration section on the Dashboard displays the quote returned by the backend's daily-quote query.",
+        "Visiting the Dashboard on different calendar days shows different quotes.",
+        "No quote is hardcoded in the frontend source.",
+        "Existing pastel brown text styling and transparent background of the section are preserved."
       ],
       "file_operations": [
         {
           "path": "frontend/src/pages/Dashboard.tsx",
-          "operation": "create",
-          "description": "Create the Home Dashboard page displaying Today's Focus (top 3 tasks from today), This Week summary, This Month count, 10-Year Vision Progress cards per category with average progress bars, daily motivational quote banner at top, and Quick Journal Entry button. Fetch data from backend using getDailyPlannerEntries, getVisionBoardEntries, and getDailyQuote. Calculate weekly and monthly summaries from planner entries. Use the authorization component to ensure only authenticated users can access this page."
-        },
-        {
-          "path": "frontend/src/components/DashboardSection.tsx",
-          "operation": "create",
-          "description": "Create a reusable dashboard section card component with soft shadows, rounded corners, and warm styling for displaying individual dashboard sections (Today's Focus, This Week, This Month, Vision Progress)."
-        },
-        {
-          "path": "frontend/src/components/MotivationalQuoteBanner.tsx",
-          "operation": "create",
-          "description": "Create a banner component for displaying the daily motivational quote in large, elegant typography with the generated quote mark decoration. Use frontend/public/assets/generated/quote-mark.dim_128x128.png as a decorative element. Fetch quote from backend getDailyQuote method."
-        },
-        {
-          "path": "frontend/src/components/VisionProgressCard.tsx",
-          "operation": "create",
-          "description": "Create a card component for displaying 10-Year Vision progress per category with category name, average progress percentage bar, and warm accent styling."
-        },
-        {
-          "path": "frontend/src/hooks/useDashboardData.ts",
-          "operation": "create",
-          "description": "Create a custom hook to fetch and aggregate dashboard data including daily planner entries, vision board entries, and daily quote. Calculate today's tasks, weekly summary, monthly counts, and per-category vision progress averages. Use React Query for caching and the useActor hook for backend calls."
-        },
-        {
-          "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Add route for the Dashboard page at root path '/' and wire it into the router. Ensure Dashboard is the default landing screen."
-        }
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "summary": "Build 10-Year Vision Board page with goal creation, category grouping, progress sliders, milestone editing, and goal deletion",
-      "acceptanceCriteria": [
-        "Users can add a new goal via a form modal.",
-        "Goals are grouped visually by category.",
-        "Progress slider updates the backend value on change.",
-        "Milestones can be added and removed inline.",
-        "Deleting a goal asks for confirmation before removing."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/VisionBoard.tsx",
-          "operation": "create",
-          "description": "Create the 10-Year Vision Board page displaying goals grouped by category (Career, Financial, Health, Relationship, Personal Growth, Travel, Spiritual). Each goal card shows category, target year, milestones list, 'why this matters' text, and an editable progress slider. Include an 'Add Goal' button that opens a modal. Use getVisionBoardEntries, addVisionBoardEntry, updateVisionBoardProgress, and deleteVisionBoardEntry backend methods. Use the authorization component to restrict access to authenticated users."
+          "description": "Replace the hardcoded inspirational quote in the Today's Inspiration section with a dynamic fetch using the useGetDailyQuote hook from useQueries.ts. Calculate the current day-of-year and pass it to the backend query. Display the returned quote while preserving the existing pastel-brown text color and transparent background styling. Ensure the section handles loading and error states gracefully."
         },
         {
-          "path": "frontend/src/components/VisionGoalCard.tsx",
-          "operation": "create",
-          "description": "Create a card component for displaying and editing a single vision goal with inline milestone editing (add/remove), progress slider, category badge, target year, 'why this matters' note, and delete button with confirmation dialog."
-        },
-        {
-          "path": "frontend/src/components/AddGoalModal.tsx",
-          "operation": "create",
-          "description": "Create a modal dialog for adding a new vision goal with form fields for category (dropdown with all 7 categories), target year (number input), initial milestones (dynamic text inputs), 'why this matters' textarea, and initial progress percentage (slider 0-100). On submit, call addVisionBoardEntry and close modal."
-        },
-        {
-          "path": "frontend/src/hooks/useVisionBoard.ts",
-          "operation": "create",
-          "description": "Create a custom hook for vision board CRUD operations using React Query mutations and the useActor hook. Include functions for fetching goals, adding goals, updating progress, and deleting goals with optimistic updates and cache invalidation."
-        },
-        {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Add route for the Vision Board page at '/vision-board' and wire it into the router with navigation link in the header or sidebar."
-        }
-      ]
-    },
-    {
-      "id": "REQ-7",
-      "summary": "Build Daily Planner page with date picker, schedule timeline, top 3 tasks, notes, water intake counter, mood picker, gratitude inputs, and mini journal",
-      "acceptanceCriteria": [
-        "Selecting a date loads that day's existing entry if present.",
-        "All fields auto-save or save on a 'Save' button press.",
-        "Checked tasks are visually marked as complete.",
-        "Water intake counter shows current count and supports increment/decrement.",
-        "Mood picker shows at least 5 distinct emoji options."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/DailyPlanner.tsx",
-          "operation": "create",
-          "description": "Create the Daily Planner page with date picker (defaulting to today), schedule timeline section, top 3 tasks with checkboxes, notes textarea, water intake counter with increment/decrement buttons, mood emoji picker (at least 5 options), three gratitude input fields, and mini journal textarea. Fetch entry for selected date using getDailyPlannerEntries filtered by date. Save changes using addDailyPlannerEntry. Support water intake updates via updateWaterIntake. Use the authorization component to restrict access to authenticated users."
-        },
-        {
-          "path": "frontend/src/components/ScheduleTimeline.tsx",
-          "operation": "create",
-          "description": "Create a component for the schedule timeline allowing users to add, edit, and remove time-block items (time + activity). Display items in chronological order with warm styling and rounded cards."
-        },
-        {
-          "path": "frontend/src/components/TaskChecklistSection.tsx",
-          "operation": "create",
-          "description": "Create a section component for the top 3 tasks with checkboxes, task description inputs, and visual completion indicators. Limit to exactly 3 tasks."
-        },
-        {
-          "path": "frontend/src/components/WaterIntakeCounter.tsx",
-          "operation": "create",
-          "description": "Create a counter component for water intake with current count display and increment/decrement buttons. Visual indicator shows progress toward daily goal."
-        },
-        {
-          "path": "frontend/src/components/MoodEmojiPicker.tsx",
-          "operation": "create",
-          "description": "Create an emoji picker component with at least 5 distinct mood emoji options (e.g., happy, calm, excited, tired, sad). Selected emoji is highlighted with warm accent styling."
-        },
-        {
-          "path": "frontend/src/components/GratitudeInputs.tsx",
-          "operation": "create",
-          "description": "Create a section component with exactly three gratitude input fields for users to enter daily gratitude entries. Use warm, inviting labels and styling."
-        },
-        {
-          "path": "frontend/src/hooks/useDailyPlanner.ts",
-          "operation": "create",
-          "description": "Create a custom hook for daily planner operations using React Query. Include functions for fetching entries by date, saving/updating entries, and updating water intake with optimistic updates and proper cache management."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Add route for the Daily Planner page at '/daily-planner' and wire it into the router with navigation link in header or sidebar. Ensure Quick Journal Entry button on Dashboard navigates to this page with today's date selected and journal field focused."
-        }
-      ]
-    },
-    {
-      "id": "REQ-8",
-      "summary": "Build Couples Collaboration UI with partner invitation, couple status display, and shared-mode indicator across planner pages",
-      "acceptanceCriteria": [
-        "A user can enter a partner's principal ID and send an invite.",
-        "The invited partner sees a pending invite they can accept or decline.",
-        "Once connected, a 'Couple Mode' badge is shown in the header.",
-        "All planner data shown in Couple Mode reflects both partners' entries.",
-        "A disconnect option is available in the settings."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/CoupleSettings.tsx",
-          "operation": "create",
-          "description": "Create a settings page with 'My Partner' section where users can invite a partner by entering their principal ID (using createCouple backend method), view pending/accepted couple status (using getCouple method), and disconnect from partner (using deleteCouple-equivalent logic or backend method if available). Include decorative frontend/public/assets/generated/couple-icon.dim_256x256.png illustration. Use the authorization component to restrict access to authenticated users."
-        },
-        {
-          "path": "frontend/src/components/CoupleModeBadge.tsx",
-          "operation": "create",
-          "description": "Create a header badge component that displays 'Couple Mode' indicator when user is part of an active couple. Badge uses warm accent color and shows both partners' names from their user profiles."
-        },
-        {
-          "path": "frontend/src/components/PartnerInviteForm.tsx",
-          "operation": "create",
-          "description": "Create a form component for inviting a partner with principal ID input field, validation, submit button, and status feedback (pending, accepted, error). On submit, call createCouple backend method."
-        },
-        {
-          "path": "frontend/src/hooks/useCoupleStatus.ts",
-          "operation": "create",
-          "description": "Create a custom hook to fetch couple status using getCouple backend method, determine if user is in an active couple, and provide couple connection/disconnection functions. Use React Query for caching and useActor hook for backend calls."
-        },
-        {
-          "path": "frontend/src/pages/Dashboard.tsx",
-          "operation": "modify",
-          "description": "Modify Dashboard to check couple status and display both partners' planner data when in Couple Mode. Fetch entries for both partner principals and merge/display together with visual indicators showing which entries belong to which partner."
-        },
-        {
-          "path": "frontend/src/pages/VisionBoard.tsx",
-          "operation": "modify",
-          "description": "Modify Vision Board page to display shared goals from both partners when in Couple Mode. Show combined goal list with visual indicators for goal ownership."
-        },
-        {
-          "path": "frontend/src/pages/DailyPlanner.tsx",
-          "operation": "modify",
-          "description": "Modify Daily Planner to show combined entries from both partners when in Couple Mode. Display side-by-side or merged view with clear attribution."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Add CoupleModeBadge to the header and route for Couple Settings page at '/couple-settings'. Wire navigation link in settings menu or header."
-        }
-      ]
-    },
-    {
-      "id": "REQ-9",
-      "summary": "Apply clean, warm-aesthetic visual theme with soft neutrals, warm accent colors, editorial typography, generous whitespace, and prominent motivational quote styling",
-      "acceptanceCriteria": [
-        "All pages share a consistent color palette and typography.",
-        "No harsh or jarring colors are used.",
-        "Card components use rounded corners and soft shadows.",
-        "The motivational quote is displayed in a large, elegant typographic style.",
-        "The design feels cohesive across Dashboard, Vision Board, and Daily Planner pages."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/index.css",
-          "operation": "modify",
-          "description": "Update global styles to implement the warm aesthetic theme. Define CSS custom properties for color palette (cream, warm white, soft taupe, dusty rose/warm amber accent). Set editorial typography (serif or elegant sans-serif font families). Apply frontend/public/assets/generated/bg-texture.dim_1920x1080.png as background texture. Define base card styles with rounded corners and soft shadows. Set generous whitespace and line-height defaults."
-        },
-        {
-          "path": "frontend/tailwind.config.js",
-          "operation": "modify",
-          "description": "Extend Tailwind config to include warm color palette (cream, warm-white, soft-taupe, dusty-rose, warm-amber) as custom theme colors. Add custom font families for editorial typography. Configure rounded corner utilities and shadow utilities for soft, warm aesthetic. Add spacing scale that supports generous whitespace."
-        },
-        {
-          "path": "frontend/src/components/Layout.tsx",
-          "operation": "create",
-          "description": "Create a layout wrapper component that applies consistent page structure, background texture, header with CoupleModeBadge slot, navigation menu, and warm aesthetic styling across all pages. Use semantic HTML and generous padding."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Wrap all routed pages in the Layout component to ensure consistent theme application across Dashboard, Vision Board, Daily Planner, and Couple Settings pages."
+          "description": "Add a new React Query hook useGetDailyQuote that accepts dayOfYear as a parameter and calls actor.getDailyQuote(dayOfYear). Configure the query to cache by dayOfYear so different dates fetch independently. Include proper enabled/retry configuration consistent with other query hooks in this file."
         }
       ]
     }

@@ -10,16 +10,49 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
+export interface Budget {
+  'expenses' : Array<string>,
+  'income' : bigint,
+  'notes' : string,
+}
 export interface Couple { 'partner1' : Principal, 'partner2' : Principal }
+export interface DailyJournalEntry {
+  'body' : string,
+  'date' : bigint,
+  'isPublic' : boolean,
+}
 export interface DailyPlannerEntry {
+  'tasks' : Array<Task>,
   'waterIntake' : bigint,
   'date' : bigint,
   'gratitudeEntries' : Array<string>,
-  'topTasks' : Array<Task>,
   'journalEntry' : string,
   'notes' : string,
   'moodEmoji' : string,
   'schedule' : Array<ScheduleItem>,
+}
+export type EmotionTag = { 'sad' : null } |
+  { 'fearful' : null } |
+  { 'content' : null } |
+  { 'anxious' : null } |
+  { 'happy' : null } |
+  { 'angry' : null } |
+  { 'disappointed' : null } |
+  { 'calm' : null } |
+  { 'grateful' : null } |
+  { 'peaceful' : null } |
+  { 'overwhelmed' : null } |
+  { 'motivated' : null } |
+  { 'frustrated' : null } |
+  { 'excited' : null } |
+  { 'optimistic' : null };
+export interface EmotionalJournalEntry {
+  'trigger' : string,
+  'emotion' : EmotionTag,
+  'date' : bigint,
+  'isPublic' : boolean,
+  'reflection' : string,
+  'intensity' : bigint,
 }
 export type GoalCategory = { 'relationship' : null } |
   { 'spiritual' : null } |
@@ -28,6 +61,46 @@ export type GoalCategory = { 'relationship' : null } |
   { 'career' : null } |
   { 'financial' : null } |
   { 'health' : null };
+export type GrowthArea = { 'spiritual' : null } |
+  { 'other' : null } |
+  { 'mindset' : null } |
+  { 'career' : null } |
+  { 'relationships' : null } |
+  { 'health' : null };
+export interface GrowthJournalEntry {
+  'growthRating' : bigint,
+  'date' : bigint,
+  'actionStep' : string,
+  'lesson' : string,
+  'isPublic' : boolean,
+  'growthArea' : GrowthArea,
+}
+export interface HabitWeekly {
+  'name' : string,
+  'dailyCheckIns' : Array<boolean>,
+}
+export interface HabitYearly {
+  'name' : string,
+  'monthlyCheckIns' : Array<boolean>,
+}
+export interface ImportantDate { 'date' : bigint, 'labelText' : string }
+export interface MonthlyEntry {
+  'month' : bigint,
+  'year' : bigint,
+  'moodTracker' : Array<string>,
+  'goals' : Array<Task>,
+  'importantDates' : Array<ImportantDate>,
+  'budget' : Budget,
+  'reflection' : string,
+}
+export interface NightReflectionJournalEntry {
+  'gratitude' : string,
+  'date' : bigint,
+  'improvements' : string,
+  'highlights' : Array<string>,
+  'isPublic' : boolean,
+  'intention' : string,
+}
 export interface ScheduleItem { 'timeBlock' : string, 'activity' : string }
 export interface Task { 'description' : string, 'isComplete' : boolean }
 export interface UserProfile { 'displayName' : string, 'name' : string }
@@ -41,26 +114,85 @@ export interface VisionBoardEntry {
   'whyThisMatters' : string,
   'milestones' : Array<string>,
 }
+export interface WeeklyEntry {
+  'todos' : Array<Task>,
+  'year' : bigint,
+  'weekNumber' : bigint,
+  'energyRating' : bigint,
+  'reflection' : string,
+  'priorities' : Array<Task>,
+  'habitTracker' : Array<HabitWeekly>,
+}
+export interface YearlyEntry {
+  'majorGoals' : Array<Task>,
+  'year' : bigint,
+  'reflection' : string,
+  'habitTracker' : Array<HabitYearly>,
+  'wordOfTheYear' : string,
+  'visionImages' : Array<string>,
+}
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'addDailyPlannerEntry' : ActorMethod<[DailyPlannerEntry], undefined>,
+  'addMonthlyEntry' : ActorMethod<[MonthlyEntry], undefined>,
   'addVisionBoardEntry' : ActorMethod<[VisionBoardEntry], undefined>,
+  'addWeeklyEntry' : ActorMethod<[WeeklyEntry], undefined>,
+  'addYearlyEntry' : ActorMethod<[YearlyEntry], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'createCouple' : ActorMethod<[Principal, Principal], undefined>,
+  'createOrUpdateDailyJournal' : ActorMethod<[DailyJournalEntry], undefined>,
+  'createOrUpdateEmotionalJournal' : ActorMethod<
+    [EmotionalJournalEntry],
+    undefined
+  >,
+  'createOrUpdateGrowthJournal' : ActorMethod<[GrowthJournalEntry], undefined>,
+  'createOrUpdateNightReflection' : ActorMethod<
+    [NightReflectionJournalEntry],
+    undefined
+  >,
   'deleteDailyPlannerEntry' : ActorMethod<[bigint], undefined>,
+  'deleteMonthlyEntry' : ActorMethod<[bigint, bigint], undefined>,
   'deleteVisionBoardEntry' : ActorMethod<[bigint], undefined>,
+  'deleteWeeklyEntry' : ActorMethod<[bigint, bigint], undefined>,
+  'deleteYearlyEntry' : ActorMethod<[bigint], undefined>,
   'getAllCouples' : ActorMethod<[], Array<Couple>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getCouple' : ActorMethod<[Principal], [] | [Couple]>,
+  'getDailyJournals' : ActorMethod<[], Array<DailyJournalEntry>>,
+  'getDailyJournalsForUser' : ActorMethod<
+    [Principal],
+    Array<DailyJournalEntry>
+  >,
   'getDailyPlannerEntries' : ActorMethod<[], Array<DailyPlannerEntry>>,
-  'getDailyQuote' : ActorMethod<[], string>,
+  'getDailyQuote' : ActorMethod<[bigint], string>,
+  'getEmotionalJournals' : ActorMethod<[], Array<EmotionalJournalEntry>>,
+  'getEmotionalJournalsForUser' : ActorMethod<
+    [Principal],
+    Array<EmotionalJournalEntry>
+  >,
+  'getGrowthJournals' : ActorMethod<[], Array<GrowthJournalEntry>>,
+  'getGrowthJournalsForUser' : ActorMethod<
+    [Principal],
+    Array<GrowthJournalEntry>
+  >,
+  'getMonthlyEntries' : ActorMethod<[], Array<MonthlyEntry>>,
+  'getNightReflections' : ActorMethod<[], Array<NightReflectionJournalEntry>>,
+  'getNightReflectionsForUser' : ActorMethod<
+    [Principal],
+    Array<NightReflectionJournalEntry>
+  >,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'getVisionBoardEntries' : ActorMethod<[], Array<VisionBoardEntry>>,
+  'getWeeklyEntries' : ActorMethod<[], Array<WeeklyEntry>>,
+  'getYearlyEntries' : ActorMethod<[], Array<YearlyEntry>>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'updateMonthlyEntry' : ActorMethod<[bigint, bigint, MonthlyEntry], undefined>,
   'updateVisionBoardProgress' : ActorMethod<[bigint, bigint], undefined>,
   'updateWaterIntake' : ActorMethod<[bigint, bigint], undefined>,
+  'updateWeeklyEntry' : ActorMethod<[bigint, bigint, WeeklyEntry], undefined>,
+  'updateYearlyEntry' : ActorMethod<[bigint, YearlyEntry], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

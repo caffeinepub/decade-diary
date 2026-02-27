@@ -1,209 +1,60 @@
 {
   "kind": "build_request",
-  "title": "Decade Diary – Phase 1: Home Dashboard, 10-Year Vision Board, Daily Planner & Couples Collaboration",
-  "projectName": "Decade Diary",
+  "title": "Auto-rotate daily quotes in Today's Inspiration section",
+  "projectName": "Future Us",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Create a backend data model and actor supporting two core entities: User and Couple. A Couple links two user principals together, giving both read and write access to all shared planner data (vision board entries, daily planner entries, goals).",
+      "text": "Store a curated list of inspirational quotes in the backend and expose a function that deterministically returns a quote based on the current date (e.g., using a day-of-year index into the quotes array), so a different quote is shown each calendar day without any manual intervention.",
       "target": "backend",
       "source": {
         "messageIds": [
-          "msg-9"
+          "msg-6"
         ],
         "quotes": [
-          "make it available for couples to work together"
+          "Change quotes in today's inspiration section automatically everyday"
         ]
       },
       "acceptanceCriteria": [
-        "A couple can be created by one user inviting another via their principal ID.",
-        "Both members of a couple can create, read, and update shared planner data.",
-        "Users without a couple link only see and edit their own data.",
-        "Couple state persists across canister upgrades."
+        "The backend holds at least 30 distinct inspirational quotes.",
+        "A query function accepts no arguments and returns the quote assigned to the current UTC date.",
+        "The returned quote changes when the calendar date changes (different day = different quote).",
+        "The same date always returns the same quote (deterministic selection)."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Implement backend storage and CRUD operations for the 10-Year Vision Board. Each goal entry must support: category (Career, Financial, Health, Relationship, Personal Growth, Travel, Spiritual), target year, milestone list, 'why this matters' note, and a progress percentage (0–100).",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-7"
-        ],
-        "quotes": [
-          "10-Year Vision Board"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Goals can be created, updated, and deleted per authenticated user or couple.",
-        "All seven categories are supported.",
-        "Progress percentage is stored as a Nat (0–100).",
-        "Milestones are stored as an ordered list of text entries."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Implement backend storage and CRUD operations for the Daily Planner. Each day entry must include: date, schedule timeline (list of time-block items), top 3 tasks (with completion status), notes, water intake count, mood emoji selection, gratitude entries (3 items), and a mini journal text field.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-7"
-        ],
-        "quotes": [
-          "Daily Planner"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Daily entries are keyed by date and user/couple ID.",
-        "All fields are optional except the date key.",
-        "Existing entries can be updated; data persists across sessions."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Implement a backend function that returns a daily motivational quote. The quote should rotate daily (keyed by day-of-year) from a hardcoded list of at least 30 quotes.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-5"
-        ],
-        "quotes": [
-          "Motivational quotes daily"
-        ]
-      },
-      "acceptanceCriteria": [
-        "A query function returns a quote string for the current day.",
-        "The same quote is returned for all calls on the same calendar day.",
-        "The quote list contains at least 30 unique motivational quotes."
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "text": "Build a Home Dashboard page as the default landing screen. It must display: Today's Focus (top 3 tasks from today's daily plan), This Week (a mini summary of the current week's tasks), This Month (a count of goals and tasks for the current month), 10-Year Vision Progress (a summary card per category showing average progress %), a daily motivational quote banner at the top, and a Quick Journal Entry button that opens the Daily Planner mini journal for today.",
+      "text": "Update the Dashboard's Today's Inspiration section to fetch the daily quote from the backend using the date-based query introduced in REQ-1, replacing any hardcoded or static quote. The displayed quote must update automatically each new day without requiring a page reload mid-session beyond normal daily visits.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-7"
+          "msg-6"
         ],
         "quotes": [
-          "Home Dashboard"
+          "Change quotes in today's inspiration section automatically everyday"
         ]
       },
       "acceptanceCriteria": [
-        "All five dashboard sections are visible on the home screen.",
-        "The motivational quote updates each calendar day.",
-        "Clicking the Quick Journal Entry button navigates to or opens today's daily planner journal field.",
-        "10-Year Vision Progress cards show per-category average progress as a percentage bar.",
-        "Dashboard data reflects real backend state."
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "text": "Build a 10-Year Vision Board page where users can create and manage goals across all seven categories. Each goal card must display: category, target year, milestones (editable list), 'why this matters' text, and a progress bar with an editable percentage slider. Goals should be grouped by category.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-7"
-        ],
-        "quotes": [
-          "10-Year Vision Board"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Users can add a new goal via a form modal.",
-        "Goals are grouped visually by category.",
-        "Progress slider updates the backend value on change.",
-        "Milestones can be added and removed inline.",
-        "Deleting a goal asks for confirmation before removing."
-      ]
-    },
-    {
-      "id": "REQ-7",
-      "text": "Build a Daily Planner page where users can view and edit the entry for any selected date (defaulting to today). The page must include: a date picker to navigate between days, a schedule timeline (add time-block items), top 3 tasks with checkboxes, notes field, water intake counter (tap to increment), mood emoji picker, three gratitude input fields, and a mini journal textarea.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-7"
-        ],
-        "quotes": [
-          "Daily Planner"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Selecting a date loads that day's existing entry if present.",
-        "All fields auto-save or save on a 'Save' button press.",
-        "Checked tasks are visually marked as complete.",
-        "Water intake counter shows current count and supports increment/decrement.",
-        "Mood picker shows at least 5 distinct emoji options."
-      ]
-    },
-    {
-      "id": "REQ-8",
-      "text": "Build a Couples Collaboration UI. It must include: a 'My Partner' section in settings where a user can invite a partner by entering their principal ID, view pending/accepted couple status, and disconnect from a partner. When a couple is active, the dashboard and all planner pages must display a shared-mode indicator and show both partners' data together.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-9"
-        ],
-        "quotes": [
-          "make it available for couples to work together"
-        ]
-      },
-      "acceptanceCriteria": [
-        "A user can enter a partner's principal ID and send an invite.",
-        "The invited partner sees a pending invite they can accept or decline.",
-        "Once connected, a 'Couple Mode' badge is shown in the header.",
-        "All planner data shown in Couple Mode reflects both partners' entries.",
-        "A disconnect option is available in the settings."
-      ]
-    },
-    {
-      "id": "REQ-9",
-      "text": "Apply a clean, warm-aesthetic visual theme consistently across all pages. Use soft warm neutrals (cream, warm white, soft taupe) paired with one warm accent color (e.g., dusty rose or warm amber). Typography should feel editorial and elegant. The layout should use generous whitespace, soft card shadows, and rounded corners. The motivational quote banner should be typographically prominent.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-5",
-          "msg-7"
-        ],
-        "quotes": [
-          "Clean aesthetic",
-          "Motivational quotes daily"
-        ]
-      },
-      "acceptanceCriteria": [
-        "All pages share a consistent color palette and typography.",
-        "No harsh or jarring colors are used.",
-        "Card components use rounded corners and soft shadows.",
-        "The motivational quote is displayed in a large, elegant typographic style.",
-        "The design feels cohesive across Dashboard, Vision Board, and Daily Planner pages."
+        "The Today's Inspiration section on the Dashboard displays the quote returned by the backend's daily-quote query.",
+        "Visiting the Dashboard on different calendar days shows different quotes.",
+        "No quote is hardcoded in the frontend source.",
+        "Existing pastel brown text styling and transparent background of the section are preserved."
       ]
     }
   ],
   "constraints": [
-    "All Motoko logic must remain in a single actor in backend/main.mo.",
-    "Do not modify any files listed in frontend.immutablePaths.",
-    "No external databases or cloud services; all data is stored in the canister.",
-    "No real-time features (WebSockets); couple collaboration is synchronous via canister queries/updates."
+    "Preserve the existing transparent background and pastel brown text styling of the Today's Inspiration section.",
+    "Do not break or modify other dashboard sections."
   ],
   "nonGoals": [
-    "Yearly Planner (Phase 2)",
-    "Monthly Planner (Phase 2)",
-    "Weekly Planner (Phase 2)",
-    "Full Journaling Section — Daily, Emotional, Night Reflection, Growth journals (Phase 2)",
-    "Progress graphs and smart reminders (Phase 2)",
-    "Private lock / PIN protection (Phase 2)",
-    "PDF export (Phase 2)",
-    "Custom themes switcher (Phase 2)",
-    "Vision image uploads (Phase 2)"
+    "Allowing users to manually select or favorite quotes.",
+    "User-submitted or editable quote lists.",
+    "Real-time quote refresh within a single session without a page interaction.",
+    "Push notifications for daily quotes."
   ],
   "imageRequirements": {
-    "required": [
-      "Soft abstract watercolor texture in warm cream and dusty rose tones, suitable as a full-page background (bg-texture.dim_1920x1080.png)",
-      "Minimal decorative illustration of intertwined hearts and a small calendar, warm line-art style on transparent background (couple-icon.dim_256x256.png)",
-      "Decorative quote mark illustration in warm amber, ornamental style on transparent background (quote-mark.dim_128x128.png)"
-    ],
+    "required": [],
     "edits": []
   }
 }

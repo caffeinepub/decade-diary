@@ -91,7 +91,13 @@ export default {
           DEFAULT: 'oklch(0.52 0.03 60)',
           light: 'oklch(0.70 0.025 62)',
           dark: 'oklch(0.35 0.04 55)',
-        }
+        },
+        // Pastel brown palette for Today's Inspiration section
+        'pastel-brown': {
+          DEFAULT: 'oklch(0.72 0.055 55)',
+          light: 'oklch(0.80 0.040 58)',
+          dark: 'oklch(0.55 0.065 52)',
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',
@@ -119,14 +125,14 @@ export default {
         'fade-in': {
           from: { opacity: '0', transform: 'translateY(8px)' },
           to: { opacity: '1', transform: 'translateY(0)' }
-        }
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'fade-in': 'fade-in 0.4s ease-out',
-      }
+      },
     }
   },
-  plugins: [typography, containerQueries, animate]
+  plugins: [typography, containerQueries, animate],
 };

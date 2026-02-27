@@ -65,6 +65,8 @@ const CATEGORY_COLORS: Record<string, string> = {
   [GoalCategory.spiritual]: 'bg-purple-50 border-purple-200 dark:bg-purple-950/30 dark:border-purple-800',
 };
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 // ─── Add Goal Modal ───────────────────────────────────────────────────────────
 
 interface AddGoalModalProps {
@@ -75,7 +77,7 @@ interface AddGoalModalProps {
 function AddGoalModal({ open, onClose }: AddGoalModalProps) {
   const addEntry = useAddVisionBoardEntry();
   const [category, setCategory] = useState<GoalCategory>(GoalCategory.career);
-  const [targetYear, setTargetYear] = useState(new Date().getFullYear() + 1);
+  const [targetYear, setTargetYear] = useState(CURRENT_YEAR + 1);
   const [milestones, setMilestones] = useState(['']);
   const [whyThisMatters, setWhyThisMatters] = useState('');
   const [progress, setProgress] = useState(0);
@@ -102,7 +104,7 @@ function AddGoalModal({ open, onClose }: AddGoalModalProps) {
       toast.success('Goal added to your vision board!');
       onClose();
       setCategory(GoalCategory.career);
-      setTargetYear(new Date().getFullYear() + 1);
+      setTargetYear(CURRENT_YEAR + 1);
       setMilestones(['']);
       setWhyThisMatters('');
       setProgress(0);
@@ -117,7 +119,7 @@ function AddGoalModal({ open, onClose }: AddGoalModalProps) {
         <DialogHeader>
           <DialogTitle className="font-display text-2xl">Add Vision Goal</DialogTitle>
           <DialogDescription className="font-body text-muted-foreground">
-            Define a goal that will shape your next decade.
+            Define a goal that will shape your future.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-5 pt-2">
@@ -139,15 +141,21 @@ function AddGoalModal({ open, onClose }: AddGoalModalProps) {
             </div>
             <div className="space-y-1.5">
               <Label className="label-warm">Target Year</Label>
-              <Input
-                type="number"
-                min={new Date().getFullYear()}
-                max={new Date().getFullYear() + 10}
-                value={targetYear}
-                onChange={(e) => setTargetYear(parseInt(e.target.value))}
-                className="font-body"
-                required
-              />
+              <Select
+                value={String(targetYear)}
+                onValueChange={(v) => setTargetYear(parseInt(v))}
+              >
+                <SelectTrigger className="font-body">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 21 }, (_, i) => CURRENT_YEAR + i).map((yr) => (
+                    <SelectItem key={yr} value={String(yr)} className="font-body">
+                      {yr}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -361,10 +369,10 @@ export default function VisionBoard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-3xl sm:text-4xl font-bold text-foreground">
-            10-Year Vision Board 🪄
+            Long-Term Vision Board 🪄
           </h1>
           <p className="font-body text-muted-foreground mt-1">
-            Define the life you want to build over the next decade.
+            Define the life you want to build over the next 20 years.
           </p>
         </div>
         <Button onClick={() => setAddOpen(true)} className="font-body font-semibold rounded-2xl shadow-warm">
@@ -382,7 +390,7 @@ export default function VisionBoard() {
           <Target className="w-12 h-12 text-muted-foreground mx-auto" />
           <h2 className="font-display text-2xl font-semibold text-foreground">Start Your Vision</h2>
           <p className="font-body text-muted-foreground max-w-md mx-auto">
-            Add your first goal across any of the 7 life categories and begin mapping your 10-year journey.
+            Add your first goal across any of the 7 life categories and begin mapping your long-term journey.
           </p>
           <Button onClick={() => setAddOpen(true)} className="font-body font-semibold rounded-2xl">
             <Plus className="w-4 h-4 mr-2" /> Add Your First Goal

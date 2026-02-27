@@ -89,6 +89,66 @@ export class ExternalBlob {
         return this;
     }
 }
+export interface Budget {
+    expenses: Array<string>;
+    income: bigint;
+    notes: string;
+}
+export interface ImportantDate {
+    date: bigint;
+    labelText: string;
+}
+export interface GrowthJournalEntry {
+    growthRating: bigint;
+    date: bigint;
+    actionStep: string;
+    lesson: string;
+    isPublic: boolean;
+    growthArea: GrowthArea;
+}
+export interface Task {
+    description: string;
+    isComplete: boolean;
+}
+export interface EmotionalJournalEntry {
+    trigger: string;
+    emotion: EmotionTag;
+    date: bigint;
+    isPublic: boolean;
+    reflection: string;
+    intensity: bigint;
+}
+export interface WeeklyEntry {
+    todos: Array<Task>;
+    year: bigint;
+    weekNumber: bigint;
+    energyRating: bigint;
+    reflection: string;
+    priorities: Array<Task>;
+    habitTracker: Array<HabitWeekly>;
+}
+export interface DailyJournalEntry {
+    body: string;
+    date: bigint;
+    isPublic: boolean;
+}
+export interface MonthlyEntry {
+    month: bigint;
+    year: bigint;
+    moodTracker: Array<string>;
+    goals: Array<Task>;
+    importantDates: Array<ImportantDate>;
+    budget: Budget;
+    reflection: string;
+}
+export interface YearlyEntry {
+    majorGoals: Array<Task>;
+    year: bigint;
+    reflection: string;
+    habitTracker: Array<HabitYearly>;
+    wordOfTheYear: string;
+    visionImages: Array<string>;
+}
 export interface VisionBoardEntry {
     progressPercentage: bigint;
     targetYear: bigint;
@@ -100,19 +160,27 @@ export interface ScheduleItem {
     timeBlock: string;
     activity: string;
 }
+export interface NightReflectionJournalEntry {
+    gratitude: string;
+    date: bigint;
+    improvements: string;
+    highlights: Array<string>;
+    isPublic: boolean;
+    intention: string;
+}
 export interface Couple {
     partner1: Principal;
     partner2: Principal;
 }
-export interface Task {
-    description: string;
-    isComplete: boolean;
+export interface HabitWeekly {
+    name: string;
+    dailyCheckIns: Array<boolean>;
 }
 export interface DailyPlannerEntry {
+    tasks: Array<Task>;
     waterIntake: bigint;
     date: bigint;
     gratitudeEntries: Array<string>;
-    topTasks: Array<Task>;
     journalEntry: string;
     notes: string;
     moodEmoji: string;
@@ -121,6 +189,27 @@ export interface DailyPlannerEntry {
 export interface UserProfile {
     displayName: string;
     name: string;
+}
+export interface HabitYearly {
+    name: string;
+    monthlyCheckIns: Array<boolean>;
+}
+export enum EmotionTag {
+    sad = "sad",
+    fearful = "fearful",
+    content = "content",
+    anxious = "anxious",
+    happy = "happy",
+    angry = "angry",
+    disappointed = "disappointed",
+    calm = "calm",
+    grateful = "grateful",
+    peaceful = "peaceful",
+    overwhelmed = "overwhelmed",
+    motivated = "motivated",
+    frustrated = "frustrated",
+    excited = "excited",
+    optimistic = "optimistic"
 }
 export enum GoalCategory {
     relationship = "relationship",
@@ -131,6 +220,14 @@ export enum GoalCategory {
     financial = "financial",
     health = "health"
 }
+export enum GrowthArea {
+    spiritual = "spiritual",
+    other = "other",
+    mindset = "mindset",
+    career = "career",
+    relationships = "relationships",
+    health = "health"
+}
 export enum UserRole {
     admin = "admin",
     user = "user",
@@ -139,25 +236,49 @@ export enum UserRole {
 export interface backendInterface {
     _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
     addDailyPlannerEntry(entry: DailyPlannerEntry): Promise<void>;
+    addMonthlyEntry(entry: MonthlyEntry): Promise<void>;
     addVisionBoardEntry(entry: VisionBoardEntry): Promise<void>;
+    addWeeklyEntry(entry: WeeklyEntry): Promise<void>;
+    addYearlyEntry(entry: YearlyEntry): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     createCouple(partner1: Principal, partner2: Principal): Promise<void>;
+    createOrUpdateDailyJournal(entry: DailyJournalEntry): Promise<void>;
+    createOrUpdateEmotionalJournal(entry: EmotionalJournalEntry): Promise<void>;
+    createOrUpdateGrowthJournal(entry: GrowthJournalEntry): Promise<void>;
+    createOrUpdateNightReflection(entry: NightReflectionJournalEntry): Promise<void>;
     deleteDailyPlannerEntry(date: bigint): Promise<void>;
+    deleteMonthlyEntry(year: bigint, month: bigint): Promise<void>;
     deleteVisionBoardEntry(targetYear: bigint): Promise<void>;
+    deleteWeeklyEntry(year: bigint, weekNumber: bigint): Promise<void>;
+    deleteYearlyEntry(year: bigint): Promise<void>;
     getAllCouples(): Promise<Array<Couple>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getCouple(partner: Principal): Promise<Couple | null>;
+    getDailyJournals(): Promise<Array<DailyJournalEntry>>;
+    getDailyJournalsForUser(user: Principal): Promise<Array<DailyJournalEntry>>;
     getDailyPlannerEntries(): Promise<Array<DailyPlannerEntry>>;
-    getDailyQuote(): Promise<string>;
+    getDailyQuote(dayOfYear: bigint): Promise<string>;
+    getEmotionalJournals(): Promise<Array<EmotionalJournalEntry>>;
+    getEmotionalJournalsForUser(user: Principal): Promise<Array<EmotionalJournalEntry>>;
+    getGrowthJournals(): Promise<Array<GrowthJournalEntry>>;
+    getGrowthJournalsForUser(user: Principal): Promise<Array<GrowthJournalEntry>>;
+    getMonthlyEntries(): Promise<Array<MonthlyEntry>>;
+    getNightReflections(): Promise<Array<NightReflectionJournalEntry>>;
+    getNightReflectionsForUser(user: Principal): Promise<Array<NightReflectionJournalEntry>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     getVisionBoardEntries(): Promise<Array<VisionBoardEntry>>;
+    getWeeklyEntries(): Promise<Array<WeeklyEntry>>;
+    getYearlyEntries(): Promise<Array<YearlyEntry>>;
     isCallerAdmin(): Promise<boolean>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    updateMonthlyEntry(year: bigint, month: bigint, updatedEntry: MonthlyEntry): Promise<void>;
     updateVisionBoardProgress(targetYear: bigint, progress: bigint): Promise<void>;
     updateWaterIntake(date: bigint, intake: bigint): Promise<void>;
+    updateWeeklyEntry(year: bigint, weekNumber: bigint, updatedEntry: WeeklyEntry): Promise<void>;
+    updateYearlyEntry(year: bigint, updatedEntry: YearlyEntry): Promise<void>;
 }
-import type { Couple as _Couple, GoalCategory as _GoalCategory, UserProfile as _UserProfile, UserRole as _UserRole, VisionBoardEntry as _VisionBoardEntry } from "./declarations/backend.did.d.ts";
+import type { Couple as _Couple, EmotionTag as _EmotionTag, EmotionalJournalEntry as _EmotionalJournalEntry, GoalCategory as _GoalCategory, GrowthArea as _GrowthArea, GrowthJournalEntry as _GrowthJournalEntry, UserProfile as _UserProfile, UserRole as _UserRole, VisionBoardEntry as _VisionBoardEntry } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
     async _initializeAccessControlWithSecret(arg0: string): Promise<void> {
@@ -188,6 +309,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async addMonthlyEntry(arg0: MonthlyEntry): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.addMonthlyEntry(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.addMonthlyEntry(arg0);
+            return result;
+        }
+    }
     async addVisionBoardEntry(arg0: VisionBoardEntry): Promise<void> {
         if (this.processError) {
             try {
@@ -199,6 +334,34 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.addVisionBoardEntry(to_candid_VisionBoardEntry_n1(this._uploadFile, this._downloadFile, arg0));
+            return result;
+        }
+    }
+    async addWeeklyEntry(arg0: WeeklyEntry): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.addWeeklyEntry(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.addWeeklyEntry(arg0);
+            return result;
+        }
+    }
+    async addYearlyEntry(arg0: YearlyEntry): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.addYearlyEntry(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.addYearlyEntry(arg0);
             return result;
         }
     }
@@ -230,6 +393,62 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async createOrUpdateDailyJournal(arg0: DailyJournalEntry): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.createOrUpdateDailyJournal(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.createOrUpdateDailyJournal(arg0);
+            return result;
+        }
+    }
+    async createOrUpdateEmotionalJournal(arg0: EmotionalJournalEntry): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.createOrUpdateEmotionalJournal(to_candid_EmotionalJournalEntry_n7(this._uploadFile, this._downloadFile, arg0));
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.createOrUpdateEmotionalJournal(to_candid_EmotionalJournalEntry_n7(this._uploadFile, this._downloadFile, arg0));
+            return result;
+        }
+    }
+    async createOrUpdateGrowthJournal(arg0: GrowthJournalEntry): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.createOrUpdateGrowthJournal(to_candid_GrowthJournalEntry_n11(this._uploadFile, this._downloadFile, arg0));
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.createOrUpdateGrowthJournal(to_candid_GrowthJournalEntry_n11(this._uploadFile, this._downloadFile, arg0));
+            return result;
+        }
+    }
+    async createOrUpdateNightReflection(arg0: NightReflectionJournalEntry): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.createOrUpdateNightReflection(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.createOrUpdateNightReflection(arg0);
+            return result;
+        }
+    }
     async deleteDailyPlannerEntry(arg0: bigint): Promise<void> {
         if (this.processError) {
             try {
@@ -244,6 +463,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async deleteMonthlyEntry(arg0: bigint, arg1: bigint): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deleteMonthlyEntry(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deleteMonthlyEntry(arg0, arg1);
+            return result;
+        }
+    }
     async deleteVisionBoardEntry(arg0: bigint): Promise<void> {
         if (this.processError) {
             try {
@@ -255,6 +488,34 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.deleteVisionBoardEntry(arg0);
+            return result;
+        }
+    }
+    async deleteWeeklyEntry(arg0: bigint, arg1: bigint): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deleteWeeklyEntry(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deleteWeeklyEntry(arg0, arg1);
+            return result;
+        }
+    }
+    async deleteYearlyEntry(arg0: bigint): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deleteYearlyEntry(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deleteYearlyEntry(arg0);
             return result;
         }
     }
@@ -276,42 +537,70 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getCallerUserProfile();
-                return from_candid_opt_n7(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getCallerUserProfile();
-            return from_candid_opt_n7(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
         }
     }
     async getCallerUserRole(): Promise<UserRole> {
         if (this.processError) {
             try {
                 const result = await this.actor.getCallerUserRole();
-                return from_candid_UserRole_n8(this._uploadFile, this._downloadFile, result);
+                return from_candid_UserRole_n16(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getCallerUserRole();
-            return from_candid_UserRole_n8(this._uploadFile, this._downloadFile, result);
+            return from_candid_UserRole_n16(this._uploadFile, this._downloadFile, result);
         }
     }
     async getCouple(arg0: Principal): Promise<Couple | null> {
         if (this.processError) {
             try {
                 const result = await this.actor.getCouple(arg0);
-                return from_candid_opt_n10(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n18(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getCouple(arg0);
-            return from_candid_opt_n10(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n18(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getDailyJournals(): Promise<Array<DailyJournalEntry>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getDailyJournals();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getDailyJournals();
+            return result;
+        }
+    }
+    async getDailyJournalsForUser(arg0: Principal): Promise<Array<DailyJournalEntry>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getDailyJournalsForUser(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getDailyJournalsForUser(arg0);
+            return result;
         }
     }
     async getDailyPlannerEntries(): Promise<Array<DailyPlannerEntry>> {
@@ -328,17 +617,115 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async getDailyQuote(): Promise<string> {
+    async getDailyQuote(arg0: bigint): Promise<string> {
         if (this.processError) {
             try {
-                const result = await this.actor.getDailyQuote();
+                const result = await this.actor.getDailyQuote(arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getDailyQuote();
+            const result = await this.actor.getDailyQuote(arg0);
+            return result;
+        }
+    }
+    async getEmotionalJournals(): Promise<Array<EmotionalJournalEntry>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getEmotionalJournals();
+                return from_candid_vec_n19(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getEmotionalJournals();
+            return from_candid_vec_n19(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getEmotionalJournalsForUser(arg0: Principal): Promise<Array<EmotionalJournalEntry>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getEmotionalJournalsForUser(arg0);
+                return from_candid_vec_n19(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getEmotionalJournalsForUser(arg0);
+            return from_candid_vec_n19(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getGrowthJournals(): Promise<Array<GrowthJournalEntry>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getGrowthJournals();
+                return from_candid_vec_n24(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getGrowthJournals();
+            return from_candid_vec_n24(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getGrowthJournalsForUser(arg0: Principal): Promise<Array<GrowthJournalEntry>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getGrowthJournalsForUser(arg0);
+                return from_candid_vec_n24(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getGrowthJournalsForUser(arg0);
+            return from_candid_vec_n24(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getMonthlyEntries(): Promise<Array<MonthlyEntry>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getMonthlyEntries();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getMonthlyEntries();
+            return result;
+        }
+    }
+    async getNightReflections(): Promise<Array<NightReflectionJournalEntry>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getNightReflections();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getNightReflections();
+            return result;
+        }
+    }
+    async getNightReflectionsForUser(arg0: Principal): Promise<Array<NightReflectionJournalEntry>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getNightReflectionsForUser(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getNightReflectionsForUser(arg0);
             return result;
         }
     }
@@ -346,28 +733,56 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getUserProfile(arg0);
-                return from_candid_opt_n7(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getUserProfile(arg0);
-            return from_candid_opt_n7(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
         }
     }
     async getVisionBoardEntries(): Promise<Array<VisionBoardEntry>> {
         if (this.processError) {
             try {
                 const result = await this.actor.getVisionBoardEntries();
-                return from_candid_vec_n11(this._uploadFile, this._downloadFile, result);
+                return from_candid_vec_n29(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getVisionBoardEntries();
-            return from_candid_vec_n11(this._uploadFile, this._downloadFile, result);
+            return from_candid_vec_n29(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getWeeklyEntries(): Promise<Array<WeeklyEntry>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getWeeklyEntries();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getWeeklyEntries();
+            return result;
+        }
+    }
+    async getYearlyEntries(): Promise<Array<YearlyEntry>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getYearlyEntries();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getYearlyEntries();
+            return result;
         }
     }
     async isCallerAdmin(): Promise<boolean> {
@@ -395,6 +810,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.saveCallerUserProfile(arg0);
+            return result;
+        }
+    }
+    async updateMonthlyEntry(arg0: bigint, arg1: bigint, arg2: MonthlyEntry): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateMonthlyEntry(arg0, arg1, arg2);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateMonthlyEntry(arg0, arg1, arg2);
             return result;
         }
     }
@@ -426,23 +855,111 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async updateWeeklyEntry(arg0: bigint, arg1: bigint, arg2: WeeklyEntry): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateWeeklyEntry(arg0, arg1, arg2);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateWeeklyEntry(arg0, arg1, arg2);
+            return result;
+        }
+    }
+    async updateYearlyEntry(arg0: bigint, arg1: YearlyEntry): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateYearlyEntry(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateYearlyEntry(arg0, arg1);
+            return result;
+        }
+    }
 }
-function from_candid_GoalCategory_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _GoalCategory): GoalCategory {
-    return from_candid_variant_n15(_uploadFile, _downloadFile, value);
+function from_candid_EmotionTag_n22(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _EmotionTag): EmotionTag {
+    return from_candid_variant_n23(_uploadFile, _downloadFile, value);
 }
-function from_candid_UserRole_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole): UserRole {
-    return from_candid_variant_n9(_uploadFile, _downloadFile, value);
+function from_candid_EmotionalJournalEntry_n20(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _EmotionalJournalEntry): EmotionalJournalEntry {
+    return from_candid_record_n21(_uploadFile, _downloadFile, value);
 }
-function from_candid_VisionBoardEntry_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _VisionBoardEntry): VisionBoardEntry {
-    return from_candid_record_n13(_uploadFile, _downloadFile, value);
+function from_candid_GoalCategory_n32(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _GoalCategory): GoalCategory {
+    return from_candid_variant_n33(_uploadFile, _downloadFile, value);
 }
-function from_candid_opt_n10(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_Couple]): Couple | null {
+function from_candid_GrowthArea_n27(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _GrowthArea): GrowthArea {
+    return from_candid_variant_n28(_uploadFile, _downloadFile, value);
+}
+function from_candid_GrowthJournalEntry_n25(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _GrowthJournalEntry): GrowthJournalEntry {
+    return from_candid_record_n26(_uploadFile, _downloadFile, value);
+}
+function from_candid_UserRole_n16(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole): UserRole {
+    return from_candid_variant_n17(_uploadFile, _downloadFile, value);
+}
+function from_candid_VisionBoardEntry_n30(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _VisionBoardEntry): VisionBoardEntry {
+    return from_candid_record_n31(_uploadFile, _downloadFile, value);
+}
+function from_candid_opt_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_UserProfile]): UserProfile | null {
     return value.length === 0 ? null : value[0];
 }
-function from_candid_opt_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_UserProfile]): UserProfile | null {
+function from_candid_opt_n18(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_Couple]): Couple | null {
     return value.length === 0 ? null : value[0];
 }
-function from_candid_record_n13(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_record_n21(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    trigger: string;
+    emotion: _EmotionTag;
+    date: bigint;
+    isPublic: boolean;
+    reflection: string;
+    intensity: bigint;
+}): {
+    trigger: string;
+    emotion: EmotionTag;
+    date: bigint;
+    isPublic: boolean;
+    reflection: string;
+    intensity: bigint;
+} {
+    return {
+        trigger: value.trigger,
+        emotion: from_candid_EmotionTag_n22(_uploadFile, _downloadFile, value.emotion),
+        date: value.date,
+        isPublic: value.isPublic,
+        reflection: value.reflection,
+        intensity: value.intensity
+    };
+}
+function from_candid_record_n26(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    growthRating: bigint;
+    date: bigint;
+    actionStep: string;
+    lesson: string;
+    isPublic: boolean;
+    growthArea: _GrowthArea;
+}): {
+    growthRating: bigint;
+    date: bigint;
+    actionStep: string;
+    lesson: string;
+    isPublic: boolean;
+    growthArea: GrowthArea;
+} {
+    return {
+        growthRating: value.growthRating,
+        date: value.date,
+        actionStep: value.actionStep,
+        lesson: value.lesson,
+        isPublic: value.isPublic,
+        growthArea: from_candid_GrowthArea_n27(_uploadFile, _downloadFile, value.growthArea)
+    };
+}
+function from_candid_record_n31(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     progressPercentage: bigint;
     targetYear: bigint;
     category: _GoalCategory;
@@ -458,12 +975,69 @@ function from_candid_record_n13(_uploadFile: (file: ExternalBlob) => Promise<Uin
     return {
         progressPercentage: value.progressPercentage,
         targetYear: value.targetYear,
-        category: from_candid_GoalCategory_n14(_uploadFile, _downloadFile, value.category),
+        category: from_candid_GoalCategory_n32(_uploadFile, _downloadFile, value.category),
         whyThisMatters: value.whyThisMatters,
         milestones: value.milestones
     };
 }
-function from_candid_variant_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_variant_n17(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    admin: null;
+} | {
+    user: null;
+} | {
+    guest: null;
+}): UserRole {
+    return "admin" in value ? UserRole.admin : "user" in value ? UserRole.user : "guest" in value ? UserRole.guest : value;
+}
+function from_candid_variant_n23(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    sad: null;
+} | {
+    fearful: null;
+} | {
+    content: null;
+} | {
+    anxious: null;
+} | {
+    happy: null;
+} | {
+    angry: null;
+} | {
+    disappointed: null;
+} | {
+    calm: null;
+} | {
+    grateful: null;
+} | {
+    peaceful: null;
+} | {
+    overwhelmed: null;
+} | {
+    motivated: null;
+} | {
+    frustrated: null;
+} | {
+    excited: null;
+} | {
+    optimistic: null;
+}): EmotionTag {
+    return "sad" in value ? EmotionTag.sad : "fearful" in value ? EmotionTag.fearful : "content" in value ? EmotionTag.content : "anxious" in value ? EmotionTag.anxious : "happy" in value ? EmotionTag.happy : "angry" in value ? EmotionTag.angry : "disappointed" in value ? EmotionTag.disappointed : "calm" in value ? EmotionTag.calm : "grateful" in value ? EmotionTag.grateful : "peaceful" in value ? EmotionTag.peaceful : "overwhelmed" in value ? EmotionTag.overwhelmed : "motivated" in value ? EmotionTag.motivated : "frustrated" in value ? EmotionTag.frustrated : "excited" in value ? EmotionTag.excited : "optimistic" in value ? EmotionTag.optimistic : value;
+}
+function from_candid_variant_n28(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    spiritual: null;
+} | {
+    other: null;
+} | {
+    mindset: null;
+} | {
+    career: null;
+} | {
+    relationships: null;
+} | {
+    health: null;
+}): GrowthArea {
+    return "spiritual" in value ? GrowthArea.spiritual : "other" in value ? GrowthArea.other : "mindset" in value ? GrowthArea.mindset : "career" in value ? GrowthArea.career : "relationships" in value ? GrowthArea.relationships : "health" in value ? GrowthArea.health : value;
+}
+function from_candid_variant_n33(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     relationship: null;
 } | {
     spiritual: null;
@@ -480,26 +1054,59 @@ function from_candid_variant_n15(_uploadFile: (file: ExternalBlob) => Promise<Ui
 }): GoalCategory {
     return "relationship" in value ? GoalCategory.relationship : "spiritual" in value ? GoalCategory.spiritual : "travel" in value ? GoalCategory.travel : "personalGrowth" in value ? GoalCategory.personalGrowth : "career" in value ? GoalCategory.career : "financial" in value ? GoalCategory.financial : "health" in value ? GoalCategory.health : value;
 }
-function from_candid_variant_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    admin: null;
-} | {
-    user: null;
-} | {
-    guest: null;
-}): UserRole {
-    return "admin" in value ? UserRole.admin : "user" in value ? UserRole.user : "guest" in value ? UserRole.guest : value;
+function from_candid_vec_n19(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_EmotionalJournalEntry>): Array<EmotionalJournalEntry> {
+    return value.map((x)=>from_candid_EmotionalJournalEntry_n20(_uploadFile, _downloadFile, x));
 }
-function from_candid_vec_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_VisionBoardEntry>): Array<VisionBoardEntry> {
-    return value.map((x)=>from_candid_VisionBoardEntry_n12(_uploadFile, _downloadFile, x));
+function from_candid_vec_n24(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_GrowthJournalEntry>): Array<GrowthJournalEntry> {
+    return value.map((x)=>from_candid_GrowthJournalEntry_n25(_uploadFile, _downloadFile, x));
+}
+function from_candid_vec_n29(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_VisionBoardEntry>): Array<VisionBoardEntry> {
+    return value.map((x)=>from_candid_VisionBoardEntry_n30(_uploadFile, _downloadFile, x));
+}
+function to_candid_EmotionTag_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: EmotionTag): _EmotionTag {
+    return to_candid_variant_n10(_uploadFile, _downloadFile, value);
+}
+function to_candid_EmotionalJournalEntry_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: EmotionalJournalEntry): _EmotionalJournalEntry {
+    return to_candid_record_n8(_uploadFile, _downloadFile, value);
 }
 function to_candid_GoalCategory_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: GoalCategory): _GoalCategory {
     return to_candid_variant_n4(_uploadFile, _downloadFile, value);
+}
+function to_candid_GrowthArea_n13(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: GrowthArea): _GrowthArea {
+    return to_candid_variant_n14(_uploadFile, _downloadFile, value);
+}
+function to_candid_GrowthJournalEntry_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: GrowthJournalEntry): _GrowthJournalEntry {
+    return to_candid_record_n12(_uploadFile, _downloadFile, value);
 }
 function to_candid_UserRole_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): _UserRole {
     return to_candid_variant_n6(_uploadFile, _downloadFile, value);
 }
 function to_candid_VisionBoardEntry_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: VisionBoardEntry): _VisionBoardEntry {
     return to_candid_record_n2(_uploadFile, _downloadFile, value);
+}
+function to_candid_record_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    growthRating: bigint;
+    date: bigint;
+    actionStep: string;
+    lesson: string;
+    isPublic: boolean;
+    growthArea: GrowthArea;
+}): {
+    growthRating: bigint;
+    date: bigint;
+    actionStep: string;
+    lesson: string;
+    isPublic: boolean;
+    growthArea: _GrowthArea;
+} {
+    return {
+        growthRating: value.growthRating,
+        date: value.date,
+        actionStep: value.actionStep,
+        lesson: value.lesson,
+        isPublic: value.isPublic,
+        growthArea: to_candid_GrowthArea_n13(_uploadFile, _downloadFile, value.growthArea)
+    };
 }
 function to_candid_record_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     progressPercentage: bigint;
@@ -521,6 +1128,120 @@ function to_candid_record_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8A
         whyThisMatters: value.whyThisMatters,
         milestones: value.milestones
     };
+}
+function to_candid_record_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    trigger: string;
+    emotion: EmotionTag;
+    date: bigint;
+    isPublic: boolean;
+    reflection: string;
+    intensity: bigint;
+}): {
+    trigger: string;
+    emotion: _EmotionTag;
+    date: bigint;
+    isPublic: boolean;
+    reflection: string;
+    intensity: bigint;
+} {
+    return {
+        trigger: value.trigger,
+        emotion: to_candid_EmotionTag_n9(_uploadFile, _downloadFile, value.emotion),
+        date: value.date,
+        isPublic: value.isPublic,
+        reflection: value.reflection,
+        intensity: value.intensity
+    };
+}
+function to_candid_variant_n10(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: EmotionTag): {
+    sad: null;
+} | {
+    fearful: null;
+} | {
+    content: null;
+} | {
+    anxious: null;
+} | {
+    happy: null;
+} | {
+    angry: null;
+} | {
+    disappointed: null;
+} | {
+    calm: null;
+} | {
+    grateful: null;
+} | {
+    peaceful: null;
+} | {
+    overwhelmed: null;
+} | {
+    motivated: null;
+} | {
+    frustrated: null;
+} | {
+    excited: null;
+} | {
+    optimistic: null;
+} {
+    return value == EmotionTag.sad ? {
+        sad: null
+    } : value == EmotionTag.fearful ? {
+        fearful: null
+    } : value == EmotionTag.content ? {
+        content: null
+    } : value == EmotionTag.anxious ? {
+        anxious: null
+    } : value == EmotionTag.happy ? {
+        happy: null
+    } : value == EmotionTag.angry ? {
+        angry: null
+    } : value == EmotionTag.disappointed ? {
+        disappointed: null
+    } : value == EmotionTag.calm ? {
+        calm: null
+    } : value == EmotionTag.grateful ? {
+        grateful: null
+    } : value == EmotionTag.peaceful ? {
+        peaceful: null
+    } : value == EmotionTag.overwhelmed ? {
+        overwhelmed: null
+    } : value == EmotionTag.motivated ? {
+        motivated: null
+    } : value == EmotionTag.frustrated ? {
+        frustrated: null
+    } : value == EmotionTag.excited ? {
+        excited: null
+    } : value == EmotionTag.optimistic ? {
+        optimistic: null
+    } : value;
+}
+function to_candid_variant_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: GrowthArea): {
+    spiritual: null;
+} | {
+    other: null;
+} | {
+    mindset: null;
+} | {
+    career: null;
+} | {
+    relationships: null;
+} | {
+    health: null;
+} {
+    return value == GrowthArea.spiritual ? {
+        spiritual: null
+    } : value == GrowthArea.other ? {
+        other: null
+    } : value == GrowthArea.mindset ? {
+        mindset: null
+    } : value == GrowthArea.career ? {
+        career: null
+    } : value == GrowthArea.relationships ? {
+        relationships: null
+    } : value == GrowthArea.health ? {
+        health: null
+    } : value;
 }
 function to_candid_variant_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: GoalCategory): {
     relationship: null;

@@ -80,23 +80,26 @@ function QuoteBanner() {
   const { data: quote, isLoading } = useGetDailyQuote();
 
   return (
-    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-warm/90 to-primary/80 text-primary-foreground p-8 shadow-warm-xl">
+    <div className="relative overflow-hidden rounded-3xl bg-transparent p-8">
       <img
         src="/assets/generated/quote-mark.dim_128x128.png"
         alt=""
         className="absolute top-4 left-6 w-16 h-16 opacity-20 select-none pointer-events-none"
+        style={{ filter: 'sepia(1) saturate(0.5) hue-rotate(10deg)' }}
       />
       <div className="relative z-10 text-center space-y-3">
-        <p className="label-warm text-primary-foreground/70 tracking-widest">Today's Inspiration</p>
+        <p className="text-xs font-body font-semibold uppercase tracking-widest text-pastel-brown-dark">
+          Today's Inspiration
+        </p>
         {isLoading ? (
-          <Skeleton className="h-8 w-3/4 mx-auto bg-primary-foreground/20" />
+          <Skeleton className="h-8 w-3/4 mx-auto bg-pastel-brown/20" />
         ) : (
-          <blockquote className="font-display text-xl sm:text-2xl font-medium italic leading-relaxed max-w-2xl mx-auto">
+          <blockquote className="font-display text-xl sm:text-2xl font-medium italic leading-relaxed max-w-2xl mx-auto text-pastel-brown">
             "{quote}"
           </blockquote>
         )}
-        <div className="flex items-center justify-center gap-1.5 text-primary-foreground/60 text-sm font-body">
-          <Sparkles className="w-3.5 h-3.5" />
+        <div className="flex items-center justify-center gap-1.5 text-sm font-body text-pastel-brown-light">
+          <Sparkles className="w-3.5 h-3.5 text-pastel-brown-light" />
           <span>{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
         </div>
       </div>
@@ -126,8 +129,8 @@ export default function Dashboard() {
   const weekEntries = plannerEntries.filter((e) => weekKeys.includes(e.date));
   const monthEntries = plannerEntries.filter((e) => e.date >= monthStart && e.date <= monthEnd);
 
-  const weekTasksTotal = weekEntries.reduce((sum, e) => sum + e.topTasks.length, 0);
-  const weekTasksDone = weekEntries.reduce((sum, e) => sum + e.topTasks.filter((t) => t.isComplete).length, 0);
+  const weekTasksTotal = weekEntries.reduce((sum, e) => sum + e.tasks.length, 0);
+  const weekTasksDone = weekEntries.reduce((sum, e) => sum + e.tasks.filter((t) => t.isComplete).length, 0);
   const monthGoalsCount = monthEntries.length;
 
   // Vision progress by category
@@ -178,9 +181,9 @@ export default function Dashboard() {
             <div className="space-y-2">
               {[1, 2, 3].map((i) => <Skeleton key={i} className="h-5 w-full" />)}
             </div>
-          ) : todayEntry && todayEntry.topTasks.length > 0 ? (
+          ) : todayEntry && todayEntry.tasks.length > 0 ? (
             <ul className="space-y-2">
-              {todayEntry.topTasks.slice(0, 3).map((task, i) => (
+              {todayEntry.tasks.slice(0, 3).map((task, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm font-body">
                   {task.isComplete ? (
                     <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />

@@ -10,11 +10,15 @@ import {
 import { useInternetIdentity } from './hooks/useInternetIdentity';
 import { useQueryClient } from '@tanstack/react-query';
 import { useGetCallerUserProfile, useSaveCallerUserProfile, useGetCouple } from './hooks/useQueries';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Dashboard from './pages/Dashboard';
 import VisionBoard from './pages/VisionBoard';
 import DailyPlanner from './pages/DailyPlanner';
 import CoupleSettings from './pages/CoupleSettings';
+import YearlyPlanner from './pages/YearlyPlanner';
+import MonthlyPlanner from './pages/MonthlyPlanner';
+import WeeklyPlanner from './pages/WeeklyPlanner';
+import JournalSection from './pages/JournalSection';
 import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
 import {
@@ -27,6 +31,10 @@ import {
   LogIn,
   LogOut,
   Loader2,
+  CalendarRange,
+  CalendarCheck,
+  BookOpen,
+  NotebookPen,
 } from 'lucide-react';
 import {
   Dialog,
@@ -60,9 +68,9 @@ function ProfileSetupModal() {
     <Dialog open={showModal}>
       <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader>
-          <DialogTitle className="font-display text-2xl">Welcome to Decade Diary ✨</DialogTitle>
+          <DialogTitle className="font-display text-2xl">Welcome to Future Us ✨</DialogTitle>
           <DialogDescription className="font-body text-muted-foreground">
-            Let's set up your profile to get started on your 10-year journey.
+            Let's set up your profile to get started on your journey together.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
@@ -95,7 +103,7 @@ function ProfileSetupModal() {
             {saveProfile.isPending ? (
               <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>
             ) : (
-              'Start My Journey →'
+              'Start Our Journey →'
             )}
           </Button>
         </form>
@@ -156,7 +164,11 @@ function Header() {
   const navLinks = [
     { to: '/', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/vision-board', label: 'Vision Board', icon: Target },
-    { to: '/daily-planner', label: 'Daily Planner', icon: CalendarDays },
+    { to: '/yearly-planner', label: 'Yearly', icon: BookOpen },
+    { to: '/monthly-planner', label: 'Monthly', icon: CalendarRange },
+    { to: '/weekly-planner', label: 'Weekly', icon: CalendarCheck },
+    { to: '/daily-planner', label: 'Daily', icon: CalendarDays },
+    { to: '/journal', label: 'Journal', icon: NotebookPen },
     { to: '/couple-settings', label: 'Couple', icon: Heart },
   ];
 
@@ -165,20 +177,20 @@ function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <span className="text-2xl">📖</span>
+          <Link to="/" className="flex items-center gap-2 group shrink-0">
+            <span className="text-2xl">💑</span>
             <span className="font-display text-xl font-semibold text-foreground group-hover:text-primary transition-colors">
-              Decade Diary
+              Future Us
             </span>
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-0.5">
             {navLinks.map(({ to, label, icon: Icon }) => (
               <Link
                 key={to}
                 to={to}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-body font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors [&.active]:text-primary [&.active]:bg-primary/10"
+                className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-body font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors [&.active]:text-primary [&.active]:bg-primary/10"
                 activeOptions={to === '/' ? { exact: true } : undefined}
               >
                 <Icon className="w-4 h-4" />
@@ -188,10 +200,10 @@ function Header() {
           </nav>
 
           {/* Right side */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 shrink-0">
             <CoupleModeBadge />
             {isAuthenticated && userProfile && (
-              <span className="hidden sm:block text-sm font-body text-muted-foreground">
+              <span className="hidden xl:block text-sm font-body text-muted-foreground">
                 Hi, {userProfile.name} 👋
               </span>
             )}
@@ -213,7 +225,7 @@ function Header() {
 
             {/* Mobile menu toggle */}
             <button
-              className="md:hidden p-2 rounded-lg hover:bg-secondary transition-colors"
+              className="lg:hidden p-2 rounded-lg hover:bg-secondary transition-colors"
               onClick={() => setMobileOpen(!mobileOpen)}
             >
               {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -223,7 +235,7 @@ function Header() {
 
         {/* Mobile Nav */}
         {mobileOpen && (
-          <nav className="md:hidden pb-4 pt-2 border-t border-border/40 mt-2">
+          <nav className="lg:hidden pb-4 pt-2 border-t border-border/40 mt-2 grid grid-cols-2 gap-1">
             {navLinks.map(({ to, label, icon: Icon }) => (
               <Link
                 key={to}
@@ -247,13 +259,13 @@ function Header() {
 
 function Footer() {
   const year = new Date().getFullYear();
-  const appId = encodeURIComponent(window.location.hostname || 'decade-diary');
+  const appId = encodeURIComponent(window.location.hostname || 'future-us');
 
   return (
     <footer className="mt-auto py-8 border-t border-border/40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <p className="text-sm font-body text-muted-foreground">
-          © {year} Decade Diary. Built with{' '}
+          © {year} Future Us. Built with{' '}
           <Heart className="inline w-3.5 h-3.5 text-rose-dusty fill-current mx-0.5" />{' '}
           using{' '}
           <a
@@ -303,18 +315,18 @@ function LandingScreen() {
     <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center animate-fade-in">
       <div className="max-w-2xl mx-auto space-y-8">
         <div className="space-y-4">
-          <div className="text-6xl mb-4">📖</div>
+          <div className="text-6xl mb-4">💑</div>
           <h1 className="font-display text-5xl sm:text-6xl font-bold text-foreground leading-tight">
-            Your 10-Year
-            <span className="block text-primary italic">Life Journey</span>
+            Your Future
+            <span className="block text-primary italic">Together</span>
           </h1>
           <p className="font-body text-lg text-muted-foreground max-w-lg mx-auto leading-relaxed">
-            Plan your decade, track your vision, journal your growth — and share the journey with your partner.
+            Plan your life, track your vision, journal your growth — and share the journey with your partner.
           </p>
         </div>
 
-        <div className="flex flex-wrap justify-center gap-4 text-sm font-body text-muted-foreground">
-          {['🎯 Vision Board', '📅 Daily Planner', '💑 Couple Mode', '✨ Daily Quotes'].map((f) => (
+        <div className="flex flex-wrap justify-center gap-3 text-sm font-body text-muted-foreground">
+          {['🎯 Vision Board', '📅 Daily Planner', '📆 Monthly Planner', '🗓️ Yearly Planner', '📓 Journal', '💑 Couple Mode', '✨ Daily Quotes'].map((f) => (
             <span key={f} className="px-4 py-2 rounded-full bg-card border border-border/60 shadow-warm">
               {f}
             </span>
@@ -330,7 +342,7 @@ function LandingScreen() {
           {isLoggingIn ? (
             <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Connecting...</>
           ) : (
-            'Begin Your Journey →'
+            'Begin Our Journey →'
           )}
         </Button>
         <p className="text-xs font-body text-muted-foreground">
@@ -369,11 +381,39 @@ const coupleSettingsRoute = createRoute({
   component: CoupleSettings,
 });
 
+const yearlyPlannerRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/yearly-planner',
+  component: YearlyPlanner,
+});
+
+const monthlyPlannerRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/monthly-planner',
+  component: MonthlyPlanner,
+});
+
+const weeklyPlannerRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/weekly-planner',
+  component: WeeklyPlanner,
+});
+
+const journalRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/journal',
+  component: JournalSection,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   visionBoardRoute,
   dailyPlannerRoute,
   coupleSettingsRoute,
+  yearlyPlannerRoute,
+  monthlyPlannerRoute,
+  weeklyPlannerRoute,
+  journalRoute,
 ]);
 
 const router = createRouter({ routeTree });

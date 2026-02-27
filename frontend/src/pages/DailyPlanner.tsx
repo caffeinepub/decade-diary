@@ -8,7 +8,6 @@ import {
 import type { DailyPlannerEntry, ScheduleItem, Task } from '../backend';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -24,6 +23,7 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
+  ListTodo,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -77,11 +77,7 @@ export default function DailyPlanner() {
 
   // Form state
   const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
-  const [topTasks, setTopTasks] = useState<Task[]>([
-    { description: '', isComplete: false },
-    { description: '', isComplete: false },
-    { description: '', isComplete: false },
-  ]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [notes, setNotes] = useState('');
   const [waterIntake, setWaterIntake] = useState(0);
   const [moodEmoji, setMoodEmoji] = useState('');
@@ -93,9 +89,7 @@ export default function DailyPlanner() {
   useEffect(() => {
     if (existingEntry) {
       setSchedule(existingEntry.schedule);
-      const tasks = [...existingEntry.topTasks];
-      while (tasks.length < 3) tasks.push({ description: '', isComplete: false });
-      setTopTasks(tasks.slice(0, 3));
+      setTasks([...existingEntry.tasks]);
       setNotes(existingEntry.notes);
       setWaterIntake(Number(existingEntry.waterIntake));
       setMoodEmoji(existingEntry.moodEmoji);
@@ -105,11 +99,7 @@ export default function DailyPlanner() {
       setJournalEntry(existingEntry.journalEntry);
     } else {
       setSchedule([]);
-      setTopTasks([
-        { description: '', isComplete: false },
-        { description: '', isComplete: false },
-        { description: '', isComplete: false },
-      ]);
+      setTasks([]);
       setNotes('');
       setWaterIntake(0);
       setMoodEmoji('');
@@ -125,7 +115,7 @@ export default function DailyPlanner() {
     const entry: DailyPlannerEntry = {
       date: dateKey,
       schedule,
-      topTasks: topTasks.filter((t) => t.description.trim()),
+      tasks: tasks.filter((t) => t.description.trim()),
       notes,
       waterIntake: BigInt(waterIntake),
       moodEmoji,
@@ -173,10 +163,18 @@ export default function DailyPlanner() {
     setSchedule(updated);
   };
 
+  const handleAddTask = () => {
+    setTasks([...tasks, { description: '', isComplete: false }]);
+  };
+
+  const handleRemoveTask = (i: number) => {
+    setTasks(tasks.filter((_, idx) => idx !== i));
+  };
+
   const handleTaskChange = (i: number, field: keyof Task, val: string | boolean) => {
-    const updated = [...topTasks];
+    const updated = [...tasks];
     updated[i] = { ...updated[i], [field]: val };
-    setTopTasks(updated);
+    setTasks(updated);
   };
 
   const handleGratitudeChange = (i: number, val: string) => {
@@ -184,6 +182,8 @@ export default function DailyPlanner() {
     updated[i] = val;
     setGratitude(updated);
   };
+
+  const completedCount = tasks.filter((t) => t.isComplete).length;
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 animate-fade-in">
@@ -269,27 +269,62 @@ export default function DailyPlanner() {
             </div>
           </div>
 
-          {/* Top 3 Tasks */}
+          {/* Tasks — Unlimited */}
           <div className="card-warm p-5 space-y-4">
-            <h2 className="section-title">Top 3 Tasks ✅</h2>
-            <div className="space-y-3">
-              {topTasks.map((task, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <Checkbox
-                    id={`task-${i}`}
-                    checked={task.isComplete}
-                    onCheckedChange={(checked) => handleTaskChange(i, 'isComplete', !!checked)}
-                    className="shrink-0"
-                  />
-                  <Input
-                    placeholder={`Task ${i + 1}`}
-                    value={task.description}
-                    onChange={(e) => handleTaskChange(i, 'description', e.target.value)}
-                    className={`font-body ${task.isComplete ? 'line-through text-muted-foreground' : ''}`}
-                  />
-                </div>
-              ))}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <h2 className="section-title">Tasks ✅</h2>
+                {tasks.length > 0 && (
+                  <span className="text-xs font-body text-muted-foreground bg-secondary/50 px-2 py-0.5 rounded-full">
+                    {completedCount}/{tasks.length} done
+                  </span>
+                )}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAddTask}
+                className="font-body text-xs"
+              >
+                <Plus className="w-3 h-3 mr-1" /> Add Task
+              </Button>
             </div>
+
+            {tasks.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-6 gap-2 text-muted-foreground">
+                <ListTodo className="w-8 h-8 opacity-40" />
+                <p className="text-sm font-body italic">No tasks yet. Add your first task!</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {tasks.map((task, i) => (
+                  <div key={i} className="flex items-center gap-3 group">
+                    <Checkbox
+                      id={`task-${i}`}
+                      checked={task.isComplete}
+                      onCheckedChange={(checked) => handleTaskChange(i, 'isComplete', !!checked)}
+                      className="shrink-0"
+                    />
+                    <Input
+                      placeholder={`Task ${i + 1}...`}
+                      value={task.description}
+                      onChange={(e) => handleTaskChange(i, 'description', e.target.value)}
+                      className={`font-body flex-1 ${task.isComplete ? 'line-through text-muted-foreground' : ''}`}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveTask(i)}
+                      className="shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Schedule Timeline */}
