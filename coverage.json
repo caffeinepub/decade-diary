@@ -1,0 +1,242 @@
+{
+  "kind": "coverage_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-27T07:50:48.454Z",
+  "sources": {
+    "buildRequest": true,
+    "implementationPlan": true
+  },
+  "requirements": {
+    "total": 9,
+    "implemented": 5,
+    "items": [
+      {
+        "id": "REQ-1",
+        "summary": "Create a backend data model and actor supporting two core entities: User and Couple. A Couple links two user principals together, giving both read and write access to all shared planner data (vision board entries, daily planner entries, goals).",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-2",
+        "summary": "Implement backend storage and CRUD operations for the 10-Year Vision Board. Each goal entry must support: category (Career, Financial, Health, Relationship, Personal Growth, Travel, Spiritual), target year, milestone list, 'why this matters' note, and a progress percentage (0–100).",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Implement backend storage and CRUD operations for the Daily Planner. Each day entry must include: date, schedule timeline (list of time-block items), top 3 tasks (with completion status), notes, water intake count, mood emoji selection, gratitude entries (3 items), and a mini journal text field.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Implement a backend function that returns a daily motivational quote. The quote should rotate daily (keyed by day-of-year) from a hardcoded list of at least 30 quotes.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-5",
+        "summary": "Build a Home Dashboard page as the default landing screen. It must display: Today's Focus (top 3 tasks from today's daily plan), This Week (a mini summary of the current week's tasks), This Month (a count of goals and tasks for the current month), 10-Year Vision Progress (a summary card per category showing average progress %), a daily motivational quote banner at the top, and a Quick Journal Entry button that opens the Daily Planner mini journal for today.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/Dashboard.tsx",
+          "frontend/src/components/DashboardSection.tsx",
+          "frontend/src/components/MotivationalQuoteBanner.tsx",
+          "frontend/src/components/VisionProgressCard.tsx",
+          "frontend/src/hooks/useDashboardData.ts",
+          "frontend/src/App.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/Dashboard.tsx",
+          "frontend/src/App.tsx"
+        ]
+      },
+      {
+        "id": "REQ-6",
+        "summary": "Build a 10-Year Vision Board page where users can create and manage goals across all seven categories. Each goal card must display: category, target year, milestones (editable list), 'why this matters' text, and a progress bar with an editable percentage slider. Goals should be grouped by category.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/VisionBoard.tsx",
+          "frontend/src/components/VisionGoalCard.tsx",
+          "frontend/src/components/AddGoalModal.tsx",
+          "frontend/src/hooks/useVisionBoard.ts",
+          "frontend/src/App.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/VisionBoard.tsx",
+          "frontend/src/App.tsx"
+        ]
+      },
+      {
+        "id": "REQ-7",
+        "summary": "Build a Daily Planner page where users can view and edit the entry for any selected date (defaulting to today). The page must include: a date picker to navigate between days, a schedule timeline (add time-block items), top 3 tasks with checkboxes, notes field, water intake counter (tap to increment), mood emoji picker, three gratitude input fields, and a mini journal textarea.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/DailyPlanner.tsx",
+          "frontend/src/components/ScheduleTimeline.tsx",
+          "frontend/src/components/TaskChecklistSection.tsx",
+          "frontend/src/components/WaterIntakeCounter.tsx",
+          "frontend/src/components/MoodEmojiPicker.tsx",
+          "frontend/src/components/GratitudeInputs.tsx",
+          "frontend/src/hooks/useDailyPlanner.ts",
+          "frontend/src/App.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/DailyPlanner.tsx",
+          "frontend/src/App.tsx"
+        ]
+      },
+      {
+        "id": "REQ-8",
+        "summary": "Build a Couples Collaboration UI. It must include: a 'My Partner' section in settings where a user can invite a partner by entering their principal ID, view pending/accepted couple status, and disconnect from a partner. When a couple is active, the dashboard and all planner pages must display a shared-mode indicator and show both partners' data together.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/CoupleSettings.tsx",
+          "frontend/src/components/CoupleModeBadge.tsx",
+          "frontend/src/components/PartnerInviteForm.tsx",
+          "frontend/src/hooks/useCoupleStatus.ts",
+          "frontend/src/pages/Dashboard.tsx",
+          "frontend/src/pages/VisionBoard.tsx",
+          "frontend/src/pages/DailyPlanner.tsx",
+          "frontend/src/App.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/CoupleSettings.tsx",
+          "frontend/src/pages/Dashboard.tsx",
+          "frontend/src/pages/VisionBoard.tsx",
+          "frontend/src/pages/DailyPlanner.tsx",
+          "frontend/src/App.tsx"
+        ]
+      },
+      {
+        "id": "REQ-9",
+        "summary": "Apply a clean, warm-aesthetic visual theme consistently across all pages. Use soft warm neutrals (cream, warm white, soft taupe) paired with one warm accent color (e.g., dusty rose or warm amber). Typography should feel editorial and elegant. The layout should use generous whitespace, soft card shadows, and rounded corners. The motivational quote banner should be typographically prominent.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/index.css",
+          "frontend/tailwind.config.js",
+          "frontend/src/components/Layout.tsx",
+          "frontend/src/App.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/index.css",
+          "frontend/tailwind.config.js",
+          "frontend/src/App.tsx"
+        ]
+      }
+    ]
+  },
+  "changedFiles": [
+    "backend/authorization/MixinAuthorization.mo",
+    "backend/authorization/access-control.mo",
+    "backend/main.mo",
+    "build-request.json",
+    "build-template/Dockerfile",
+    "build-template/LICENSE",
+    "build-template/README.md",
+    "build-template/deploy.sh",
+    "build-template/icp.yaml",
+    "build-template/package.json",
+    "build-template/pnpm-lock.yaml",
+    "build-template/pnpm-workspace.yaml",
+    "build-template/scripts/prune-unused-images.js",
+    "build-template/scripts/resize-images.js",
+    "build-template/src/backend/canister.yaml",
+    "build-template/src/backend/system-idl/aaaaa-aa.did",
+    "build-template/src/frontend/canister.yaml",
+    "build-template/src/frontend/components.json",
+    "build-template/src/frontend/env.json",
+    "build-template/src/frontend/eslint-rules/no-bigint-in-query-keys.js",
+    "build-template/src/frontend/eslint-rules/require-internet-identity-provider.js",
+    "build-template/src/frontend/eslint.config.js",
+    "build-template/src/frontend/package.json",
+    "build-template/src/frontend/postcss.config.js",
+    "build-template/src/frontend/src/components/ui/accordion.tsx",
+    "build-template/src/frontend/src/components/ui/alert-dialog.tsx",
+    "build-template/src/frontend/src/components/ui/alert.tsx",
+    "build-template/src/frontend/src/components/ui/aspect-ratio.tsx",
+    "build-template/src/frontend/src/components/ui/avatar.tsx",
+    "build-template/src/frontend/src/components/ui/badge.tsx",
+    "build-template/src/frontend/src/components/ui/breadcrumb.tsx",
+    "build-template/src/frontend/src/components/ui/button.tsx",
+    "build-template/src/frontend/src/components/ui/calendar.tsx",
+    "build-template/src/frontend/src/components/ui/card.tsx",
+    "build-template/src/frontend/src/components/ui/carousel.tsx",
+    "build-template/src/frontend/src/components/ui/chart.tsx",
+    "build-template/src/frontend/src/components/ui/checkbox.tsx",
+    "build-template/src/frontend/src/components/ui/collapsible.tsx",
+    "build-template/src/frontend/src/components/ui/command.tsx",
+    "build-template/src/frontend/src/components/ui/context-menu.tsx",
+    "build-template/src/frontend/src/components/ui/dialog.tsx",
+    "build-template/src/frontend/src/components/ui/drawer.tsx",
+    "build-template/src/frontend/src/components/ui/dropdown-menu.tsx",
+    "build-template/src/frontend/src/components/ui/form.tsx",
+    "build-template/src/frontend/src/components/ui/hover-card.tsx",
+    "build-template/src/frontend/src/components/ui/input-otp.tsx",
+    "build-template/src/frontend/src/components/ui/input.tsx",
+    "build-template/src/frontend/src/components/ui/label.tsx",
+    "build-template/src/frontend/src/components/ui/menubar.tsx",
+    "build-template/src/frontend/src/components/ui/navigation-menu.tsx",
+    "build-template/src/frontend/src/components/ui/pagination.tsx",
+    "build-template/src/frontend/src/components/ui/popover.tsx",
+    "build-template/src/frontend/src/components/ui/progress.tsx",
+    "build-template/src/frontend/src/components/ui/radio-group.tsx",
+    "build-template/src/frontend/src/components/ui/resizable.tsx",
+    "build-template/src/frontend/src/components/ui/scroll-area.tsx",
+    "build-template/src/frontend/src/components/ui/select.tsx",
+    "build-template/src/frontend/src/components/ui/separator.tsx",
+    "build-template/src/frontend/src/components/ui/sheet.tsx",
+    "build-template/src/frontend/src/components/ui/sidebar.tsx",
+    "build-template/src/frontend/src/components/ui/skeleton.tsx",
+    "build-template/src/frontend/src/components/ui/slider.tsx",
+    "build-template/src/frontend/src/components/ui/sonner.tsx",
+    "build-template/src/frontend/src/components/ui/switch.tsx",
+    "build-template/src/frontend/src/components/ui/table.tsx",
+    "build-template/src/frontend/src/components/ui/tabs.tsx",
+    "build-template/src/frontend/src/components/ui/textarea.tsx",
+    "build-template/src/frontend/src/components/ui/toggle-group.tsx",
+    "build-template/src/frontend/src/components/ui/toggle.tsx",
+    "build-template/src/frontend/src/components/ui/tooltip.tsx",
+    "build-template/src/frontend/src/hooks/use-mobile.tsx",
+    "build-template/src/frontend/src/lib/utils.ts",
+    "build-template/src/frontend/tsconfig.json",
+    "build-template/src/frontend/vite.config.js",
+    "build-template/tsconfig.json",
+    "caffeine.lock.json",
+    "feature_evidence.json",
+    "frontend-file-summaries.txt",
+    "frontend-implementation-plan.json",
+    "frontend/index.css",
+    "frontend/index.html",
+    "frontend/public/assets/generated/bg-texture.dim_1920x1080.png",
+    "frontend/public/assets/generated/couple-icon.dim_256x256.png",
+    "frontend/public/assets/generated/quote-mark.dim_128x128.png",
+    "frontend/src/App.tsx",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/config.ts",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/useActor.ts",
+    "frontend/src/hooks/useInternetIdentity.ts",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/index.css",
+    "frontend/src/main.tsx",
+    "frontend/src/pages/CoupleSettings.tsx",
+    "frontend/src/pages/DailyPlanner.tsx",
+    "frontend/src/pages/Dashboard.tsx",
+    "frontend/src/pages/VisionBoard.tsx",
+    "frontend/src/ui-summary.json",
+    "frontend/src/utils/StorageClient.ts",
+    "frontend/src/utils/urlParams.ts",
+    "frontend/tailwind.config.js",
+    "project_state.json",
+    "scratch/component-selection.json",
+    "spec.md",
+    "spec_vs_diff_report.json"
+  ]
+}

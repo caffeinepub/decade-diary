@@ -1,0 +1,20 @@
+{
+  "backend/main.mo": "Main Motoko actor implementing the Decade Diary backend with user profile management, couples pairing, vision board entries, and daily planner entries, all protected by role-based access control.",
+  "feature_evidence.json": "Feature evidence report mapping implemented features (Dashboard, Vision Board, Daily Planner, Couples UI) to their source files, components, and test requirement IDs with confidence ratings.",
+  "frontend-file-summaries.txt": "JSON document containing one-sentence summaries of each frontend source file, serving as a reference for the project's frontend file structure and purpose.",
+  "frontend/index.css": "Base Tailwind CSS file defining OKLCH-based CSS custom properties for light and dark theme color tokens used throughout the app.",
+  "frontend/index.html": "Minimal HTML entry point for the Decade Diary React app, mounting the root div and loading the main TypeScript module.",
+  "frontend/src/App.tsx": "Root React component setting up TanStack Router with Dashboard, VisionBoard, DailyPlanner, and CoupleSettings routes, plus a sticky layout, profile setup modal, couple mode badge, and auth controls.",
+  "frontend/src/hooks/useActor.ts": "React hook that creates and caches an authenticated or anonymous ICP actor using the current Internet Identity, invalidating dependent queries whenever the actor changes.",
+  "frontend/src/hooks/useInternetIdentity.ts": "Custom React hook and context provider wrapping DFINITY's AuthClient to expose Internet Identity login, logout, and identity state throughout the app.",
+  "frontend/src/hooks/useQueries.ts": "Defines React Query hooks for all backend interactions including user profiles, daily quotes, vision board entries, daily planner entries, and couple management, using TanStack Query's useQuery and useMutation.",
+  "frontend/src/index.css": "Global stylesheet that imports Google Fonts, configures Tailwind CSS, and defines CSS custom properties for a warm cream/amber light theme and a dark theme, plus reusable component utility classes.",
+  "frontend/src/main.tsx": "Application entry point that mounts the React app with QueryClientProvider and InternetIdentityProvider wrapping the root App component.",
+  "frontend/src/pages/CoupleSettings.tsx": "Page component for managing couple connections, allowing users to copy their principal ID, connect with a partner by entering their principal, and view or disconnect an existing couple relationship.",
+  "frontend/src/pages/DailyPlanner.tsx": "Page component for a per-day planner with schedule items, top tasks, mood tracking, water intake, gratitude entries, and a journal, supporting navigation between dates and saving entries to the backend.",
+  "frontend/src/pages/Dashboard.tsx": "Main dashboard page displaying a daily inspirational quote banner, vision board progress summaries, and daily planner stats using data fetched from multiple query hooks.",
+  "frontend/src/pages/VisionBoard.tsx": "Page component for managing a vision board of categorized long-term goals, supporting adding goals via a modal, updating progress with a slider, and deleting entries with a confirmation dialog.",
+  "frontend/src/utils/urlParams.ts": "Utility functions for extracting, persisting, and clearing URL parameters from both query strings and hash-based routing, with sessionStorage fallback support.",
+  "frontend/tailwind.config.js": "Tailwind CSS configuration extending the default theme with custom fonts, OKLCH-based color tokens (warm palette), shadows, border radii, and animation keyframes, using typography, container-queries, and animate plugins.",
+  "project_state.json": "Project state manifest for Decade Diary describing completed Phase 1 features (Home Dashboard, 10-Year Vision Board, Daily Planner, Couples Collaboration), architectural notes, required images, and versioning metadata."
+}

@@ -1,0 +1,152 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 3,
+  "summary": "Decade Diary — a 10-year life planner, goal tracker, and journal app. Phase 1 includes: Home Dashboard, 10-Year Vision Board, Daily Planner, clean aesthetic design with daily motivational quotes, and a couples collaboration feature. Future phases will add Yearly/Monthly/Weekly planners and full Journaling sections.",
+  "architectural_notes": [
+    "Phase 1 scope: Home Dashboard, 10-Year Vision Board, Daily Planner, motivational quotes, couples collaboration",
+    "Couples collaboration requires shared data model and multi-user access per planner/workspace"
+  ],
+  "known_issues": [],
+  "isFixRequest": false,
+  "imageRequirements": "## Required Images\n- Soft abstract watercolor texture in warm cream and dusty rose tones, suitable as a full-page background (bg-texture.dim_1920x1080.png)\n- Minimal decorative illustration of intertwined hearts and a small calendar, warm line-art style on transparent background (couple-icon.dim_256x256.png)\n- Decorative quote mark illustration in warm amber, ornamental style on transparent background (quote-mark.dim_128x128.png)",
+  "existing_features": [
+    {
+      "id": "feature-build-a-home-dashboard-page-as-the-default-landing-screen-it-must-display-today-s-focus-top-3-tasks-from-today-s-daily-plan-this-week-a-mini-summary-of-the-current-week-s-tasks-this-month-a-count-of-goals-and-tasks-for-the-current-month-10-year-vision-progress-a-summary-card-per-category-showing-average-progress-a-daily-motivational-quote-banner-at-the-top-and-a-quick-journal-entry-button-that-opens-the-daily-planner-mini-journal-for-today",
+      "title": "Build a Home Dashboard page as the default landing screen. It must display: Today's Focus (top 3 tasks from today's daily plan), This Week (a mini summary of the current week's tasks), This Month (a count of goals and tasks for the current month), 10-Year Vision Progress (a summary card per category showing average progress %), a daily motivational quote banner at the top, and a Quick Journal Entry button that opens the Daily Planner mini journal for today.",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-build-a-10-year-vision-board-page-where-users-can-create-and-manage-goals-across-all-seven-categories-each-goal-card-must-display-category-target-year-milestones-editable-list-why-this-matters-text-and-a-progress-bar-with-an-editable-percentage-slider-goals-should-be-grouped-by-category",
+      "title": "Build a 10-Year Vision Board page where users can create and manage goals across all seven categories. Each goal card must display: category, target year, milestones (editable list), 'why this matters' text, and a progress bar with an editable percentage slider. Goals should be grouped by category.",
+      "reqIds": [
+        "REQ-6"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-build-a-daily-planner-page-where-users-can-view-and-edit-the-entry-for-any-selected-date-defaulting-to-today-the-page-must-include-a-date-picker-to-navigate-between-days-a-schedule-timeline-add-time-block-items-top-3-tasks-with-checkboxes-notes-field-water-intake-counter-tap-to-increment-mood-emoji-picker-three-gratitude-input-fields-and-a-mini-journal-textarea",
+      "title": "Build a Daily Planner page where users can view and edit the entry for any selected date (defaulting to today). The page must include: a date picker to navigate between days, a schedule timeline (add time-block items), top 3 tasks with checkboxes, notes field, water intake counter (tap to increment), mood emoji picker, three gratitude input fields, and a mini journal textarea.",
+      "reqIds": [
+        "REQ-7"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-build-a-couples-collaboration-ui-it-must-include-a-my-partner-section-in-settings-where-a-user-can-invite-a-partner-by-entering-their-principal-id-view-pending-accepted-couple-status-and-disconnect-from-a-partner-when-a-couple-is-active-the-dashboard-and-all-planner-pages-must-display-a-shared-mode-indicator-and-show-both-partners-data-together",
+      "title": "Build a Couples Collaboration UI. It must include: a 'My Partner' section in settings where a user can invite a partner by entering their principal ID, view pending/accepted couple status, and disconnect from a partner. When a couple is active, the dashboard and all planner pages must display a shared-mode indicator and show both partners' data together.",
+      "reqIds": [
+        "REQ-8"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-apply-a-clean-warm-aesthetic-visual-theme-consistently-across-all-pages-use-soft-warm-neutrals-cream-warm-white-soft-taupe-paired-with-one-warm-accent-color-e-g-dusty-rose-or-warm-amber-typography-should-feel-editorial-and-elegant-the-layout-should-use-generous-whitespace-soft-card-shadows-and-rounded-corners-the-motivational-quote-banner-should-be-typographically-prominent",
+      "title": "Apply a clean, warm-aesthetic visual theme consistently across all pages. Use soft warm neutrals (cream, warm white, soft taupe) paired with one warm accent color (e.g., dusty rose or warm amber). Typography should feel editorial and elegant. The layout should use generous whitespace, soft card shadows, and rounded corners. The motivational quote banner should be typographically prominent.",
+      "reqIds": [
+        "REQ-9"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Home Dashboard with Today's Focus, This Week, This Month, and 10-Year Vision Progress sections",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "10-Year Vision Board with Career, Financial, Health, Relationship, Personal Growth, Travel, and Spiritual goals including progress % and milestones",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Daily Planner with schedule timeline, top 3 tasks, mood emoji, gratitude entries, and mini journal",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Clean aesthetic design with daily motivational quotes",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Couples collaboration feature allowing two users to share and work on the planner together",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Yearly Planner (10 years) with Word of the Year, 5 Major Goals, Vision Images, Habit Tracker, and Reflection (future phase)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-7",
+      "summary": "Monthly Planner with Monthly Goals, Important Dates, Budget Section, Mood Tracker, and Reflection (future phase)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-8",
+      "summary": "Weekly Planner with Top 3 Priorities, Habit Tracker, To-Do List, Weekly Reflection, and Energy Rating (future phase)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-9",
+      "summary": "Journaling Section: Daily, Emotional, Night Reflection, and Growth journals (future phase)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-10",
+      "summary": "Smart Features: progress graphs, smart reminders, private lock, cloud backup, PDF export, custom themes (future phase)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-11",
+      "summary": "Create a backend data model and actor supporting two core entities: User and Couple. A Couple links two user principals together, giving both read and write access to all shared planner data (vision board entries, daily planner entries, goals).",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-12",
+      "summary": "Implement backend storage and CRUD operations for the 10-Year Vision Board. Each goal entry must support: category (Career, Financial, Health, Relationship, Personal Growth, Travel, Spiritual), target year, milestone list, 'why this matters' note, and a progress percentage (0–100).",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-13",
+      "summary": "Implement backend storage and CRUD operations for the Daily Planner. Each day entry must include: date, schedule timeline (list of time-block items), top 3 tasks (with completion status), notes, water intake count, mood emoji selection, gratitude entries (3 items), and a mini journal text field.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-14",
+      "summary": "Implement a backend function that returns a daily motivational quote. The quote should rotate daily (keyed by day-of-year) from a hardcoded list of at least 30 quotes.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "status": "pending"
+    }
+  ],
+  "gameProjectType": "none",
+  "projectName": "Decade Diary",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}

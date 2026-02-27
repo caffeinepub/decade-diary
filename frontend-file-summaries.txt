@@ -1,0 +1,10 @@
+{
+  "frontend/src/index.css": "Global styles with warm OKLCH color palette, Playfair Display + Lato typography, background texture, and warm component utilities — with the `border-border/60` opacity modifier replaced by a plain CSS `border-color` property to fix the PostCSS `@apply` build error.",
+  "frontend/tailwind.config.js": "Extended Tailwind config with Playfair Display/Lato font families, warm color tokens (cream, amber, rose, taupe), custom shadow utilities (warm, warm-lg, warm-xl), and fade-in animation.",
+  "frontend/src/hooks/useQueries.ts": "All React Query hooks for backend operations (user profiles, daily quotes, vision board CRUD, daily planner CRUD, water intake, couples), with `require()` calls replaced by proper ES module imports for `Principal` and `useInternetIdentity`.",
+  "frontend/src/App.tsx": "Main app with TanStack Router setup (Dashboard, VisionBoard, DailyPlanner, CoupleSettings routes), Layout with sticky header/footer, profile setup modal, couple mode badge, and landing screen for unauthenticated users.",
+  "frontend/src/pages/Dashboard.tsx": "Home dashboard showing daily motivational quote banner, today's focus tasks, weekly/monthly stats, 10-year vision progress by category, and quick journal entry button.",
+  "frontend/src/pages/VisionBoard.tsx": "10-year vision board page with goals grouped by category, progress sliders, milestone display, add goal modal with all 7 categories, and delete confirmation dialogs.",
+  "frontend/src/pages/DailyPlanner.tsx": "Daily planner page with date navigation, mood picker, top 3 tasks with checkboxes, schedule timeline, water intake counter, gratitude inputs, notes, and mini journal textarea.",
+  "frontend/src/pages/CoupleSettings.tsx": "Couple settings page for connecting/viewing partner status via principal ID, with copy-to-clipboard, connection instructions, and disconnect dialog."
+}

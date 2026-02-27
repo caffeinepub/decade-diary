@@ -1,0 +1,65 @@
+{
+  "kind": "spec_vs_diff_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-27T07:50:48.450Z",
+  "summary": "The diff implements most of the requested requirements, including backend data models (REQ-1 through REQ-4), frontend pages for Dashboard (REQ-5), Vision Board (REQ-6), Daily Planner (REQ-7), Couples settings (REQ-8), and warm visual theming (REQ-9). However, several specific acceptance criteria have gaps, most notably around the couples invite/accept/decline flow (the implementation appears to directly create a couple rather than a pending-invite system), and some minor dashboard and planner details.",
+  "missing_requirements": [
+    {
+      "id": "REQ-1",
+      "requirement": "The invited partner sees a pending invite they can accept or decline; couple state uses an invite/accept flow.",
+      "reason": "The CoupleSettings page shows a direct createCouple call using both principal IDs entered by one user. There is no backend pending-invite state, no mechanism for the second partner to see and accept/decline an invite. The AC requires the invited partner to actively accept or decline.",
+      "evidence": [
+        "frontend/src/pages/CoupleSettings.tsx",
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-8",
+      "requirement": "The invited partner sees a pending invite they can accept or decline.",
+      "reason": "CoupleSettings.tsx implements only a connect form and a disconnect dialog. There is no UI for viewing incoming pending invites or accepting/declining them. The backend main.mo (truncated) does not show a pending-invite state machine either.",
+      "evidence": [
+        "frontend/src/pages/CoupleSettings.tsx",
+        "backend/main.mo"
+      ]
+    }
+  ],
+  "hallucinated_features": [
+    {
+      "description": "Profile setup modal requiring users to enter a name and display name before using the app.",
+      "reason": "The build request does not specify a forced profile setup onboarding modal as a named requirement. While a User entity is mentioned for REQ-1, a mandatory profile setup modal with name and displayName fields was not requested.",
+      "evidence": [
+        "frontend/src/App.tsx",
+        "backend/main.mo"
+      ]
+    },
+    {
+      "description": "Dark mode theme support with a full dark color palette.",
+      "reason": "The build request specifies only a warm-aesthetic light theme with soft warm neutrals and warm accent colors, with no mention of dark mode support. The CSS and Tailwind config include a complete .dark variant with a separate dark palette.",
+      "evidence": [
+        "frontend/src/index.css",
+        "frontend/tailwind.config.js"
+      ]
+    }
+  ],
+  "confidence": 0.72,
+  "changed_files": [
+    "all_files_summary.json",
+    "backend/main.mo",
+    "frontend-file-summaries.txt",
+    "frontend/index.css",
+    "frontend/index.html",
+    "frontend/src/App.tsx",
+    "frontend/src/hooks/useActor.ts",
+    "frontend/src/hooks/useInternetIdentity.ts",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/index.css",
+    "frontend/src/main.tsx",
+    "frontend/src/pages/CoupleSettings.tsx",
+    "frontend/src/pages/DailyPlanner.tsx",
+    "frontend/src/pages/Dashboard.tsx",
+    "frontend/src/pages/VisionBoard.tsx",
+    "frontend/src/utils/urlParams.ts",
+    "frontend/tailwind.config.js",
+    "project_state.json"
+  ]
+}
