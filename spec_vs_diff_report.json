@@ -1,40 +1,34 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-27T11:44:32.570Z",
-  "summary": "The diff implements both REQ-1 and REQ-2 partially. The frontend side (REQ-2) appears well-implemented with a date-keyed query, pastel brown styling preservation, and no hardcoded quotes. However, the backend (REQ-1) diff is truncated and we cannot verify the quotes array (≥30 quotes), the deterministic selection logic, or whether the query function accepts no arguments. The frontend calls actor.getDailyQuote(BigInt(dayOfYear)) with an argument, which conflicts with the AC that the query accepts no arguments.",
+  "generatedAt": "2026-02-28T03:59:08.833Z",
+  "summary": "The diff implements partner-view sections for YearlyPlanner, MonthlyPlanner, WeeklyPlanner, and DailyPlanner pages, adds corresponding React Query hooks in useQueries.ts, and updates the backend. Most requirements appear substantially implemented. However, the backend diff is truncated making it difficult to fully verify REQ-5's access restriction requirement, and the DailyPlanner page diff is not shown directly (only referenced in the file summary), making REQ-4 partially unverifiable.",
   "missing_requirements": [
     {
-      "id": "REQ-1",
-      "requirement": "The backend holds at least 30 distinct inspirational quotes.",
-      "reason": "The backend/main.mo diff is truncated and the quotes array content is not visible. Cannot confirm at least 30 distinct quotes are stored.",
+      "id": "REQ-5",
+      "requirement": "Access is restricted so that only a linked couple partner can fetch the other's entries",
+      "reason": "The backend/main.mo diff is truncated and does not show the implementation of partner planner query functions or their access control logic. It is not possible to confirm that the access restriction (only linked couple partner can fetch) is implemented.",
       "evidence": [
         "backend/main.mo"
       ]
     },
     {
-      "id": "REQ-1",
-      "requirement": "A query function accepts no arguments and returns the quote assigned to the current UTC date.",
-      "reason": "The frontend hook calls actor.getDailyQuote(BigInt(dayOfYear)) passing a day-of-year argument, indicating the backend function accepts an argument rather than deriving the date internally with no arguments.",
+      "id": "REQ-4",
+      "requirement": "In the DailyPlanner page, add a partner-view tab or section that fetches and displays the partner's daily planner entry (schedule items, tasks, notes, water intake, mood, gratitude entries, and journal entry) for the currently selected date as read-only content.",
+      "reason": "The DailyPlanner.tsx file is listed in the file summaries but its diff content is not shown. The summary mentions daily planner features but does not explicitly confirm partner-view tab/section with all required fields or empty state handling.",
       "evidence": [
-        "frontend/src/hooks/useQueries.ts"
-      ]
-    },
-    {
-      "id": "REQ-1",
-      "requirement": "The same date always returns the same quote (deterministic selection) and the returned quote changes when the calendar date changes.",
-      "reason": "Backend implementation is truncated; cannot verify the deterministic date-based selection logic exists in the backend.",
-      "evidence": [
-        "backend/main.mo"
+        "frontend/src/pages/DailyPlanner.tsx",
+        "frontend-file-summaries.txt"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "The frontend computes the day-of-year locally and passes it as an argument to the backend getDailyQuote function, instead of the backend deriving the current UTC date itself.",
-      "reason": "REQ-1 specifies the query function accepts no arguments and returns the quote for the current UTC date. The frontend passing the day-of-year shifts date computation to the client, which was not requested and undermines the deterministic server-side date logic.",
+      "description": "Partner hooks for journal sections (useGetPartnerDailyJournals, useGetPartnerEmotionalJournals, useGetPartnerNightReflections, useGetPartnerGrowthJournals) were added",
+      "reason": "The build request explicitly states as a non-goal modifying the JournalSection partner sharing behavior. Adding journal partner sharing hooks was not requested and falls outside scope.",
       "evidence": [
-        "frontend/src/hooks/useQueries.ts"
+        "frontend/src/hooks/useQueries.ts",
+        "frontend-file-summaries.txt"
       ]
     }
   ],
@@ -43,6 +37,11 @@
     "backend/main.mo",
     "frontend-file-summaries.txt",
     "frontend/src/hooks/useQueries.ts",
+    "frontend/src/pages/CoupleSettings.tsx",
+    "frontend/src/pages/MonthlyPlanner.tsx",
+    "frontend/src/pages/VisionBoard.tsx",
+    "frontend/src/pages/WeeklyPlanner.tsx",
+    "frontend/src/pages/YearlyPlanner.tsx",
     "project_state.json"
   ]
 }

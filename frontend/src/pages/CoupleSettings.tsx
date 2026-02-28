@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { useGetCouple, useCreateCouple, useGetCallerUserProfile } from '../hooks/useQueries';
 import { useQueryClient } from '@tanstack/react-query';
+import { Principal } from '@dfinity/principal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -53,8 +54,8 @@ export default function CoupleSettings() {
     if (!partnerPrincipal.trim()) return;
     try {
       await createCouple.mutateAsync({
-        partner1: myPrincipal,
-        partner2: partnerPrincipal.trim(),
+        partner1: Principal.fromText(myPrincipal),
+        partner2: Principal.fromText(partnerPrincipal.trim()),
       });
       toast.success('Couple connected! 💑 You can now share your journey together.');
       setPartnerPrincipal('');

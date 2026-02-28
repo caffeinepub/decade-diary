@@ -1,20 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
-import { useInternetIdentity } from './useInternetIdentity';
-import { Principal } from '@dfinity/principal';
 import type {
   VisionBoardEntry,
   DailyPlannerEntry,
-  UserProfile,
-  Couple,
   YearlyEntry,
   MonthlyEntry,
   WeeklyEntry,
+  UserProfile,
   DailyJournalEntry,
   EmotionalJournalEntry,
   NightReflectionJournalEntry,
   GrowthJournalEntry,
 } from '../backend';
+import { Principal } from '@dfinity/principal';
 
 // ─── User Profile ────────────────────────────────────────────────────────────
 
@@ -53,67 +51,70 @@ export function useSaveCallerUserProfile() {
   });
 }
 
-export function useGetUserProfile(principal: string | null) {
-  const { actor, isFetching: actorFetching } = useActor();
+// ─── Couple ──────────────────────────────────────────────────────────────────
 
-  return useQuery<UserProfile | null>({
-    queryKey: ['userProfile', principal],
+export function useGetCouple() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<{ partner1: Principal; partner2: Principal } | null>({
+    queryKey: ['couple'],
     queryFn: async () => {
-      if (!actor || !principal) return null;
+      if (!actor) return null;
       try {
-        return await actor.getUserProfile(Principal.fromText(principal));
+        const identity = (actor as any)._identity;
+        const principal = identity?.getPrincipal();
+        if (!principal) return null;
+        return actor.getCouple(principal);
       } catch {
         return null;
       }
     },
-    enabled: !!actor && !actorFetching && !!principal,
+    enabled: !!actor && !isFetching,
     retry: false,
   });
 }
 
-// ─── Daily Quote ─────────────────────────────────────────────────────────────
+export function useCreateCouple() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
 
-function getDayOfYear(): number {
-  const now = new Date();
-  const start = new Date(now.getFullYear(), 0, 0);
-  const diff = now.getTime() - start.getTime();
-  const oneDay = 1000 * 60 * 60 * 24;
-  return Math.floor(diff / oneDay);
-}
-
-function getTodayDateString(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
-}
-
-export function useGetDailyQuote() {
-  const { actor, isFetching: actorFetching } = useActor();
-  const todayString = getTodayDateString();
-  const dayOfYear = getDayOfYear();
-
-  return useQuery<string>({
-    queryKey: ['dailyQuote', todayString],
-    queryFn: async () => {
-      if (!actor) return '';
-      return actor.getDailyQuote(BigInt(dayOfYear));
+  return useMutation({
+    mutationFn: async ({ partner1, partner2 }: { partner1: Principal; partner2: Principal }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.createCouple(partner1, partner2);
     },
-    enabled: !!actor && !actorFetching,
-    staleTime: 1000 * 60 * 60 * 24, // 24 hours — quote is stable for the whole day
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['couple'] });
+    },
   });
 }
 
-// ─── Vision Board ─────────────────────────────────────────────────────────────
+// ─── Vision Board ────────────────────────────────────────────────────────────
 
-export function useGetVisionBoardEntries() {
-  const { actor, isFetching: actorFetching } = useActor();
+export function useGetVisionBoardEntries(ownerPrincipal?: Principal) {
+  const { actor, isFetching } = useActor();
 
   return useQuery<VisionBoardEntry[]>({
-    queryKey: ['visionBoardEntries'],
+    queryKey: ['visionBoardEntries', ownerPrincipal?.toString()],
+    queryFn: async () => {
+      if (!actor || !ownerPrincipal) return [];
+      return actor.getOwnerVisionBoardEntries(ownerPrincipal);
+    },
+    enabled: !!actor && !isFetching && !!ownerPrincipal,
+  });
+}
+
+export function useGetPartnerVisionBoardEntries() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<VisionBoardEntry[]>({
+    queryKey: ['partnerVisionBoardEntries'],
     queryFn: async () => {
       if (!actor) return [];
-      return actor.getVisionBoardEntries();
+      return actor.getPartnerVisionBoardEntries();
     },
-    enabled: !!actor && !actorFetching,
+    enabled: !!actor && !isFetching,
+    retry: false,
   });
 }
 
@@ -162,18 +163,32 @@ export function useDeleteVisionBoardEntry() {
   });
 }
 
-// ─── Daily Planner ────────────────────────────────────────────────────────────
+// ─── Daily Planner ───────────────────────────────────────────────────────────
 
-export function useGetDailyPlannerEntries() {
-  const { actor, isFetching: actorFetching } = useActor();
+export function useGetDailyPlannerEntries(ownerPrincipal?: Principal) {
+  const { actor, isFetching } = useActor();
 
   return useQuery<DailyPlannerEntry[]>({
-    queryKey: ['dailyPlannerEntries'],
+    queryKey: ['dailyPlannerEntries', ownerPrincipal?.toString()],
     queryFn: async () => {
-      if (!actor) return [];
-      return actor.getDailyPlannerEntries();
+      if (!actor || !ownerPrincipal) return [];
+      return actor.getOwnerDailyPlannerEntries(ownerPrincipal);
     },
-    enabled: !!actor && !actorFetching,
+    enabled: !!actor && !isFetching && !!ownerPrincipal,
+  });
+}
+
+export function useGetPartnerDailyPlannerEntries(partnerPrincipal?: Principal) {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<DailyPlannerEntry[]>({
+    queryKey: ['partnerDailyPlannerEntries', partnerPrincipal?.toString()],
+    queryFn: async () => {
+      if (!actor || !partnerPrincipal) return [];
+      return actor.getPartnerSpecificDailyPlannerEntries(partnerPrincipal);
+    },
+    enabled: !!actor && !isFetching && !!partnerPrincipal,
+    retry: false,
   });
 }
 
@@ -222,57 +237,32 @@ export function useDeleteDailyPlannerEntry() {
   });
 }
 
-// ─── Couples ──────────────────────────────────────────────────────────────────
+// ─── Yearly Planner ──────────────────────────────────────────────────────────
 
-export function useGetCouple() {
-  const { actor, isFetching: actorFetching } = useActor();
-  const { identity } = useInternetIdentity();
-
-  return useQuery<Couple | null>({
-    queryKey: ['couple', identity?.getPrincipal().toString()],
-    queryFn: async () => {
-      if (!actor || !identity) return null;
-      try {
-        return await actor.getCouple(identity.getPrincipal());
-      } catch {
-        return null;
-      }
-    },
-    enabled: !!actor && !actorFetching && !!identity,
-    retry: false,
-  });
-}
-
-export function useCreateCouple() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ partner1, partner2 }: { partner1: string; partner2: string }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.createCouple(
-        Principal.fromText(partner1),
-        Principal.fromText(partner2)
-      );
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['couple'] });
-    },
-  });
-}
-
-// ─── Yearly Planner ───────────────────────────────────────────────────────────
-
-export function useGetYearlyEntries() {
-  const { actor, isFetching: actorFetching } = useActor();
+export function useGetYearlyEntries(ownerPrincipal?: Principal) {
+  const { actor, isFetching } = useActor();
 
   return useQuery<YearlyEntry[]>({
-    queryKey: ['yearlyEntries'],
+    queryKey: ['yearlyEntries', ownerPrincipal?.toString()],
     queryFn: async () => {
-      if (!actor) return [];
-      return actor.getYearlyEntries();
+      if (!actor || !ownerPrincipal) return [];
+      return actor.getOwnerYearlyEntries(ownerPrincipal);
     },
-    enabled: !!actor && !actorFetching,
+    enabled: !!actor && !isFetching && !!ownerPrincipal,
+  });
+}
+
+export function useGetPartnerYearlyEntries(partnerPrincipal?: Principal) {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<YearlyEntry[]>({
+    queryKey: ['partnerYearlyEntries', partnerPrincipal?.toString()],
+    queryFn: async () => {
+      if (!actor || !partnerPrincipal) return [];
+      return actor.getPartnerSpecificYearlyEntries(partnerPrincipal);
+    },
+    enabled: !!actor && !isFetching && !!partnerPrincipal,
+    retry: false,
   });
 }
 
@@ -321,18 +311,32 @@ export function useDeleteYearlyEntry() {
   });
 }
 
-// ─── Monthly Planner ──────────────────────────────────────────────────────────
+// ─── Monthly Planner ─────────────────────────────────────────────────────────
 
-export function useGetMonthlyEntries() {
-  const { actor, isFetching: actorFetching } = useActor();
+export function useGetMonthlyEntries(ownerPrincipal?: Principal) {
+  const { actor, isFetching } = useActor();
 
   return useQuery<MonthlyEntry[]>({
-    queryKey: ['monthlyEntries'],
+    queryKey: ['monthlyEntries', ownerPrincipal?.toString()],
     queryFn: async () => {
-      if (!actor) return [];
-      return actor.getMonthlyEntries();
+      if (!actor || !ownerPrincipal) return [];
+      return actor.getOwnerMonthlyEntries(ownerPrincipal);
     },
-    enabled: !!actor && !actorFetching,
+    enabled: !!actor && !isFetching && !!ownerPrincipal,
+  });
+}
+
+export function useGetPartnerMonthlyEntries(partnerPrincipal?: Principal) {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<MonthlyEntry[]>({
+    queryKey: ['partnerMonthlyEntries', partnerPrincipal?.toString()],
+    queryFn: async () => {
+      if (!actor || !partnerPrincipal) return [];
+      return actor.getPartnerSpecificMonthlyEntries(partnerPrincipal);
+    },
+    enabled: !!actor && !isFetching && !!partnerPrincipal,
+    retry: false,
   });
 }
 
@@ -356,15 +360,7 @@ export function useUpdateMonthlyEntry() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      year,
-      month,
-      entry,
-    }: {
-      year: bigint;
-      month: bigint;
-      entry: MonthlyEntry;
-    }) => {
+    mutationFn: async ({ year, month, entry }: { year: bigint; month: bigint; entry: MonthlyEntry }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.updateMonthlyEntry(year, month, entry);
     },
@@ -389,18 +385,32 @@ export function useDeleteMonthlyEntry() {
   });
 }
 
-// ─── Weekly Planner ───────────────────────────────────────────────────────────
+// ─── Weekly Planner ──────────────────────────────────────────────────────────
 
-export function useGetWeeklyEntries() {
-  const { actor, isFetching: actorFetching } = useActor();
+export function useGetWeeklyEntries(ownerPrincipal?: Principal) {
+  const { actor, isFetching } = useActor();
 
   return useQuery<WeeklyEntry[]>({
-    queryKey: ['weeklyEntries'],
+    queryKey: ['weeklyEntries', ownerPrincipal?.toString()],
     queryFn: async () => {
-      if (!actor) return [];
-      return actor.getWeeklyEntries();
+      if (!actor || !ownerPrincipal) return [];
+      return actor.getOwnerWeeklyEntries(ownerPrincipal);
     },
-    enabled: !!actor && !actorFetching,
+    enabled: !!actor && !isFetching && !!ownerPrincipal,
+  });
+}
+
+export function useGetPartnerWeeklyEntries(partnerPrincipal?: Principal) {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<WeeklyEntry[]>({
+    queryKey: ['partnerWeeklyEntries', partnerPrincipal?.toString()],
+    queryFn: async () => {
+      if (!actor || !partnerPrincipal) return [];
+      return actor.getPartnerSpecificWeeklyEntries(partnerPrincipal);
+    },
+    enabled: !!actor && !isFetching && !!partnerPrincipal,
+    retry: false,
   });
 }
 
@@ -424,15 +434,7 @@ export function useUpdateWeeklyEntry() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      year,
-      weekNumber,
-      entry,
-    }: {
-      year: bigint;
-      weekNumber: bigint;
-      entry: WeeklyEntry;
-    }) => {
+    mutationFn: async ({ year, weekNumber, entry }: { year: bigint; weekNumber: bigint; entry: WeeklyEntry }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.updateWeeklyEntry(year, weekNumber, entry);
     },
@@ -457,10 +459,10 @@ export function useDeleteWeeklyEntry() {
   });
 }
 
-// ─── Journal - Daily ──────────────────────────────────────────────────────────
+// ─── Daily Journal ───────────────────────────────────────────────────────────
 
 export function useGetDailyJournals() {
-  const { actor, isFetching: actorFetching } = useActor();
+  const { actor, isFetching } = useActor();
 
   return useQuery<DailyJournalEntry[]>({
     queryKey: ['dailyJournals'],
@@ -468,7 +470,21 @@ export function useGetDailyJournals() {
       if (!actor) return [];
       return actor.getDailyJournals();
     },
-    enabled: !!actor && !actorFetching,
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useGetPartnerDailyJournals(partnerPrincipal?: Principal) {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<DailyJournalEntry[]>({
+    queryKey: ['partnerDailyJournals', partnerPrincipal?.toString()],
+    queryFn: async () => {
+      if (!actor || !partnerPrincipal) return [];
+      return actor.getDailyJournalsForUser(partnerPrincipal);
+    },
+    enabled: !!actor && !isFetching && !!partnerPrincipal,
+    retry: false,
   });
 }
 
@@ -487,10 +503,10 @@ export function useCreateOrUpdateDailyJournal() {
   });
 }
 
-// ─── Journal - Emotional ──────────────────────────────────────────────────────
+// ─── Emotional Journal ───────────────────────────────────────────────────────
 
 export function useGetEmotionalJournals() {
-  const { actor, isFetching: actorFetching } = useActor();
+  const { actor, isFetching } = useActor();
 
   return useQuery<EmotionalJournalEntry[]>({
     queryKey: ['emotionalJournals'],
@@ -498,7 +514,21 @@ export function useGetEmotionalJournals() {
       if (!actor) return [];
       return actor.getEmotionalJournals();
     },
-    enabled: !!actor && !actorFetching,
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useGetPartnerEmotionalJournals(partnerPrincipal?: Principal) {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<EmotionalJournalEntry[]>({
+    queryKey: ['partnerEmotionalJournals', partnerPrincipal?.toString()],
+    queryFn: async () => {
+      if (!actor || !partnerPrincipal) return [];
+      return actor.getEmotionalJournalsForUser(partnerPrincipal);
+    },
+    enabled: !!actor && !isFetching && !!partnerPrincipal,
+    retry: false,
   });
 }
 
@@ -517,10 +547,10 @@ export function useCreateOrUpdateEmotionalJournal() {
   });
 }
 
-// ─── Journal - Night Reflection ───────────────────────────────────────────────
+// ─── Night Reflection Journal ────────────────────────────────────────────────
 
 export function useGetNightReflections() {
-  const { actor, isFetching: actorFetching } = useActor();
+  const { actor, isFetching } = useActor();
 
   return useQuery<NightReflectionJournalEntry[]>({
     queryKey: ['nightReflections'],
@@ -528,7 +558,21 @@ export function useGetNightReflections() {
       if (!actor) return [];
       return actor.getNightReflections();
     },
-    enabled: !!actor && !actorFetching,
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useGetPartnerNightReflections(partnerPrincipal?: Principal) {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<NightReflectionJournalEntry[]>({
+    queryKey: ['partnerNightReflections', partnerPrincipal?.toString()],
+    queryFn: async () => {
+      if (!actor || !partnerPrincipal) return [];
+      return actor.getNightReflectionsForUser(partnerPrincipal);
+    },
+    enabled: !!actor && !isFetching && !!partnerPrincipal,
+    retry: false,
   });
 }
 
@@ -547,10 +591,10 @@ export function useCreateOrUpdateNightReflection() {
   });
 }
 
-// ─── Journal - Growth ─────────────────────────────────────────────────────────
+// ─── Growth Journal ──────────────────────────────────────────────────────────
 
 export function useGetGrowthJournals() {
-  const { actor, isFetching: actorFetching } = useActor();
+  const { actor, isFetching } = useActor();
 
   return useQuery<GrowthJournalEntry[]>({
     queryKey: ['growthJournals'],
@@ -558,7 +602,21 @@ export function useGetGrowthJournals() {
       if (!actor) return [];
       return actor.getGrowthJournals();
     },
-    enabled: !!actor && !actorFetching,
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useGetPartnerGrowthJournals(partnerPrincipal?: Principal) {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<GrowthJournalEntry[]>({
+    queryKey: ['partnerGrowthJournals', partnerPrincipal?.toString()],
+    queryFn: async () => {
+      if (!actor || !partnerPrincipal) return [];
+      return actor.getGrowthJournalsForUser(partnerPrincipal);
+    },
+    enabled: !!actor && !isFetching && !!partnerPrincipal,
+    retry: false,
   });
 }
 
@@ -574,5 +632,25 @@ export function useCreateOrUpdateGrowthJournal() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['growthJournals'] });
     },
+  });
+}
+
+// ─── Daily Quote ─────────────────────────────────────────────────────────────
+
+export function useGetDailyQuote() {
+  const { actor, isFetching } = useActor();
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  const diff = now.getTime() - start.getTime();
+  const oneDay = 1000 * 60 * 60 * 24;
+  const dayOfYear = Math.floor(diff / oneDay);
+
+  return useQuery<string>({
+    queryKey: ['dailyQuote', dayOfYear],
+    queryFn: async () => {
+      if (!actor) return '';
+      return actor.getDailyQuote(BigInt(dayOfYear));
+    },
+    enabled: !!actor && !isFetching,
   });
 }

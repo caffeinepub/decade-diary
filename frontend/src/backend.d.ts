@@ -174,7 +174,6 @@ export interface backendInterface {
     getCouple(partner: Principal): Promise<Couple | null>;
     getDailyJournals(): Promise<Array<DailyJournalEntry>>;
     getDailyJournalsForUser(user: Principal): Promise<Array<DailyJournalEntry>>;
-    getDailyPlannerEntries(): Promise<Array<DailyPlannerEntry>>;
     getDailyQuote(dayOfYear: bigint): Promise<string>;
     getEmotionalJournals(): Promise<Array<EmotionalJournalEntry>>;
     getEmotionalJournalsForUser(user: Principal): Promise<Array<EmotionalJournalEntry>>;
@@ -183,8 +182,17 @@ export interface backendInterface {
     getMonthlyEntries(): Promise<Array<MonthlyEntry>>;
     getNightReflections(): Promise<Array<NightReflectionJournalEntry>>;
     getNightReflectionsForUser(user: Principal): Promise<Array<NightReflectionJournalEntry>>;
+    getOwnerDailyPlannerEntries(owner: Principal): Promise<Array<DailyPlannerEntry>>;
+    getOwnerMonthlyEntries(owner: Principal): Promise<Array<MonthlyEntry>>;
+    getOwnerVisionBoardEntries(owner: Principal): Promise<Array<VisionBoardEntry>>;
+    getOwnerWeeklyEntries(owner: Principal): Promise<Array<WeeklyEntry>>;
+    getOwnerYearlyEntries(owner: Principal): Promise<Array<YearlyEntry>>;
+    getPartnerSpecificDailyPlannerEntries(owner: Principal): Promise<Array<DailyPlannerEntry>>;
+    getPartnerSpecificMonthlyEntries(owner: Principal): Promise<Array<MonthlyEntry>>;
+    getPartnerSpecificWeeklyEntries(owner: Principal): Promise<Array<WeeklyEntry>>;
+    getPartnerSpecificYearlyEntries(owner: Principal): Promise<Array<YearlyEntry>>;
+    getPartnerVisionBoardEntries(): Promise<Array<VisionBoardEntry>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
-    getVisionBoardEntries(): Promise<Array<VisionBoardEntry>>;
     getWeeklyEntries(): Promise<Array<WeeklyEntry>>;
     getYearlyEntries(): Promise<Array<YearlyEntry>>;
     isCallerAdmin(): Promise<boolean>;

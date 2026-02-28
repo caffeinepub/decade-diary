@@ -1,465 +1,525 @@
-import { useState, useEffect } from 'react';
-import { useInternetIdentity } from '../hooks/useInternetIdentity';
+import React, { useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, Star, Target, Image, BarChart2, BookOpen, Heart, Users } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   useGetYearlyEntries,
+  useGetPartnerYearlyEntries,
   useAddYearlyEntry,
   useUpdateYearlyEntry,
   useGetCouple,
 } from '../hooks/useQueries';
-import type { YearlyEntry, Task, HabitYearly } from '../backend';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import {
-  ChevronLeft,
-  ChevronRight,
-  Save,
-  Loader2,
-  Plus,
-  Trash2,
-  Heart,
-  Star,
-} from 'lucide-react';
+import { useInternetIdentity } from '../hooks/useInternetIdentity';
+import { Principal } from '@dfinity/principal';
+import type { YearlyEntry, HabitYearly, Task } from '../backend';
 import { toast } from 'sonner';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-const CURRENT_YEAR = new Date().getFullYear();
-
-// ─── Default Entry Factory ────────────────────────────────────────────────────
-
-function makeDefaultEntry(year: number): YearlyEntry {
-  return {
-    year: BigInt(year),
-    wordOfTheYear: '',
-    majorGoals: Array.from({ length: 5 }, () => ({ description: '', isComplete: false })),
-    visionImages: ['', '', ''],
-    habitTracker: [],
-    reflection: '',
-  };
+function getPartnerPrincipal(couple: { partner1: Principal; partner2: Principal } | null | undefined, myPrincipal: string): Principal | undefined {
+  if (!couple) return undefined;
+  const p1 = couple.partner1.toString();
+  const p2 = couple.partner2.toString();
+  if (p1 === myPrincipal) return couple.partner2;
+  if (p2 === myPrincipal) return couple.partner1;
+  return undefined;
 }
 
-// ─── Habit Grid ───────────────────────────────────────────────────────────────
+// ─── Partner Read-Only View ───────────────────────────────────────────────────
 
-interface HabitGridProps {
-  habits: HabitYearly[];
-  onChange: (habits: HabitYearly[]) => void;
-  readOnly?: boolean;
-}
-
-function HabitGrid({ habits, onChange, readOnly = false }: HabitGridProps) {
-  const addHabit = () => {
-    onChange([...habits, { name: '', monthlyCheckIns: Array(12).fill(false) }]);
-  };
-
-  const removeHabit = (i: number) => {
-    onChange(habits.filter((_, idx) => idx !== i));
-  };
-
-  const updateHabitName = (i: number, name: string) => {
-    const updated = [...habits];
-    updated[i] = { ...updated[i], name };
-    onChange(updated);
-  };
-
-  const toggleMonth = (habitIdx: number, monthIdx: number) => {
-    const updated = [...habits];
-    const checkIns = [...updated[habitIdx].monthlyCheckIns];
-    checkIns[monthIdx] = !checkIns[monthIdx];
-    updated[habitIdx] = { ...updated[habitIdx], monthlyCheckIns: checkIns };
-    onChange(updated);
-  };
-
+function PartnerYearlyView({ entry }: { entry: YearlyEntry }) {
   return (
-    <div className="space-y-3">
-      {/* Month headers */}
-      {habits.length > 0 && (
-        <div className="flex items-center gap-2">
-          <div className="w-36 shrink-0" />
-          <div className="flex gap-1 flex-1 overflow-x-auto">
-            {MONTHS_SHORT.map((m) => (
-              <div key={m} className="w-8 shrink-0 text-center text-xs font-body font-semibold text-muted-foreground">
-                {m}
-              </div>
-            ))}
-          </div>
-          {!readOnly && <div className="w-8 shrink-0" />}
-        </div>
-      )}
-
-      {habits.map((habit, i) => (
-        <div key={i} className="flex items-center gap-2">
-          {readOnly ? (
-            <div className="w-36 shrink-0 text-sm font-body text-foreground truncate">{habit.name || '—'}</div>
-          ) : (
-            <Input
-              value={habit.name}
-              onChange={(e) => updateHabitName(i, e.target.value)}
-              placeholder={`Habit ${i + 1}`}
-              className="w-36 shrink-0 font-body text-sm h-8"
-            />
-          )}
-          <div className="flex gap-1 flex-1 overflow-x-auto">
-            {MONTHS_SHORT.map((_, mIdx) => {
-              const checked = habit.monthlyCheckIns[mIdx] ?? false;
-              return (
-                <button
-                  key={mIdx}
-                  type="button"
-                  disabled={readOnly}
-                  onClick={() => !readOnly && toggleMonth(i, mIdx)}
-                  className={`w-8 h-8 shrink-0 rounded-lg border-2 transition-all text-xs font-bold ${
-                    checked
-                      ? 'bg-primary border-primary text-primary-foreground'
-                      : 'border-border/40 bg-secondary/30 hover:border-primary/40'
-                  } ${readOnly ? 'cursor-default' : 'cursor-pointer'}`}
-                >
-                  {checked ? '✓' : ''}
-                </button>
-              );
-            })}
-          </div>
-          {!readOnly && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => removeHabit(i)}
-              className="w-8 h-8 shrink-0 text-muted-foreground hover:text-destructive"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </Button>
-          )}
-        </div>
-      ))}
-
-      {!readOnly && (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={addHabit}
-          className="font-body text-xs mt-1"
-        >
-          <Plus className="w-3 h-3 mr-1" /> Add Habit
-        </Button>
-      )}
-
-      {habits.length === 0 && (
-        <p className="text-sm font-body text-muted-foreground italic text-center py-3">
-          {readOnly ? 'No habits tracked.' : 'Add habits to track monthly progress.'}
-        </p>
-      )}
-    </div>
-  );
-}
-
-// ─── Entry Form ───────────────────────────────────────────────────────────────
-
-interface EntryFormProps {
-  entry: YearlyEntry;
-  onChange: (entry: YearlyEntry) => void;
-  readOnly?: boolean;
-  label?: string;
-}
-
-function EntryForm({ entry, onChange, readOnly = false, label }: EntryFormProps) {
-  const updateGoal = (i: number, field: keyof Task, val: string | boolean) => {
-    const goals = [...entry.majorGoals];
-    goals[i] = { ...goals[i], [field]: val };
-    onChange({ ...entry, majorGoals: goals });
-  };
-
-  const updateVision = (i: number, val: string) => {
-    const visions = [...entry.visionImages];
-    visions[i] = val;
-    onChange({ ...entry, visionImages: visions });
-  };
-
-  return (
-    <div className="space-y-5">
-      {label && (
-        <div className="flex items-center gap-2">
-          <Heart className="w-4 h-4 text-rose-dusty fill-current" />
-          <span className="font-body font-semibold text-sm text-muted-foreground">{label}</span>
-        </div>
-      )}
-
+    <div className="space-y-6">
       {/* Word of the Year */}
-      <div className="card-warm p-5 space-y-3">
-        <h3 className="section-title">✨ Word of the Year</h3>
-        {readOnly ? (
-          <p className="font-display text-2xl font-bold text-primary italic">
-            {entry.wordOfTheYear || '—'}
-          </p>
+      <div className="bg-card rounded-2xl p-6 shadow-warm border border-border">
+        <div className="flex items-center gap-2 mb-3">
+          <Star className="w-5 h-5 text-primary" />
+          <h3 className="font-playfair text-lg font-semibold text-foreground">Word of the Year</h3>
+        </div>
+        {entry.wordOfTheYear ? (
+          <p className="text-2xl font-playfair font-bold text-primary text-center py-3">{entry.wordOfTheYear}</p>
         ) : (
-          <Input
-            value={entry.wordOfTheYear}
-            onChange={(e) => onChange({ ...entry, wordOfTheYear: e.target.value })}
-            placeholder="e.g. Growth, Abundance, Clarity..."
-            className="font-display text-lg font-semibold"
-          />
+          <p className="text-muted-foreground italic text-center">No word set</p>
         )}
       </div>
 
-      {/* 5 Major Goals */}
-      <div className="card-warm p-5 space-y-4">
-        <h3 className="section-title">🎯 5 Major Goals</h3>
-        <div className="space-y-3">
-          {Array.from({ length: 5 }).map((_, i) => {
-            const goal = entry.majorGoals[i] ?? { description: '', isComplete: false };
-            return (
-              <div key={i} className="flex items-center gap-3">
-                <Checkbox
-                  id={`goal-${i}-${readOnly ? 'ro' : 'rw'}`}
-                  checked={goal.isComplete}
-                  onCheckedChange={(checked) => !readOnly && updateGoal(i, 'isComplete', !!checked)}
-                  disabled={readOnly}
-                  className="shrink-0"
-                />
-                {readOnly ? (
-                  <span className={`font-body text-sm flex-1 ${goal.isComplete ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-                    {goal.description || `Goal ${i + 1}`}
-                  </span>
-                ) : (
-                  <Input
-                    placeholder={`Goal ${i + 1}`}
-                    value={goal.description}
-                    onChange={(e) => updateGoal(i, 'description', e.target.value)}
-                    className={`font-body flex-1 ${goal.isComplete ? 'line-through text-muted-foreground' : ''}`}
-                  />
-                )}
-              </div>
-            );
-          })}
+      {/* Major Goals */}
+      <div className="bg-card rounded-2xl p-6 shadow-warm border border-border">
+        <div className="flex items-center gap-2 mb-4">
+          <Target className="w-5 h-5 text-primary" />
+          <h3 className="font-playfair text-lg font-semibold text-foreground">Major Goals</h3>
         </div>
+        {entry.majorGoals.length === 0 ? (
+          <p className="text-muted-foreground italic">No goals set</p>
+        ) : (
+          <ul className="space-y-3">
+            {entry.majorGoals.map((goal, i) => (
+              <li key={i} className="flex items-start gap-3">
+                <span className={`mt-1 w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${goal.isComplete ? 'bg-primary border-primary' : 'border-muted-foreground'}`}>
+                  {goal.isComplete && <span className="text-white text-xs">✓</span>}
+                </span>
+                <span className={`text-sm ${goal.isComplete ? 'line-through text-muted-foreground' : 'text-foreground'}`}>{goal.description}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
-      {/* Vision Images (text descriptions) */}
-      <div className="card-warm p-5 space-y-4">
-        <h3 className="section-title">🌟 Vision Descriptions</h3>
-        <p className="text-sm font-body text-muted-foreground">Describe your vision for this year in vivid detail.</p>
-        <div className="space-y-3">
-          {[0, 1, 2].map((i) => {
-            const vision = entry.visionImages[i] ?? '';
-            return readOnly ? (
-              <div key={i} className="p-3 rounded-xl bg-secondary/30 border border-border/30">
-                <p className="font-body text-sm text-foreground">{vision || '—'}</p>
-              </div>
-            ) : (
-              <Input
-                key={i}
-                placeholder={`Vision ${i + 1} — e.g. "I am living in my dream home..."`}
-                value={vision}
-                onChange={(e) => updateVision(i, e.target.value)}
-                className="font-body"
-              />
-            );
-          })}
+      {/* Vision Images */}
+      {entry.visionImages.length > 0 && (
+        <div className="bg-card rounded-2xl p-6 shadow-warm border border-border">
+          <div className="flex items-center gap-2 mb-4">
+            <Image className="w-5 h-5 text-primary" />
+            <h3 className="font-playfair text-lg font-semibold text-foreground">Vision Images</h3>
+          </div>
+          <ul className="space-y-2">
+            {entry.visionImages.map((url, i) => (
+              <li key={i} className="text-sm text-primary underline break-all">
+                <a href={url} target="_blank" rel="noopener noreferrer">{url}</a>
+              </li>
+            ))}
+          </ul>
         </div>
-      </div>
+      )}
 
       {/* Habit Tracker */}
-      <div className="card-warm p-5 space-y-4">
-        <h3 className="section-title">📊 Habit Tracker</h3>
-        <p className="text-sm font-body text-muted-foreground">Track your habits across all 12 months.</p>
-        <div className="overflow-x-auto">
-          <HabitGrid
-            habits={entry.habitTracker}
-            onChange={(habits) => onChange({ ...entry, habitTracker: habits })}
-            readOnly={readOnly}
-          />
+      {entry.habitTracker.length > 0 && (
+        <div className="bg-card rounded-2xl p-6 shadow-warm border border-border">
+          <div className="flex items-center gap-2 mb-4">
+            <BarChart2 className="w-5 h-5 text-primary" />
+            <h3 className="font-playfair text-lg font-semibold text-foreground">Habit Tracker</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr>
+                  <th className="text-left py-1 pr-3 text-muted-foreground font-medium">Habit</th>
+                  {MONTHS.map(m => (
+                    <th key={m} className="text-center py-1 px-1 text-muted-foreground font-medium">{m}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {entry.habitTracker.map((habit, hi) => (
+                  <tr key={hi} className="border-t border-border/40">
+                    <td className="py-2 pr-3 text-foreground font-medium">{habit.name}</td>
+                    {Array.from({ length: 12 }, (_, mi) => (
+                      <td key={mi} className="text-center py-2 px-1">
+                        <span className={`inline-block w-5 h-5 rounded-full border ${habit.monthlyCheckIns[mi] ? 'bg-primary border-primary' : 'border-muted-foreground/40'}`}>
+                          {habit.monthlyCheckIns[mi] && <span className="text-white text-xs flex items-center justify-center h-full">✓</span>}
+                        </span>
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Year-End Reflection */}
-      <div className="card-warm p-5 space-y-3">
-        <h3 className="section-title">💭 Year-End Reflection</h3>
-        {readOnly ? (
-          <p className="font-body text-sm text-foreground whitespace-pre-wrap">
-            {entry.reflection || '—'}
-          </p>
-        ) : (
-          <Textarea
-            placeholder="What did you accomplish? What did you learn? What are you most proud of?"
-            value={entry.reflection}
-            onChange={(e) => onChange({ ...entry, reflection: e.target.value })}
-            className="font-body resize-none"
-            rows={5}
-          />
-        )}
-      </div>
+      {/* Reflection */}
+      {entry.reflection && (
+        <div className="bg-card rounded-2xl p-6 shadow-warm border border-border">
+          <div className="flex items-center gap-2 mb-3">
+            <BookOpen className="w-5 h-5 text-primary" />
+            <h3 className="font-playfair text-lg font-semibold text-foreground">Year-End Reflection</h3>
+          </div>
+          <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{entry.reflection}</p>
+        </div>
+      )}
     </div>
   );
 }
 
-// ─── Yearly Planner Page ──────────────────────────────────────────────────────
+// ─── Empty State ──────────────────────────────────────────────────────────────
+
+function PartnerEmptyState({ year }: { year: number }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <Heart className="w-12 h-12 text-muted-foreground/40 mb-4" />
+      <h3 className="font-playfair text-lg font-semibold text-muted-foreground mb-2">No plan yet</h3>
+      <p className="text-sm text-muted-foreground max-w-xs">
+        Your partner hasn't created a yearly plan for {year} yet. Check back later!
+      </p>
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function YearlyPlanner() {
   const { identity } = useInternetIdentity();
-  const { data: allEntries = [], isLoading } = useGetYearlyEntries();
+  const myPrincipal = identity?.getPrincipal();
+  const myPrincipalStr = myPrincipal?.toString() ?? '';
+
+  const [year, setYear] = useState(new Date().getFullYear());
+  const [activeTab, setActiveTab] = useState<'mine' | 'partner'>('mine');
+
+  // Couple info
   const { data: couple } = useGetCouple();
+  const partnerPrincipal = getPartnerPrincipal(couple ?? null, myPrincipalStr);
+  const hasPartner = !!partnerPrincipal;
+
+  // My entries
+  const { data: myEntries = [], isLoading: myLoading } = useGetYearlyEntries(myPrincipal);
+  const myEntry = myEntries.find(e => Number(e.year) === year);
+
+  // Partner entries
+  const { data: partnerEntries = [], isLoading: partnerLoading } = useGetPartnerYearlyEntries(partnerPrincipal);
+  const partnerEntry = partnerEntries.find(e => Number(e.year) === year);
+
+  // Mutations
   const addEntry = useAddYearlyEntry();
   const updateEntry = useUpdateYearlyEntry();
 
-  const [selectedYear, setSelectedYear] = useState(CURRENT_YEAR);
-  const [myEntry, setMyEntry] = useState<YearlyEntry>(makeDefaultEntry(CURRENT_YEAR));
+  // Local state for my plan
+  const [wordOfYear, setWordOfYear] = useState('');
+  const [goals, setGoals] = useState<Task[]>([
+    { description: '', isComplete: false },
+    { description: '', isComplete: false },
+    { description: '', isComplete: false },
+    { description: '', isComplete: false },
+    { description: '', isComplete: false },
+  ]);
+  const [visionImages, setVisionImages] = useState<string[]>(['', '', '']);
+  const [habits, setHabits] = useState<HabitYearly[]>([
+    { name: '', monthlyCheckIns: Array(12).fill(false) },
+    { name: '', monthlyCheckIns: Array(12).fill(false) },
+    { name: '', monthlyCheckIns: Array(12).fill(false) },
+  ]);
+  const [reflection, setReflection] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  const existingEntry = allEntries.find((e) => Number(e.year) === selectedYear);
-  const isCouple = !!couple;
-
-  // Load entry when year or data changes
+  // Populate form when entry loads
   useEffect(() => {
-    if (existingEntry) {
-      const goals = [...existingEntry.majorGoals];
-      while (goals.length < 5) goals.push({ description: '', isComplete: false });
-      const visions = [...existingEntry.visionImages];
-      while (visions.length < 3) visions.push('');
-      setMyEntry({
-        ...existingEntry,
-        majorGoals: goals.slice(0, 5),
-        visionImages: visions.slice(0, 3),
-      });
+    if (myEntry) {
+      setWordOfYear(myEntry.wordOfTheYear);
+      const loadedGoals = [...myEntry.majorGoals];
+      while (loadedGoals.length < 5) loadedGoals.push({ description: '', isComplete: false });
+      setGoals(loadedGoals.slice(0, 5));
+      const loadedImages = [...myEntry.visionImages];
+      while (loadedImages.length < 3) loadedImages.push('');
+      setVisionImages(loadedImages.slice(0, 3));
+      const loadedHabits = myEntry.habitTracker.map(h => ({
+        name: h.name,
+        monthlyCheckIns: [...h.monthlyCheckIns].concat(Array(12).fill(false)).slice(0, 12),
+      }));
+      while (loadedHabits.length < 3) loadedHabits.push({ name: '', monthlyCheckIns: Array(12).fill(false) });
+      setHabits(loadedHabits);
+      setReflection(myEntry.reflection);
     } else {
-      setMyEntry(makeDefaultEntry(selectedYear));
+      setWordOfYear('');
+      setGoals([
+        { description: '', isComplete: false },
+        { description: '', isComplete: false },
+        { description: '', isComplete: false },
+        { description: '', isComplete: false },
+        { description: '', isComplete: false },
+      ]);
+      setVisionImages(['', '', '']);
+      setHabits([
+        { name: '', monthlyCheckIns: Array(12).fill(false) },
+        { name: '', monthlyCheckIns: Array(12).fill(false) },
+        { name: '', monthlyCheckIns: Array(12).fill(false) },
+      ]);
+      setReflection('');
     }
-  }, [selectedYear, existingEntry?.year]);
-
-  if (!identity) return null;
+  }, [myEntry, year]);
 
   const handleSave = async () => {
     setIsSaving(true);
-    const entryToSave: YearlyEntry = {
-      ...myEntry,
-      year: BigInt(selectedYear),
-      majorGoals: myEntry.majorGoals.filter((g) => g.description.trim()),
-      visionImages: myEntry.visionImages.filter((v) => v.trim()),
-    };
     try {
-      if (existingEntry) {
-        await updateEntry.mutateAsync({ year: BigInt(selectedYear), entry: entryToSave });
-        toast.success('Yearly plan updated! ✨');
+      const entry: YearlyEntry = {
+        year: BigInt(year),
+        wordOfTheYear: wordOfYear,
+        majorGoals: goals.filter(g => g.description.trim()),
+        visionImages: visionImages.filter(v => v.trim()),
+        habitTracker: habits.filter(h => h.name.trim()).map(h => ({
+          name: h.name,
+          monthlyCheckIns: h.monthlyCheckIns,
+        })),
+        reflection,
+      };
+      if (myEntry) {
+        await updateEntry.mutateAsync({ year: BigInt(year), entry });
       } else {
-        await addEntry.mutateAsync(entryToSave);
-        toast.success('Yearly plan saved! 🎉');
+        await addEntry.mutateAsync(entry);
       }
+      toast.success('Yearly plan saved!');
     } catch {
-      toast.error('Failed to save yearly plan.');
+      toast.error('Failed to save yearly plan');
     } finally {
       setIsSaving(false);
     }
   };
 
+  const toggleGoal = (i: number) => {
+    setGoals(prev => prev.map((g, idx) => idx === i ? { ...g, isComplete: !g.isComplete } : g));
+  };
+
+  const toggleHabit = (hi: number, mi: number) => {
+    setHabits(prev => prev.map((h, idx) => {
+      if (idx !== hi) return h;
+      const newCheckIns = [...h.monthlyCheckIns];
+      newCheckIns[mi] = !newCheckIns[mi];
+      return { ...h, monthlyCheckIns: newCheckIns };
+    }));
+  };
+
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl sm:text-4xl font-bold text-foreground">
-            Yearly Planner 🗓️
-          </h1>
-          <p className="font-body text-muted-foreground mt-1">
-            Set your word, goals, and vision for the year ahead.
-          </p>
+    <div className="min-h-screen bg-background">
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="font-playfair text-3xl md:text-4xl font-bold text-foreground mb-2">Yearly Planner</h1>
+          <p className="text-muted-foreground">Set your vision and goals for the year</p>
         </div>
-        <Button
-          onClick={handleSave}
-          disabled={isSaving}
-          className="font-body font-semibold rounded-2xl shadow-warm shrink-0"
-        >
-          {isSaving ? (
-            <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>
+
+        {/* Year Navigation */}
+        <div className="flex items-center justify-center gap-4 mb-8">
+          <button
+            onClick={() => setYear(y => y - 1)}
+            className="p-2 rounded-full hover:bg-muted transition-colors"
+          >
+            <ChevronLeft className="w-5 h-5 text-foreground" />
+          </button>
+          <span className="font-playfair text-2xl font-bold text-foreground min-w-[80px] text-center">{year}</span>
+          <button
+            onClick={() => setYear(y => y + 1)}
+            className="p-2 rounded-full hover:bg-muted transition-colors"
+          >
+            <ChevronRight className="w-5 h-5 text-foreground" />
+          </button>
+        </div>
+
+        {/* Tabs */}
+        {hasPartner ? (
+          <Tabs value={activeTab} onValueChange={v => setActiveTab(v as 'mine' | 'partner')} className="w-full">
+            <TabsList className="w-full mb-6 bg-muted rounded-xl p-1">
+              <TabsTrigger value="mine" className="flex-1 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                My Plan
+              </TabsTrigger>
+              <TabsTrigger value="partner" className="flex-1 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Partner's Plan
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="mine">
+              {myLoading ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-32 w-full rounded-2xl" />
+                  <Skeleton className="h-48 w-full rounded-2xl" />
+                </div>
+              ) : (
+                <MyYearlyPlanForm
+                  year={year}
+                  wordOfYear={wordOfYear} setWordOfYear={setWordOfYear}
+                  goals={goals} setGoals={setGoals} toggleGoal={toggleGoal}
+                  visionImages={visionImages} setVisionImages={setVisionImages}
+                  habits={habits} setHabits={setHabits} toggleHabit={toggleHabit}
+                  reflection={reflection} setReflection={setReflection}
+                  isSaving={isSaving} onSave={handleSave}
+                />
+              )}
+            </TabsContent>
+
+            <TabsContent value="partner">
+              {partnerLoading ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-32 w-full rounded-2xl" />
+                  <Skeleton className="h-48 w-full rounded-2xl" />
+                </div>
+              ) : partnerEntry ? (
+                <PartnerYearlyView entry={partnerEntry} />
+              ) : (
+                <PartnerEmptyState year={year} />
+              )}
+            </TabsContent>
+          </Tabs>
+        ) : (
+          myLoading ? (
+            <div className="space-y-4">
+              <Skeleton className="h-32 w-full rounded-2xl" />
+              <Skeleton className="h-48 w-full rounded-2xl" />
+            </div>
           ) : (
-            <><Save className="w-4 h-4 mr-2" /> Save Plan</>
-          )}
-        </Button>
+            <MyYearlyPlanForm
+              year={year}
+              wordOfYear={wordOfYear} setWordOfYear={setWordOfYear}
+              goals={goals} setGoals={setGoals} toggleGoal={toggleGoal}
+              visionImages={visionImages} setVisionImages={setVisionImages}
+              habits={habits} setHabits={setHabits} toggleHabit={toggleHabit}
+              reflection={reflection} setReflection={setReflection}
+              isSaving={isSaving} onSave={handleSave}
+            />
+          )
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── My Plan Form ─────────────────────────────────────────────────────────────
+
+interface MyYearlyPlanFormProps {
+  year: number;
+  wordOfYear: string; setWordOfYear: (v: string) => void;
+  goals: Task[]; setGoals: (v: Task[]) => void; toggleGoal: (i: number) => void;
+  visionImages: string[]; setVisionImages: (v: string[]) => void;
+  habits: HabitYearly[]; setHabits: (v: HabitYearly[]) => void; toggleHabit: (hi: number, mi: number) => void;
+  reflection: string; setReflection: (v: string) => void;
+  isSaving: boolean; onSave: () => void;
+}
+
+function MyYearlyPlanForm({
+  year, wordOfYear, setWordOfYear,
+  goals, setGoals, toggleGoal,
+  visionImages, setVisionImages,
+  habits, setHabits, toggleHabit,
+  reflection, setReflection,
+  isSaving, onSave,
+}: MyYearlyPlanFormProps) {
+  return (
+    <div className="space-y-6">
+      {/* Word of the Year */}
+      <div className="bg-card rounded-2xl p-6 shadow-warm border border-border">
+        <div className="flex items-center gap-2 mb-3">
+          <Star className="w-5 h-5 text-primary" />
+          <h3 className="font-playfair text-lg font-semibold text-foreground">Word of the Year</h3>
+        </div>
+        <input
+          type="text"
+          value={wordOfYear}
+          onChange={e => setWordOfYear(e.target.value)}
+          placeholder="e.g. Growth, Courage, Balance..."
+          className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-center text-lg font-playfair"
+        />
       </div>
 
-      {/* Year Selector */}
-      <div className="card-warm p-4 flex items-center justify-between">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setSelectedYear((y) => y - 1)}
-          className="rounded-xl"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </Button>
-        <div className="text-center space-y-1">
-          <div className="flex items-center gap-2 justify-center">
-            <Star className="w-4 h-4 text-primary" />
-            <span className="font-display text-2xl font-bold text-foreground">{selectedYear}</span>
-          </div>
-          {existingEntry && (
-            <Badge variant="secondary" className="text-xs font-body">
-              Plan exists ✓
-            </Badge>
-          )}
+      {/* Major Goals */}
+      <div className="bg-card rounded-2xl p-6 shadow-warm border border-border">
+        <div className="flex items-center gap-2 mb-4">
+          <Target className="w-5 h-5 text-primary" />
+          <h3 className="font-playfair text-lg font-semibold text-foreground">5 Major Goals for {year}</h3>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setSelectedYear((y) => y + 1)}
-          className="rounded-xl"
-        >
-          <ChevronRight className="w-5 h-5" />
-        </Button>
+        <div className="space-y-3">
+          {goals.map((goal, i) => (
+            <div key={i} className="flex items-center gap-3">
+              <button
+                onClick={() => toggleGoal(i)}
+                className={`w-6 h-6 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors ${goal.isComplete ? 'bg-primary border-primary' : 'border-muted-foreground hover:border-primary'}`}
+              >
+                {goal.isComplete && <span className="text-white text-xs">✓</span>}
+              </button>
+              <input
+                type="text"
+                value={goal.description}
+                onChange={e => setGoals(goals.map((g, idx) => idx === i ? { ...g, description: e.target.value } : g))}
+                placeholder={`Goal ${i + 1}`}
+                className={`flex-1 bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 ${goal.isComplete ? 'line-through text-muted-foreground' : ''}`}
+              />
+            </div>
+          ))}
+        </div>
       </div>
 
-      {isLoading ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-40 rounded-2xl" />)}
+      {/* Vision Images */}
+      <div className="bg-card rounded-2xl p-6 shadow-warm border border-border">
+        <div className="flex items-center gap-2 mb-4">
+          <Image className="w-5 h-5 text-primary" />
+          <h3 className="font-playfair text-lg font-semibold text-foreground">Vision Image URLs</h3>
         </div>
-      ) : isCouple ? (
-        /* Couple Mode: side-by-side */
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 px-1">
-            <Heart className="w-4 h-4 text-rose-dusty fill-current" />
-            <span className="font-body text-sm font-semibold text-muted-foreground">Couple Mode — Your Plan</span>
-          </div>
-          <EntryForm
-            entry={myEntry}
-            onChange={setMyEntry}
-            readOnly={false}
-          />
-          <Separator className="my-6" />
-          <div className="flex items-center gap-2 px-1">
-            <Heart className="w-4 h-4 text-rose-dusty fill-current" />
-            <span className="font-body text-sm font-semibold text-muted-foreground">Partner's Plan (read-only)</span>
-          </div>
-          <EntryForm
-            entry={myEntry}
-            onChange={() => {}}
-            readOnly={true}
-            label="Partner's yearly plan is shared with you"
-          />
+        <div className="space-y-3">
+          {visionImages.map((url, i) => (
+            <input
+              key={i}
+              type="url"
+              value={url}
+              onChange={e => setVisionImages(visionImages.map((v, idx) => idx === i ? e.target.value : v))}
+              placeholder={`Image URL ${i + 1}`}
+              className="w-full bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          ))}
         </div>
-      ) : (
-        <EntryForm entry={myEntry} onChange={setMyEntry} />
-      )}
-
-      <Separator />
-      <div className="flex justify-end">
-        <Button
-          onClick={handleSave}
-          disabled={isSaving}
-          size="lg"
-          className="font-body font-semibold rounded-2xl shadow-warm px-8"
-        >
-          {isSaving ? (
-            <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>
-          ) : (
-            <><Save className="w-4 h-4 mr-2" /> Save Plan</>
-          )}
-        </Button>
       </div>
+
+      {/* Habit Tracker */}
+      <div className="bg-card rounded-2xl p-6 shadow-warm border border-border">
+        <div className="flex items-center gap-2 mb-4">
+          <BarChart2 className="w-5 h-5 text-primary" />
+          <h3 className="font-playfair text-lg font-semibold text-foreground">Monthly Habit Tracker</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr>
+                <th className="text-left py-1 pr-3 text-muted-foreground font-medium min-w-[120px]">Habit</th>
+                {MONTHS.map(m => (
+                  <th key={m} className="text-center py-1 px-1 text-muted-foreground font-medium">{m}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {habits.map((habit, hi) => (
+                <tr key={hi} className="border-t border-border/40">
+                  <td className="py-2 pr-3">
+                    <input
+                      type="text"
+                      value={habit.name}
+                      onChange={e => setHabits(habits.map((h, idx) => idx === hi ? { ...h, name: e.target.value } : h))}
+                      placeholder={`Habit ${hi + 1}`}
+                      className="w-full bg-background border border-border rounded-lg px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    />
+                  </td>
+                  {Array.from({ length: 12 }, (_, mi) => (
+                    <td key={mi} className="text-center py-2 px-1">
+                      <button
+                        onClick={() => toggleHabit(hi, mi)}
+                        className={`w-5 h-5 rounded-full border transition-colors ${habit.monthlyCheckIns[mi] ? 'bg-primary border-primary' : 'border-muted-foreground/40 hover:border-primary'}`}
+                      >
+                        {habit.monthlyCheckIns[mi] && <span className="text-white text-xs flex items-center justify-center h-full">✓</span>}
+                      </button>
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Reflection */}
+      <div className="bg-card rounded-2xl p-6 shadow-warm border border-border">
+        <div className="flex items-center gap-2 mb-3">
+          <BookOpen className="w-5 h-5 text-primary" />
+          <h3 className="font-playfair text-lg font-semibold text-foreground">Year-End Reflection</h3>
+        </div>
+        <textarea
+          value={reflection}
+          onChange={e => setReflection(e.target.value)}
+          placeholder="What do you hope to reflect on at the end of this year?"
+          rows={4}
+          className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+        />
+      </div>
+
+      {/* Save Button */}
+      <button
+        onClick={onSave}
+        disabled={isSaving}
+        className="w-full bg-primary text-primary-foreground rounded-xl py-3 font-semibold hover:bg-primary/90 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+      >
+        {isSaving ? (
+          <>
+            <span className="w-4 h-4 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full animate-spin" />
+            Saving...
+          </>
+        ) : (
+          'Save Yearly Plan'
+        )}
+      </button>
     </div>
   );
 }

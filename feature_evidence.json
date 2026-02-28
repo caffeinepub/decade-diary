@@ -2,8 +2,65 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-update-the-dashboard-s-today-s-inspiration-section-to-fetch-the-daily-quote-from-the-backend-using-the-date-based-query-introduced-in-req-1-replacing-any-hardcoded-or-static-quote-the-displayed-quote-must-update-automatically-each-new-day-without-requiring-a-page-reload-mid-session-beyond-normal-daily-visits",
-      "featureTitle": "Update the Dashboard's Today's Inspiration section to fetch the daily quote from the backend using the date-based query introduced in REQ-1, replacing any hardcoded or static quote. The displayed quote must update automatically each new day without requiring a page reload mid-session beyond normal daily visits.",
+      "featureId": "feature-in-the-yearlyplanner-page-add-a-partner-view-tab-or-section-that-fetches-and-displays-the-partner-s-yearly-planner-entry-word-of-the-year-major-goals-vision-image-urls-monthly-habit-tracker-grid-and-year-end-reflection-as-read-only-content-the-partner-s-data-must-be-clearly-distinguished-from-the-current-user-s-own-data",
+      "featureTitle": "In the YearlyPlanner page, add a partner-view tab or section that fetches and displays the partner's yearly planner entry (word of the year, major goals, vision image URLs, monthly habit tracker grid, and year-end reflection) as read-only content. The partner's data must be clearly distinguished from the current user's own data.",
+      "files": [
+        "frontend/src/pages/YearlyPlanner.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-in-the-monthlyplanner-page-add-a-partner-view-tab-or-section-that-fetches-and-displays-the-partner-s-monthly-planner-entry-goals-important-dates-budget-entries-and-mood-tracker-for-the-currently-selected-month-as-read-only-content",
+      "featureTitle": "In the MonthlyPlanner page, add a partner-view tab or section that fetches and displays the partner's monthly planner entry (goals, important dates, budget entries, and mood tracker) for the currently selected month as read-only content.",
+      "files": [
+        "frontend/src/pages/MonthlyPlanner.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-in-the-weeklyplanner-page-add-a-partner-view-tab-or-section-that-fetches-and-displays-the-partner-s-weekly-planner-entry-priority-tasks-habit-tracker-grid-todos-energy-rating-and-reflection-for-the-currently-selected-iso-week-as-read-only-content",
+      "featureTitle": "In the WeeklyPlanner page, add a partner-view tab or section that fetches and displays the partner's weekly planner entry (priority tasks, habit tracker grid, todos, energy rating, and reflection) for the currently selected ISO week as read-only content.",
+      "files": [
+        "frontend/src/pages/WeeklyPlanner.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-react-query-hooks-in-usequeries-ts-for-the-new-partner-planner-query-functions-yearly-monthly-weekly-daily-by-partner-principal-so-the-frontend-components-can-consume-partner-data-consistently-with-the-existing-query-patterns",
+      "featureTitle": "Add React Query hooks in useQueries.ts for the new partner planner query functions (yearly, monthly, weekly, daily by partner principal), so the frontend components can consume partner data consistently with the existing query patterns.",
       "files": [
         "frontend/src/hooks/useQueries.ts"
       ],
@@ -16,7 +73,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-2"
+        "REQ-6"
       ],
       "confidence": "high"
     }

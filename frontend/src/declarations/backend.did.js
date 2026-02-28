@@ -185,11 +185,6 @@ export const idlService = IDL.Service({
       [IDL.Vec(DailyJournalEntry)],
       ['query'],
     ),
-  'getDailyPlannerEntries' : IDL.Func(
-      [],
-      [IDL.Vec(DailyPlannerEntry)],
-      ['query'],
-    ),
   'getDailyQuote' : IDL.Func([IDL.Nat], [IDL.Text], ['query']),
   'getEmotionalJournals' : IDL.Func(
       [],
@@ -218,14 +213,59 @@ export const idlService = IDL.Service({
       [IDL.Vec(NightReflectionJournalEntry)],
       ['query'],
     ),
+  'getOwnerDailyPlannerEntries' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Vec(DailyPlannerEntry)],
+      ['query'],
+    ),
+  'getOwnerMonthlyEntries' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Vec(MonthlyEntry)],
+      ['query'],
+    ),
+  'getOwnerVisionBoardEntries' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Vec(VisionBoardEntry)],
+      ['query'],
+    ),
+  'getOwnerWeeklyEntries' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Vec(WeeklyEntry)],
+      ['query'],
+    ),
+  'getOwnerYearlyEntries' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Vec(YearlyEntry)],
+      ['query'],
+    ),
+  'getPartnerSpecificDailyPlannerEntries' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Vec(DailyPlannerEntry)],
+      ['query'],
+    ),
+  'getPartnerSpecificMonthlyEntries' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Vec(MonthlyEntry)],
+      ['query'],
+    ),
+  'getPartnerSpecificWeeklyEntries' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Vec(WeeklyEntry)],
+      ['query'],
+    ),
+  'getPartnerSpecificYearlyEntries' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Vec(YearlyEntry)],
+      ['query'],
+    ),
+  'getPartnerVisionBoardEntries' : IDL.Func(
+      [],
+      [IDL.Vec(VisionBoardEntry)],
+      ['query'],
+    ),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
-      ['query'],
-    ),
-  'getVisionBoardEntries' : IDL.Func(
-      [],
-      [IDL.Vec(VisionBoardEntry)],
       ['query'],
     ),
   'getWeeklyEntries' : IDL.Func([], [IDL.Vec(WeeklyEntry)], ['query']),
@@ -423,11 +463,6 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(DailyJournalEntry)],
         ['query'],
       ),
-    'getDailyPlannerEntries' : IDL.Func(
-        [],
-        [IDL.Vec(DailyPlannerEntry)],
-        ['query'],
-      ),
     'getDailyQuote' : IDL.Func([IDL.Nat], [IDL.Text], ['query']),
     'getEmotionalJournals' : IDL.Func(
         [],
@@ -460,14 +495,59 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(NightReflectionJournalEntry)],
         ['query'],
       ),
+    'getOwnerDailyPlannerEntries' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Vec(DailyPlannerEntry)],
+        ['query'],
+      ),
+    'getOwnerMonthlyEntries' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Vec(MonthlyEntry)],
+        ['query'],
+      ),
+    'getOwnerVisionBoardEntries' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Vec(VisionBoardEntry)],
+        ['query'],
+      ),
+    'getOwnerWeeklyEntries' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Vec(WeeklyEntry)],
+        ['query'],
+      ),
+    'getOwnerYearlyEntries' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Vec(YearlyEntry)],
+        ['query'],
+      ),
+    'getPartnerSpecificDailyPlannerEntries' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Vec(DailyPlannerEntry)],
+        ['query'],
+      ),
+    'getPartnerSpecificMonthlyEntries' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Vec(MonthlyEntry)],
+        ['query'],
+      ),
+    'getPartnerSpecificWeeklyEntries' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Vec(WeeklyEntry)],
+        ['query'],
+      ),
+    'getPartnerSpecificYearlyEntries' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Vec(YearlyEntry)],
+        ['query'],
+      ),
+    'getPartnerVisionBoardEntries' : IDL.Func(
+        [],
+        [IDL.Vec(VisionBoardEntry)],
+        ['query'],
+      ),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(UserProfile)],
-        ['query'],
-      ),
-    'getVisionBoardEntries' : IDL.Func(
-        [],
-        [IDL.Vec(VisionBoardEntry)],
         ['query'],
       ),
     'getWeeklyEntries' : IDL.Func([], [IDL.Vec(WeeklyEntry)], ['query']),

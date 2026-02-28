@@ -164,7 +164,6 @@ export interface _SERVICE {
     [Principal],
     Array<DailyJournalEntry>
   >,
-  'getDailyPlannerEntries' : ActorMethod<[], Array<DailyPlannerEntry>>,
   'getDailyQuote' : ActorMethod<[bigint], string>,
   'getEmotionalJournals' : ActorMethod<[], Array<EmotionalJournalEntry>>,
   'getEmotionalJournalsForUser' : ActorMethod<
@@ -182,8 +181,35 @@ export interface _SERVICE {
     [Principal],
     Array<NightReflectionJournalEntry>
   >,
+  'getOwnerDailyPlannerEntries' : ActorMethod<
+    [Principal],
+    Array<DailyPlannerEntry>
+  >,
+  'getOwnerMonthlyEntries' : ActorMethod<[Principal], Array<MonthlyEntry>>,
+  'getOwnerVisionBoardEntries' : ActorMethod<
+    [Principal],
+    Array<VisionBoardEntry>
+  >,
+  'getOwnerWeeklyEntries' : ActorMethod<[Principal], Array<WeeklyEntry>>,
+  'getOwnerYearlyEntries' : ActorMethod<[Principal], Array<YearlyEntry>>,
+  'getPartnerSpecificDailyPlannerEntries' : ActorMethod<
+    [Principal],
+    Array<DailyPlannerEntry>
+  >,
+  'getPartnerSpecificMonthlyEntries' : ActorMethod<
+    [Principal],
+    Array<MonthlyEntry>
+  >,
+  'getPartnerSpecificWeeklyEntries' : ActorMethod<
+    [Principal],
+    Array<WeeklyEntry>
+  >,
+  'getPartnerSpecificYearlyEntries' : ActorMethod<
+    [Principal],
+    Array<YearlyEntry>
+  >,
+  'getPartnerVisionBoardEntries' : ActorMethod<[], Array<VisionBoardEntry>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
-  'getVisionBoardEntries' : ActorMethod<[], Array<VisionBoardEntry>>,
   'getWeeklyEntries' : ActorMethod<[], Array<WeeklyEntry>>,
   'getYearlyEntries' : ActorMethod<[], Array<YearlyEntry>>,
   'isCallerAdmin' : ActorMethod<[], boolean>,

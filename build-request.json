@@ -1,57 +1,141 @@
 {
   "kind": "build_request",
-  "title": "Auto-rotate daily quotes in Today's Inspiration section",
+  "title": "Display partner's yearly, monthly, weekly, and daily planner entries in sharing sections",
   "projectName": "Future Us",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Store a curated list of inspirational quotes in the backend and expose a function that deterministically returns a quote based on the current date (e.g., using a day-of-year index into the quotes array), so a different quote is shown each calendar day without any manual intervention.",
-      "target": "backend",
+      "text": "In the YearlyPlanner page, add a partner-view tab or section that fetches and displays the partner's yearly planner entry (word of the year, major goals, vision image URLs, monthly habit tracker grid, and year-end reflection) as read-only content. The partner's data must be clearly distinguished from the current user's own data.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-7"
         ],
         "quotes": [
-          "Change quotes in today's inspiration section automatically everyday"
+          "Share me the partners yearly monthly weekly and daily planner section"
         ]
       },
       "acceptanceCriteria": [
-        "The backend holds at least 30 distinct inspirational quotes.",
-        "A query function accepts no arguments and returns the quote assigned to the current UTC date.",
-        "The returned quote changes when the calendar date changes (different day = different quote).",
-        "The same date always returns the same quote (deterministic selection)."
+        "A 'Partner's Plan' tab or section is visible in YearlyPlanner",
+        "The partner's word of the year, goals, vision URLs, habit tracker, and reflection are displayed",
+        "The section is read-only — the current user cannot edit the partner's data",
+        "If no partner is linked or the partner has no entry, a friendly empty state message is shown",
+        "The current user's own planner data is unaffected"
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Update the Dashboard's Today's Inspiration section to fetch the daily quote from the backend using the date-based query introduced in REQ-1, replacing any hardcoded or static quote. The displayed quote must update automatically each new day without requiring a page reload mid-session beyond normal daily visits.",
+      "text": "In the MonthlyPlanner page, add a partner-view tab or section that fetches and displays the partner's monthly planner entry (goals, important dates, budget entries, and mood tracker) for the currently selected month as read-only content.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-7"
         ],
         "quotes": [
-          "Change quotes in today's inspiration section automatically everyday"
+          "Share me the partners yearly monthly weekly and daily planner section"
         ]
       },
       "acceptanceCriteria": [
-        "The Today's Inspiration section on the Dashboard displays the quote returned by the backend's daily-quote query.",
-        "Visiting the Dashboard on different calendar days shows different quotes.",
-        "No quote is hardcoded in the frontend source.",
-        "Existing pastel brown text styling and transparent background of the section are preserved."
+        "A 'Partner's Plan' tab or section is visible in MonthlyPlanner",
+        "The partner's goals, important dates, budget, and mood tracker for the selected month are displayed",
+        "The section is read-only",
+        "If no partner is linked or the partner has no entry for the month, a friendly empty state message is shown",
+        "Month navigation applies to the partner view as well"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "In the WeeklyPlanner page, add a partner-view tab or section that fetches and displays the partner's weekly planner entry (priority tasks, habit tracker grid, todos, energy rating, and reflection) for the currently selected ISO week as read-only content.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-7"
+        ],
+        "quotes": [
+          "Share me the partners yearly monthly weekly and daily planner section"
+        ]
+      },
+      "acceptanceCriteria": [
+        "A 'Partner's Plan' tab or section is visible in WeeklyPlanner",
+        "The partner's priority tasks, habit tracker, todos, energy rating, and reflection for the selected week are displayed",
+        "The section is read-only",
+        "If no partner is linked or the partner has no entry for the week, a friendly empty state message is shown",
+        "ISO-week navigation applies to the partner view as well"
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "In the DailyPlanner page, add a partner-view tab or section that fetches and displays the partner's daily planner entry (schedule items, tasks, notes, water intake, mood, gratitude entries, and journal entry) for the currently selected date as read-only content.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-7"
+        ],
+        "quotes": [
+          "Share me the partners yearly monthly weekly and daily planner section"
+        ]
+      },
+      "acceptanceCriteria": [
+        "A 'Partner's Plan' tab or section is visible in DailyPlanner",
+        "The partner's schedule, tasks, notes, water intake, mood, gratitude, and journal entry for the selected date are displayed",
+        "The section is read-only",
+        "If no partner is linked or the partner has no entry for the date, a friendly empty state message is shown",
+        "Date navigation applies to the partner view as well"
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "text": "Ensure the backend exposes query functions that allow fetching another user's (partner's) yearly, monthly, weekly, and daily planner entries by principal ID. If these queries do not already exist, add them to the main actor with appropriate read-only access (no mutation allowed via these endpoints).",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-7"
+        ],
+        "quotes": [
+          "Share me the partners yearly monthly weekly and daily planner section"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Query functions exist for retrieving a partner's yearly planner entry by principal and year",
+        "Query functions exist for retrieving a partner's monthly planner entry by principal and month/year",
+        "Query functions exist for retrieving a partner's weekly planner entry by principal and ISO week/year",
+        "Query functions exist for retrieving a partner's daily planner entry by principal and date",
+        "These are query (not update) calls — they do not mutate any state",
+        "Access is restricted so that only a linked couple partner can fetch the other's entries"
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "text": "Add React Query hooks in useQueries.ts for the new partner planner query functions (yearly, monthly, weekly, daily by partner principal), so the frontend components can consume partner data consistently with the existing query patterns.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-7"
+        ],
+        "quotes": [
+          "Share me the partners yearly monthly weekly and daily planner section"
+        ]
+      },
+      "acceptanceCriteria": [
+        "A hook exists to fetch the partner's yearly planner entry",
+        "A hook exists to fetch the partner's monthly planner entry",
+        "A hook exists to fetch the partner's weekly planner entry",
+        "A hook exists to fetch the partner's daily planner entry",
+        "Hooks follow the same pattern as existing hooks in useQueries.ts",
+        "Hooks return loading, error, and data states"
       ]
     }
   ],
   "constraints": [
-    "Preserve the existing transparent background and pastel brown text styling of the Today's Inspiration section.",
-    "Do not break or modify other dashboard sections."
+    "Do not allow the current user to edit or mutate the partner's planner entries from any of these views",
+    "Partner-view sections must only be visible when a couple relationship is established",
+    "Do not modify files in frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui"
   ],
   "nonGoals": [
-    "Allowing users to manually select or favorite quotes.",
-    "User-submitted or editable quote lists.",
-    "Real-time quote refresh within a single session without a page interaction.",
-    "Push notifications for daily quotes."
+    "Allowing the current user to comment on or react to the partner's planner entries",
+    "Real-time sync of partner planner data",
+    "Modifying the VisionBoard or JournalSection partner sharing behavior"
   ],
   "imageRequirements": {
     "required": [],

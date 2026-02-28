@@ -1,27 +1,96 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Auto-rotate daily quotes in Today's Inspiration section",
+  "title": "Display partner's yearly, monthly, weekly, and daily planner entries in sharing sections",
   "requirements": [
     {
-      "id": "REQ-2",
-      "summary": "Update Dashboard's Today's Inspiration section to fetch daily quote from backend using date-based query, replacing hardcoded quote with automatic daily rotation",
+      "id": "REQ-1",
+      "summary": "Add a partner-view tab in YearlyPlanner page to display the partner's yearly planner entry as read-only content",
       "acceptanceCriteria": [
-        "The Today's Inspiration section on the Dashboard displays the quote returned by the backend's daily-quote query.",
-        "Visiting the Dashboard on different calendar days shows different quotes.",
-        "No quote is hardcoded in the frontend source.",
-        "Existing pastel brown text styling and transparent background of the section are preserved."
+        "A 'Partner's Plan' tab or section is visible in YearlyPlanner",
+        "The partner's word of the year, goals, vision URLs, habit tracker, and reflection are displayed",
+        "The section is read-only — the current user cannot edit the partner's data",
+        "If no partner is linked or the partner has no entry, a friendly empty state message is shown",
+        "The current user's own planner data is unaffected"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/Dashboard.tsx",
+          "path": "frontend/src/pages/YearlyPlanner.tsx",
           "operation": "modify",
-          "description": "Replace the hardcoded inspirational quote in the Today's Inspiration section with a dynamic fetch using the useGetDailyQuote hook from useQueries.ts. Calculate the current day-of-year and pass it to the backend query. Display the returned quote while preserving the existing pastel-brown text color and transparent background styling. Ensure the section handles loading and error states gracefully."
-        },
+          "description": "Add a tab-based UI that switches between 'My Plan' and 'Partner's Plan' views. In the partner tab, fetch the partner's yearly entry using the partner's principal from the couple relationship, then display word of the year, major goals, vision image URLs, monthly habit tracker grid, and year-end reflection as read-only content. Show a friendly empty state if no partner is linked or no entry exists. Ensure year navigation applies to both tabs."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Add a partner-view tab in MonthlyPlanner page to display the partner's monthly planner entry as read-only content",
+      "acceptanceCriteria": [
+        "A 'Partner's Plan' tab or section is visible in MonthlyPlanner",
+        "The partner's goals, important dates, budget, and mood tracker for the selected month are displayed",
+        "The section is read-only",
+        "If no partner is linked or the partner has no entry for the month, a friendly empty state message is shown",
+        "Month navigation applies to the partner view as well"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/MonthlyPlanner.tsx",
+          "operation": "modify",
+          "description": "Add a tab-based UI that switches between 'My Plan' and 'Partner's Plan' views. In the partner tab, fetch the partner's monthly entry for the selected month/year using the partner's principal, then display goals, important dates, budget entries, and mood tracker as read-only content. Show a friendly empty state if no partner is linked or no entry exists. Ensure month navigation applies to both tabs."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Add a partner-view tab in WeeklyPlanner page to display the partner's weekly planner entry as read-only content",
+      "acceptanceCriteria": [
+        "A 'Partner's Plan' tab or section is visible in WeeklyPlanner",
+        "The partner's priority tasks, habit tracker, todos, energy rating, and reflection for the selected week are displayed",
+        "The section is read-only",
+        "If no partner is linked or the partner has no entry for the week, a friendly empty state message is shown",
+        "ISO-week navigation applies to the partner view as well"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/WeeklyPlanner.tsx",
+          "operation": "modify",
+          "description": "Add a tab-based UI that switches between 'My Plan' and 'Partner's Plan' views. In the partner tab, fetch the partner's weekly entry for the selected ISO week/year using the partner's principal, then display priority tasks, habit tracker grid, todos, energy rating, and reflection as read-only content. Show a friendly empty state if no partner is linked or no entry exists. Ensure ISO-week navigation applies to both tabs."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Add a partner-view tab in DailyPlanner page to display the partner's daily planner entry as read-only content",
+      "acceptanceCriteria": [
+        "A 'Partner's Plan' tab or section is visible in DailyPlanner",
+        "The partner's schedule, tasks, notes, water intake, mood, gratitude, and journal entry for the selected date are displayed",
+        "The section is read-only",
+        "If no partner is linked or the partner has no entry for the date, a friendly empty state message is shown",
+        "Date navigation applies to the partner view as well"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/DailyPlanner.tsx",
+          "operation": "modify",
+          "description": "Add a tab-based UI that switches between 'My Plan' and 'Partner's Plan' views. In the partner tab, fetch the partner's daily entry for the selected date using the partner's principal, then display schedule items, tasks, notes, water intake, mood, gratitude entries, and journal entry as read-only content. Show a friendly empty state if no partner is linked or no entry exists. Ensure date navigation applies to both tabs."
+        }
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "summary": "Add React Query hooks for fetching partner planner entries by principal",
+      "acceptanceCriteria": [
+        "A hook exists to fetch the partner's yearly planner entry",
+        "A hook exists to fetch the partner's monthly planner entry",
+        "A hook exists to fetch the partner's weekly planner entry",
+        "A hook exists to fetch the partner's daily planner entry",
+        "Hooks follow the same pattern as existing hooks in useQueries.ts",
+        "Hooks return loading, error, and data states"
+      ],
+      "file_operations": [
         {
           "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Add a new React Query hook useGetDailyQuote that accepts dayOfYear as a parameter and calls actor.getDailyQuote(dayOfYear). Configure the query to cache by dayOfYear so different dates fetch independently. Include proper enabled/retry configuration consistent with other query hooks in this file."
+          "description": "Add four new React Query hooks: usePartnerYearlyEntries, usePartnerMonthlyEntries, usePartnerWeeklyEntries, and usePartnerDailyPlannerEntries. Each hook accepts a partner principal and the relevant time parameter (year, month/year, week/year, or date) and calls the corresponding backend query function (getPartnerSpecificYearlyEntries, getPartnerSpecificMonthlyEntries, getPartnerSpecificWeeklyEntries, getPartnerSpecificDailyPlannerEntries). Follow the existing hook patterns for enabled conditions, error handling, and returning loading/error/data states."
         }
       ]
     }

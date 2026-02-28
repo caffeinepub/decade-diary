@@ -1,37 +1,62 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "App with a 'Today's Inspiration' section featuring daily rotating quotes and pastel brown styling.",
+  "summary": "New project",
   "architectural_notes": [],
   "known_issues": [],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-update-the-dashboard-s-today-s-inspiration-section-to-fetch-the-daily-quote-from-the-backend-using-the-date-based-query-introduced-in-req-1-replacing-any-hardcoded-or-static-quote-the-displayed-quote-must-update-automatically-each-new-day-without-requiring-a-page-reload-mid-session-beyond-normal-daily-visits",
-      "title": "Update the Dashboard's Today's Inspiration section to fetch the daily quote from the backend using the date-based query introduced in REQ-1, replacing any hardcoded or static quote. The displayed quote must update automatically each new day without requiring a page reload mid-session beyond normal daily visits.",
+      "id": "feature-in-the-yearlyplanner-page-add-a-partner-view-tab-or-section-that-fetches-and-displays-the-partner-s-yearly-planner-entry-word-of-the-year-major-goals-vision-image-urls-monthly-habit-tracker-grid-and-year-end-reflection-as-read-only-content-the-partner-s-data-must-be-clearly-distinguished-from-the-current-user-s-own-data",
+      "title": "In the YearlyPlanner page, add a partner-view tab or section that fetches and displays the partner's yearly planner entry (word of the year, major goals, vision image URLs, monthly habit tracker grid, and year-end reflection) as read-only content. The partner's data must be clearly distinguished from the current user's own data.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-in-the-monthlyplanner-page-add-a-partner-view-tab-or-section-that-fetches-and-displays-the-partner-s-monthly-planner-entry-goals-important-dates-budget-entries-and-mood-tracker-for-the-currently-selected-month-as-read-only-content",
+      "title": "In the MonthlyPlanner page, add a partner-view tab or section that fetches and displays the partner's monthly planner entry (goals, important dates, budget entries, and mood tracker) for the currently selected month as read-only content.",
       "reqIds": [
         "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-in-the-weeklyplanner-page-add-a-partner-view-tab-or-section-that-fetches-and-displays-the-partner-s-weekly-planner-entry-priority-tasks-habit-tracker-grid-todos-energy-rating-and-reflection-for-the-currently-selected-iso-week-as-read-only-content",
+      "title": "In the WeeklyPlanner page, add a partner-view tab or section that fetches and displays the partner's weekly planner entry (priority tasks, habit tracker grid, todos, energy rating, and reflection) for the currently selected ISO week as read-only content.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-react-query-hooks-in-usequeries-ts-for-the-new-partner-planner-query-functions-yearly-monthly-weekly-daily-by-partner-principal-so-the-frontend-components-can-consume-partner-data-consistently-with-the-existing-query-patterns",
+      "title": "Add React Query hooks in useQueries.ts for the new partner planner query functions (yearly, monthly, weekly, daily by partner principal), so the frontend components can consume partner data consistently with the existing query patterns.",
+      "reqIds": [
+        "REQ-6"
       ],
       "version": 1
     }
   ],
   "new_feature_requests": [
     {
-      "id": "AR-1",
-      "summary": "Automatically change quotes in Today's Inspiration section every day",
-      "reqIds": [],
+      "id": "AR-4",
+      "summary": "In the DailyPlanner page, add a partner-view tab or section that fetches and displays the partner's daily planner entry (schedule items, tasks, notes, water intake, mood, gratitude entries, and journal entry) for the currently selected date as read-only content.",
+      "reqIds": [
+        "REQ-4"
+      ],
       "status": "pending"
     },
     {
-      "id": "AR-2",
-      "summary": "Store a curated list of inspirational quotes in the backend and expose a function that deterministically returns a quote based on the current date (e.g., using a day-of-year index into the quotes array), so a different quote is shown each calendar day without any manual intervention.",
+      "id": "AR-5",
+      "summary": "Ensure the backend exposes query functions that allow fetching another user's (partner's) yearly, monthly, weekly, and daily planner entries by principal ID. If these queries do not already exist, add them to the main actor with appropriate read-only access (no mutation allowed via these endpoints).",
       "reqIds": [
-        "REQ-1"
+        "REQ-5"
       ],
       "status": "pending"
     }
   ],
-  "gameProjectType": "none",
   "projectName": "Future Us",
   "clarification_mode": "instant",
   "clarification_rounds": 0

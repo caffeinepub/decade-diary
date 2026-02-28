@@ -5,6 +5,8 @@ import {
   useAddVisionBoardEntry,
   useUpdateVisionBoardProgress,
   useDeleteVisionBoardEntry,
+  useGetCouple,
+  useGetPartnerVisionBoardEntries,
 } from '../hooks/useQueries';
 import { GoalCategory, type VisionBoardEntry } from '../backend';
 import { Button } from '@/components/ui/button';
@@ -40,7 +42,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, X, Loader2, Target } from 'lucide-react';
+import { Plus, Trash2, X, Loader2, Target, Heart, Users } from 'lucide-react';
 import { toast } from 'sonner';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -223,7 +225,7 @@ function AddGoalModal({ open, onClose }: AddGoalModalProps) {
   );
 }
 
-// ─── Vision Goal Card ─────────────────────────────────────────────────────────
+// ─── Vision Goal Card (editable) ──────────────────────────────────────────────
 
 interface VisionGoalCardProps {
   entry: VisionBoardEntry;
@@ -346,16 +348,77 @@ function VisionGoalCard({ entry }: VisionGoalCardProps) {
   );
 }
 
-// ─── Vision Board Page ────────────────────────────────────────────────────────
+// ─── Partner Vision Goal Card (read-only) ─────────────────────────────────────
 
-export default function VisionBoard() {
-  const { identity } = useInternetIdentity();
-  const { data: entries = [], isLoading } = useGetVisionBoardEntries();
-  const [addOpen, setAddOpen] = useState(false);
+interface PartnerVisionGoalCardProps {
+  entry: VisionBoardEntry;
+}
 
-  if (!identity) return null;
+function PartnerVisionGoalCard({ entry }: PartnerVisionGoalCardProps) {
+  const cat = CATEGORIES.find((c) => c.value === (entry.category as unknown as string));
+  const colorClass = CATEGORY_COLORS[entry.category as unknown as string] || '';
+  const progress = Number(entry.progressPercentage);
 
-  // Group by category
+  return (
+    <div className={`rounded-2xl border p-5 space-y-4 shadow-warm ${colorClass} opacity-90`}>
+      {/* Header */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xl">{cat?.emoji || '🎯'}</span>
+          <Badge variant="secondary" className="font-body text-xs">
+            {cat?.label || entry.category as unknown as string}
+          </Badge>
+          <Badge variant="outline" className="font-body text-xs">
+            {String(entry.targetYear)}
+          </Badge>
+        </div>
+        <Badge variant="outline" className="font-body text-xs text-muted-foreground shrink-0">
+          read-only
+        </Badge>
+      </div>
+
+      {/* Why this matters */}
+      {entry.whyThisMatters && (
+        <p className="text-sm font-body text-foreground/80 italic leading-relaxed">
+          "{entry.whyThisMatters}"
+        </p>
+      )}
+
+      {/* Milestones */}
+      {entry.milestones.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="label-warm text-xs">Milestones</p>
+          <ul className="space-y-1">
+            {entry.milestones.map((m, i) => (
+              <li key={i} className="flex items-start gap-1.5 text-xs font-body text-foreground/70">
+                <span className="text-primary mt-0.5">•</span>
+                <span>{m}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Progress (display only) */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <p className="label-warm text-xs">Progress</p>
+          <span className="text-sm font-body font-bold text-primary">{progress}%</span>
+        </div>
+        <Progress value={progress} className="h-2" />
+      </div>
+    </div>
+  );
+}
+
+// ─── Goals Grid ───────────────────────────────────────────────────────────────
+
+interface GoalsGridProps {
+  entries: VisionBoardEntry[];
+  readOnly?: boolean;
+}
+
+function GoalsGrid({ entries, readOnly = false }: GoalsGridProps) {
   const grouped: Record<string, VisionBoardEntry[]> = {};
   for (const entry of entries) {
     const cat = entry.category as unknown as string;
@@ -364,61 +427,147 @@ export default function VisionBoard() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fade-in">
+    <div className="space-y-8">
+      {CATEGORIES.map(({ value, label, emoji }) => {
+        const catEntries = grouped[value] || [];
+        if (catEntries.length === 0) return null;
+        return (
+          <section key={value}>
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-2xl">{emoji}</span>
+              <h2 className="font-display text-xl font-semibold text-foreground">{label}</h2>
+              <Badge variant="secondary" className="font-body text-xs ml-1">
+                {catEntries.length}
+              </Badge>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {catEntries.map((entry, i) =>
+                readOnly ? (
+                  <PartnerVisionGoalCard key={`${value}-${i}`} entry={entry} />
+                ) : (
+                  <VisionGoalCard key={`${value}-${i}`} entry={entry} />
+                )
+              )}
+            </div>
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Vision Board Page ────────────────────────────────────────────────────────
+
+export default function VisionBoard() {
+  const { identity } = useInternetIdentity();
+  const myPrincipal = identity?.getPrincipal();
+
+  // Fetch my own entries using my principal
+  const { data: entries = [], isLoading: myLoading } = useGetVisionBoardEntries(myPrincipal);
+  const { data: couple } = useGetCouple();
+  const [addOpen, setAddOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'mine' | 'partner'>('mine');
+
+  const isCouple = !!couple;
+
+  // Partner entries — uses the no-arg backend call that resolves partner from caller context
+  const { data: partnerEntries = [], isLoading: partnerLoading } = useGetPartnerVisionBoardEntries();
+
+  if (!identity) return null;
+
+  const isLoading = viewMode === 'mine' ? myLoading : partnerLoading;
+  const activeEntries = viewMode === 'mine' ? entries : partnerEntries;
+
+  return (
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="font-display text-3xl sm:text-4xl font-bold text-foreground">
-            Long-Term Vision Board 🪄
+            Vision Board 🎯
           </h1>
           <p className="font-body text-muted-foreground mt-1">
-            Define the life you want to build over the next 20 years.
+            Map your goals across every dimension of life.
           </p>
         </div>
-        <Button onClick={() => setAddOpen(true)} className="font-body font-semibold rounded-2xl shadow-warm">
-          <Plus className="w-4 h-4 mr-2" /> Add Goal
-        </Button>
+        {viewMode === 'mine' && (
+          <Button
+            onClick={() => setAddOpen(true)}
+            className="font-body font-semibold rounded-2xl shadow-warm shrink-0"
+          >
+            <Plus className="w-4 h-4 mr-2" /> Add Goal
+          </Button>
+        )}
       </div>
+
+      {/* Couple Toggle */}
+      {isCouple && (
+        <div className="flex items-center gap-2 p-1 bg-secondary/50 rounded-2xl w-fit">
+          <button
+            onClick={() => setViewMode('mine')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-body font-semibold transition-all ${
+              viewMode === 'mine'
+                ? 'bg-card shadow-warm text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Target className="w-4 h-4" />
+            My Goals
+          </button>
+          <button
+            onClick={() => setViewMode('partner')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-body font-semibold transition-all ${
+              viewMode === 'partner'
+                ? 'bg-card shadow-warm text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            Partner's Goals
+          </button>
+        </div>
+      )}
 
       {/* Content */}
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {[1, 2, 3, 4, 5, 6].map((i) => <Skeleton key={i} className="h-48 rounded-2xl" />)}
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Skeleton key={i} className="h-48 rounded-2xl" />
+          ))}
         </div>
-      ) : entries.length === 0 ? (
-        <div className="card-warm p-16 text-center space-y-4">
-          <Target className="w-12 h-12 text-muted-foreground mx-auto" />
-          <h2 className="font-display text-2xl font-semibold text-foreground">Start Your Vision</h2>
+      ) : activeEntries.length === 0 ? (
+        <div className="text-center py-20 space-y-4">
+          <div className="text-6xl">🌟</div>
+          <h2 className="font-display text-2xl font-semibold text-foreground">
+            {viewMode === 'partner' ? "Your partner hasn't added any goals yet" : 'Your vision board is empty'}
+          </h2>
           <p className="font-body text-muted-foreground max-w-md mx-auto">
-            Add your first goal across any of the 7 life categories and begin mapping your long-term journey.
+            {viewMode === 'partner'
+              ? 'Check back later when your partner adds their vision goals.'
+              : 'Start by adding your first vision goal. Dream big — your future self will thank you!'}
           </p>
-          <Button onClick={() => setAddOpen(true)} className="font-body font-semibold rounded-2xl">
-            <Plus className="w-4 h-4 mr-2" /> Add Your First Goal
-          </Button>
+          {viewMode === 'mine' && (
+            <Button
+              onClick={() => setAddOpen(true)}
+              size="lg"
+              className="font-body font-semibold rounded-2xl shadow-warm mt-2"
+            >
+              <Plus className="w-4 h-4 mr-2" /> Add Your First Goal
+            </Button>
+          )}
         </div>
       ) : (
-        <div className="space-y-8">
-          {CATEGORIES.map(({ value, label, emoji }) => {
-            const catEntries = grouped[value] || [];
-            if (catEntries.length === 0) return null;
-            return (
-              <section key={value}>
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="text-2xl">{emoji}</span>
-                  <h2 className="font-display text-xl font-semibold text-foreground">{label}</h2>
-                  <Badge variant="secondary" className="font-body text-xs ml-1">
-                    {catEntries.length}
-                  </Badge>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {catEntries.map((entry, i) => (
-                    <VisionGoalCard key={`${value}-${i}`} entry={entry} />
-                  ))}
-                </div>
-              </section>
-            );
-          })}
-        </div>
+        <>
+          {viewMode === 'partner' && (
+            <div className="flex items-center gap-2 px-1">
+              <Heart className="w-4 h-4 text-rose-dusty fill-current" />
+              <span className="font-body text-sm font-semibold text-muted-foreground">
+                Partner's Goals (read-only)
+              </span>
+            </div>
+          )}
+          <GoalsGrid entries={activeEntries} readOnly={viewMode === 'partner'} />
+        </>
       )}
 
       <AddGoalModal open={addOpen} onClose={() => setAddOpen(false)} />

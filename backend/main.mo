@@ -1,7 +1,6 @@
 import Text "mo:core/Text";
 import Nat "mo:core/Nat";
 import Map "mo:core/Map";
-import Iter "mo:core/Iter";
 import List "mo:core/List";
 import Int "mo:core/Int";
 import Array "mo:core/Array";
@@ -12,11 +11,11 @@ import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
 
 actor {
-  // ------------------------- Authorization Setup ----------------------
+  //------------------------- Authorization Setup ----------------------
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
-  // ------------------------- Types ------------------------
+  //------------------------- Types ------------------------
 
   public type UserProfile = {
     name : Text;
@@ -130,7 +129,7 @@ actor {
     quoteText : Text;
   };
 
-  // --------------------------- Journal Types --------------------------
+  //--------------------------- Journal Types --------------------------
 
   public type EmotionTag = {
     #happy;
@@ -192,7 +191,7 @@ actor {
     isPublic : Bool;
   };
 
-  // ------------------------- State -----------------------
+  //------------------------- State -----------------------
 
   let userProfiles = Map.empty<Principal, UserProfile>();
   let couples = Map.empty<Principal, Couple>();
@@ -241,7 +240,7 @@ actor {
     "Let your vision be greater than your fears:",
   ];
 
-  // ------------------------- Helper Functions ------------------------
+  //------------------------- Helper Functions ------------------------
 
   func getPartner(caller : Principal) : ?Principal {
     if (caller.isAnonymous()) { return null };
@@ -253,6 +252,19 @@ actor {
     };
   };
 
+  // Returns true if caller and owner are in the same couple.
+  func areLinkedPartners(caller : Principal, owner : Principal) : Bool {
+    if (caller.isAnonymous()) { return false };
+    if (caller == owner) { return false };
+    switch (couples.get(caller)) {
+      case (null) { false };
+      case (?couple) {
+        (caller == couple.partner1 or caller == couple.partner2) and
+        (owner == couple.partner1 or owner == couple.partner2);
+      };
+    };
+  };
+
   // Returns true if caller can view an entry owned by `owner`:
   // - caller is the owner, OR
   // - the entry is marked public, OR
@@ -260,21 +272,18 @@ actor {
   func canViewEntry(caller : Principal, owner : Principal, entryIsPublic : Bool) : Bool {
     if (caller == owner) { return true };
     if (entryIsPublic) { return true };
-    // Couple-shared read: caller and owner must be in the same couple
-    if (not caller.isAnonymous()) {
-      switch (couples.get(caller)) {
-        case (null) { false };
-        case (?couple) {
-          (caller == couple.partner1 or caller == couple.partner2) and
-          (owner == couple.partner1 or owner == couple.partner2);
-        };
-      };
-    } else {
-      false;
-    };
+    areLinkedPartners(caller, owner);
   };
 
-  // ------------------------- User Profile Management -----------------------
+  // Returns true if caller is allowed to read all entries for `owner`
+  // (owner themselves, linked partner, or admin).
+  func canReadAllEntriesFor(caller : Principal, owner : Principal) : Bool {
+    if (caller == owner) { return true };
+    if (AccessControl.isAdmin(accessControlState, caller)) { return true };
+    areLinkedPartners(caller, owner);
+  };
+
+  //------------------------- User Profile Management -----------------------
 
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
@@ -297,7 +306,7 @@ actor {
     userProfiles.add(caller, profile);
   };
 
-  // ------------------------- Couples Management -----------------------
+  //------------------------- Couples Management -----------------------
 
   public shared ({ caller }) func createCouple(partner1 : Principal, partner2 : Principal) : async () {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
@@ -349,7 +358,7 @@ actor {
     couples.values().toArray();
   };
 
-  // ------------------- Journaling - Daily Journal ---------------------
+  //------------------- Journaling - Daily Journal ---------------------
 
   public shared ({ caller }) func createOrUpdateDailyJournal(entry : DailyJournalEntry) : async () {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
@@ -395,7 +404,7 @@ actor {
     };
   };
 
-  // ------------------- Journaling - Emotional Journal ----------------
+  //------------------- Journaling - Emotional Journal ----------------
 
   public shared ({ caller }) func createOrUpdateEmotionalJournal(entry : EmotionalJournalEntry) : async () {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
@@ -438,7 +447,7 @@ actor {
     };
   };
 
-  // ------------------- Journaling - Night Reflection -----------------
+  //------------------- Journaling - Night Reflection -----------------
 
   public shared ({ caller }) func createOrUpdateNightReflection(entry : NightReflectionJournalEntry) : async () {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
@@ -481,7 +490,7 @@ actor {
     };
   };
 
-  // ------------------- Journaling - Growth Journal -------------------
+  //------------------- Journaling - Growth Journal -------------------
 
   public shared ({ caller }) func createOrUpdateGrowthJournal(entry : GrowthJournalEntry) : async () {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
@@ -524,7 +533,7 @@ actor {
     };
   };
 
-  // ------------------- Vision Board Entry Management ----------------------
+  //------------------- Vision Board Entry Management ----------------------
 
   public shared ({ caller }) func addVisionBoardEntry(entry : VisionBoardEntry) : async () {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
@@ -538,13 +547,39 @@ actor {
     visionBoardEntries.add(caller, entries);
   };
 
-  public query ({ caller }) func getVisionBoardEntries() : async [VisionBoardEntry] {
+  // Returns all vision board entries for `owner`.
+  // Caller must be the owner, the owner's linked partner, or an admin.
+  public query ({ caller }) func getOwnerVisionBoardEntries(owner : Principal) : async [VisionBoardEntry] {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
       Runtime.trap("Unauthorized: Only users can view vision board entries");
     };
-    switch (visionBoardEntries.get(caller)) {
+    if (not canReadAllEntriesFor(caller, owner)) {
+      Runtime.trap("Unauthorized: You can only view vision board entries for yourself or your linked partner");
+    };
+    switch (visionBoardEntries.get(owner)) {
       case (null) { [] };
       case (?entries) { entries.toArray() };
+    };
+  };
+
+  // Returns all vision board entries for the partner of the authenticated caller.
+  // Only callable by a user who is in a couple.
+  public query ({ caller }) func getPartnerVisionBoardEntries() : async [VisionBoardEntry] {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can view partner's vision board entries");
+    };
+    switch (getPartner(caller)) {
+      case (null) { Runtime.trap("No linked partner found") };
+      case (?partnerPrincipal) {
+        if (partnerPrincipal.isAnonymous()) {
+          Runtime.trap("Linked partner principal is anonymous");
+        };
+
+        switch (visionBoardEntries.get(partnerPrincipal)) {
+          case (null) { [] };
+          case (?entries) { entries.toArray() };
+        };
+      };
     };
   };
 
@@ -590,7 +625,7 @@ actor {
     visionBoardEntries.add(caller, updatedEntries);
   };
 
-  // ------------------- Daily Planner Management ----------------------
+  //------------------- Daily Planner Management ----------------------
 
   public shared ({ caller }) func addDailyPlannerEntry(entry : DailyPlannerEntry) : async () {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
@@ -604,11 +639,81 @@ actor {
     dailyPlannerEntries.add(caller, entries);
   };
 
-  public query ({ caller }) func getDailyPlannerEntries() : async [DailyPlannerEntry] {
+  // Returns all daily planner entries for `owner`.
+  // Caller must be the owner, the owner's linked partner, or an admin.
+  public query ({ caller }) func getOwnerDailyPlannerEntries(owner : Principal) : async [DailyPlannerEntry] {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
       Runtime.trap("Unauthorized: Only users can view daily planner entries");
     };
-    switch (dailyPlannerEntries.get(caller)) {
+    if (not canReadAllEntriesFor(caller, owner)) {
+      Runtime.trap("Unauthorized: You can only view daily planner entries for yourself or your linked partner");
+    };
+    switch (dailyPlannerEntries.get(owner)) {
+      case (null) { [] };
+      case (?entries) { entries.toArray() };
+    };
+  };
+
+  // New: Returns daily planner entries for a specified user, accessible by their partner.
+  public query ({ caller }) func getPartnerSpecificDailyPlannerEntries(owner : Principal) : async [DailyPlannerEntry] {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can view daily planner entries");
+    };
+
+    let partner = getPartner(caller);
+    if (partner == null or partner != ?owner) {
+      Runtime.trap("Unauthorized: You can only view daily planner entries for your linked partner");
+    };
+
+    switch (dailyPlannerEntries.get(owner)) {
+      case (null) { [] };
+      case (?entries) { entries.toArray() };
+    };
+  };
+
+  public query ({ caller }) func getPartnerSpecificYearlyEntries(owner : Principal) : async [YearlyEntry] {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can view yearly entries");
+    };
+
+    let partner = getPartner(caller);
+    if (partner == null or partner != ?owner) {
+      Runtime.trap("Unauthorized: You can only view yearly entries for your linked partner");
+    };
+
+    switch (yearlyEntries.get(owner)) {
+      case (null) { [] };
+      case (?entries) { entries.toArray() };
+    };
+  };
+
+  public query ({ caller }) func getPartnerSpecificMonthlyEntries(owner : Principal) : async [MonthlyEntry] {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can view monthly entries");
+    };
+
+    let partner = getPartner(caller);
+    if (partner == null or partner != ?owner) {
+      Runtime.trap("Unauthorized: You can only view monthly entries for your linked partner");
+    };
+
+    switch (monthlyEntries.get(owner)) {
+      case (null) { [] };
+      case (?entries) { entries.toArray() };
+    };
+  };
+
+  public query ({ caller }) func getPartnerSpecificWeeklyEntries(owner : Principal) : async [WeeklyEntry] {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can view weekly entries");
+    };
+
+    let partner = getPartner(caller);
+    if (partner == null or partner != ?owner) {
+      Runtime.trap("Unauthorized: You can only view weekly entries for your linked partner");
+    };
+
+    switch (weeklyEntries.get(owner)) {
       case (null) { [] };
       case (?entries) { entries.toArray() };
     };
@@ -683,6 +788,21 @@ actor {
     };
   };
 
+  // Returns all yearly entries for `owner`.
+  // Caller must be the owner, the owner's linked partner, or an admin.
+  public query ({ caller }) func getOwnerYearlyEntries(owner : Principal) : async [YearlyEntry] {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can view yearly entries");
+    };
+    if (not canReadAllEntriesFor(caller, owner)) {
+      Runtime.trap("Unauthorized: You can only view yearly entries for yourself or your linked partner");
+    };
+    switch (yearlyEntries.get(owner)) {
+      case (null) { [] };
+      case (?entries) { entries.toArray() };
+    };
+  };
+
   public shared ({ caller }) func updateYearlyEntry(year : Int, updatedEntry : YearlyEntry) : async () {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
       Runtime.trap("Unauthorized: Only users can update yearly entries");
@@ -739,6 +859,21 @@ actor {
     };
   };
 
+  // Returns all monthly entries for `owner`.
+  // Caller must be the owner, the owner's linked partner, or an admin.
+  public query ({ caller }) func getOwnerMonthlyEntries(owner : Principal) : async [MonthlyEntry] {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can view monthly entries");
+    };
+    if (not canReadAllEntriesFor(caller, owner)) {
+      Runtime.trap("Unauthorized: You can only view monthly entries for yourself or your linked partner");
+    };
+    switch (monthlyEntries.get(owner)) {
+      case (null) { [] };
+      case (?entries) { entries.toArray() };
+    };
+  };
+
   public shared ({ caller }) func updateMonthlyEntry(year : Int, month : Nat, updatedEntry : MonthlyEntry) : async () {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
       Runtime.trap("Unauthorized: Only users can update monthly entries");
@@ -790,6 +925,21 @@ actor {
       Runtime.trap("Unauthorized: Only users can view weekly entries");
     };
     switch (weeklyEntries.get(caller)) {
+      case (null) { [] };
+      case (?entries) { entries.toArray() };
+    };
+  };
+
+  // Returns all weekly entries for `owner`.
+  // Caller must be the owner, the owner's linked partner, or an admin.
+  public query ({ caller }) func getOwnerWeeklyEntries(owner : Principal) : async [WeeklyEntry] {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can view weekly entries");
+    };
+    if (not canReadAllEntriesFor(caller, owner)) {
+      Runtime.trap("Unauthorized: You can only view weekly entries for yourself or your linked partner");
+    };
+    switch (weeklyEntries.get(owner)) {
       case (null) { [] };
       case (?entries) { entries.toArray() };
     };
