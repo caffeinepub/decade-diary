@@ -12,20 +12,6 @@ export const Task = IDL.Record({
   'description' : IDL.Text,
   'isComplete' : IDL.Bool,
 });
-export const ScheduleItem = IDL.Record({
-  'timeBlock' : IDL.Text,
-  'activity' : IDL.Text,
-});
-export const DailyPlannerEntry = IDL.Record({
-  'tasks' : IDL.Vec(Task),
-  'waterIntake' : IDL.Nat,
-  'date' : IDL.Int,
-  'gratitudeEntries' : IDL.Vec(IDL.Text),
-  'journalEntry' : IDL.Text,
-  'notes' : IDL.Text,
-  'moodEmoji' : IDL.Text,
-  'schedule' : IDL.Vec(ScheduleItem),
-});
 export const ImportantDate = IDL.Record({
   'date' : IDL.Int,
   'labelText' : IDL.Text,
@@ -43,22 +29,6 @@ export const MonthlyEntry = IDL.Record({
   'importantDates' : IDL.Vec(ImportantDate),
   'budget' : Budget,
   'reflection' : IDL.Text,
-});
-export const GoalCategory = IDL.Variant({
-  'relationship' : IDL.Null,
-  'spiritual' : IDL.Null,
-  'travel' : IDL.Null,
-  'personalGrowth' : IDL.Null,
-  'career' : IDL.Null,
-  'financial' : IDL.Null,
-  'health' : IDL.Null,
-});
-export const VisionBoardEntry = IDL.Record({
-  'progressPercentage' : IDL.Nat,
-  'targetYear' : IDL.Int,
-  'category' : GoalCategory,
-  'whyThisMatters' : IDL.Text,
-  'milestones' : IDL.Vec(IDL.Text),
 });
 export const HabitWeekly = IDL.Record({
   'name' : IDL.Text,
@@ -89,6 +59,12 @@ export const UserRole = IDL.Variant({
   'admin' : IDL.Null,
   'user' : IDL.Null,
   'guest' : IDL.Null,
+});
+export const CoupleCreateError = IDL.Variant({
+  'partnerAlreadyLinked' : IDL.Null,
+  'callerAlreadyLinked' : IDL.Null,
+  'unauthorized' : IDL.Null,
+  'anonymousNotPermitted' : IDL.Null,
 });
 export const DailyJournalEntry = IDL.Record({
   'body' : IDL.Text,
@@ -152,16 +128,48 @@ export const UserProfile = IDL.Record({
   'displayName' : IDL.Text,
   'name' : IDL.Text,
 });
+export const ScheduleItem = IDL.Record({
+  'timeBlock' : IDL.Text,
+  'activity' : IDL.Text,
+});
+export const DailyPlannerEntry = IDL.Record({
+  'tasks' : IDL.Vec(Task),
+  'waterIntake' : IDL.Nat,
+  'date' : IDL.Int,
+  'gratitudeEntries' : IDL.Vec(IDL.Text),
+  'journalEntry' : IDL.Text,
+  'notes' : IDL.Text,
+  'moodEmoji' : IDL.Text,
+  'schedule' : IDL.Vec(ScheduleItem),
+});
+export const GoalCategory = IDL.Variant({
+  'relationship' : IDL.Null,
+  'spiritual' : IDL.Null,
+  'travel' : IDL.Null,
+  'personalGrowth' : IDL.Null,
+  'career' : IDL.Null,
+  'financial' : IDL.Null,
+  'health' : IDL.Null,
+});
+export const VisionBoardEntry = IDL.Record({
+  'progressPercentage' : IDL.Nat,
+  'targetYear' : IDL.Int,
+  'category' : GoalCategory,
+  'whyThisMatters' : IDL.Text,
+  'milestones' : IDL.Vec(IDL.Text),
+});
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
-  'addDailyPlannerEntry' : IDL.Func([DailyPlannerEntry], [], []),
   'addMonthlyEntry' : IDL.Func([MonthlyEntry], [], []),
-  'addVisionBoardEntry' : IDL.Func([VisionBoardEntry], [], []),
   'addWeeklyEntry' : IDL.Func([WeeklyEntry], [], []),
   'addYearlyEntry' : IDL.Func([YearlyEntry], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
-  'createCouple' : IDL.Func([IDL.Principal, IDL.Principal], [], []),
+  'createCouple' : IDL.Func(
+      [IDL.Principal, IDL.Principal],
+      [IDL.Opt(CoupleCreateError)],
+      [],
+    ),
   'createOrUpdateDailyJournal' : IDL.Func([DailyJournalEntry], [], []),
   'createOrUpdateEmotionalJournal' : IDL.Func([EmotionalJournalEntry], [], []),
   'createOrUpdateGrowthJournal' : IDL.Func([GrowthJournalEntry], [], []),
@@ -175,14 +183,25 @@ export const idlService = IDL.Service({
   'deleteVisionBoardEntry' : IDL.Func([IDL.Int], [], []),
   'deleteWeeklyEntry' : IDL.Func([IDL.Int, IDL.Nat], [], []),
   'deleteYearlyEntry' : IDL.Func([IDL.Int], [], []),
+  'dissolveCouple' : IDL.Func([], [IDL.Bool], []),
   'getAllCouples' : IDL.Func([], [IDL.Vec(Couple)], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getCouple' : IDL.Func([IDL.Principal], [IDL.Opt(Couple)], ['query']),
   'getDailyJournals' : IDL.Func([], [IDL.Vec(DailyJournalEntry)], ['query']),
+  'getDailyJournalsForOwner' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Vec(DailyJournalEntry)],
+      ['query'],
+    ),
   'getDailyJournalsForUser' : IDL.Func(
       [IDL.Principal],
       [IDL.Vec(DailyJournalEntry)],
+      ['query'],
+    ),
+  'getDailyPlannerEntries' : IDL.Func(
+      [],
+      [IDL.Vec(DailyPlannerEntry)],
       ['query'],
     ),
   'getDailyQuote' : IDL.Func([IDL.Nat], [IDL.Text], ['query']),
@@ -191,13 +210,13 @@ export const idlService = IDL.Service({
       [IDL.Vec(EmotionalJournalEntry)],
       ['query'],
     ),
-  'getEmotionalJournalsForUser' : IDL.Func(
+  'getEmotionalJournalsForOwner' : IDL.Func(
       [IDL.Principal],
       [IDL.Vec(EmotionalJournalEntry)],
       ['query'],
     ),
   'getGrowthJournals' : IDL.Func([], [IDL.Vec(GrowthJournalEntry)], ['query']),
-  'getGrowthJournalsForUser' : IDL.Func(
+  'getGrowthJournalsForOwner' : IDL.Func(
       [IDL.Principal],
       [IDL.Vec(GrowthJournalEntry)],
       ['query'],
@@ -208,24 +227,14 @@ export const idlService = IDL.Service({
       [IDL.Vec(NightReflectionJournalEntry)],
       ['query'],
     ),
-  'getNightReflectionsForUser' : IDL.Func(
+  'getNightReflectionsForOwner' : IDL.Func(
       [IDL.Principal],
       [IDL.Vec(NightReflectionJournalEntry)],
-      ['query'],
-    ),
-  'getOwnerDailyPlannerEntries' : IDL.Func(
-      [IDL.Principal],
-      [IDL.Vec(DailyPlannerEntry)],
       ['query'],
     ),
   'getOwnerMonthlyEntries' : IDL.Func(
       [IDL.Principal],
       [IDL.Vec(MonthlyEntry)],
-      ['query'],
-    ),
-  'getOwnerVisionBoardEntries' : IDL.Func(
-      [IDL.Principal],
-      [IDL.Vec(VisionBoardEntry)],
       ['query'],
     ),
   'getOwnerWeeklyEntries' : IDL.Func(
@@ -238,40 +247,72 @@ export const idlService = IDL.Service({
       [IDL.Vec(YearlyEntry)],
       ['query'],
     ),
-  'getPartnerSpecificDailyPlannerEntries' : IDL.Func(
-      [IDL.Principal],
+  'getPartnerDailyJournals' : IDL.Func(
+      [],
+      [IDL.Vec(DailyJournalEntry)],
+      ['query'],
+    ),
+  'getPartnerDailyPlannerEntries' : IDL.Func(
+      [],
       [IDL.Vec(DailyPlannerEntry)],
       ['query'],
     ),
-  'getPartnerSpecificMonthlyEntries' : IDL.Func(
-      [IDL.Principal],
-      [IDL.Vec(MonthlyEntry)],
+  'getPartnerDailyPlannerEntryForDate' : IDL.Func(
+      [IDL.Int],
+      [IDL.Opt(DailyPlannerEntry)],
       ['query'],
     ),
-  'getPartnerSpecificWeeklyEntries' : IDL.Func(
-      [IDL.Principal],
-      [IDL.Vec(WeeklyEntry)],
+  'getPartnerEmotionalJournals' : IDL.Func(
+      [],
+      [IDL.Vec(EmotionalJournalEntry)],
       ['query'],
     ),
-  'getPartnerSpecificYearlyEntries' : IDL.Func(
-      [IDL.Principal],
-      [IDL.Vec(YearlyEntry)],
+  'getPartnerGrowthJournals' : IDL.Func(
+      [],
+      [IDL.Vec(GrowthJournalEntry)],
       ['query'],
     ),
+  'getPartnerJournals' : IDL.Func(
+      [],
+      [
+        IDL.Record({
+          'growth' : IDL.Vec(GrowthJournalEntry),
+          'night' : IDL.Vec(NightReflectionJournalEntry),
+          'emotional' : IDL.Vec(EmotionalJournalEntry),
+          'daily' : IDL.Vec(DailyJournalEntry),
+        }),
+      ],
+      ['query'],
+    ),
+  'getPartnerMonthlyEntries' : IDL.Func([], [IDL.Vec(MonthlyEntry)], ['query']),
+  'getPartnerNightReflections' : IDL.Func(
+      [],
+      [IDL.Vec(NightReflectionJournalEntry)],
+      ['query'],
+    ),
+  'getPartnerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getPartnerVisionBoardEntries' : IDL.Func(
       [],
       [IDL.Vec(VisionBoardEntry)],
       ['query'],
     ),
+  'getPartnerWeeklyEntries' : IDL.Func([], [IDL.Vec(WeeklyEntry)], ['query']),
+  'getPartnerYearlyEntries' : IDL.Func([], [IDL.Vec(YearlyEntry)], ['query']),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
       ['query'],
     ),
+  'getVisionBoardEntries' : IDL.Func(
+      [],
+      [IDL.Vec(VisionBoardEntry)],
+      ['query'],
+    ),
   'getWeeklyEntries' : IDL.Func([], [IDL.Vec(WeeklyEntry)], ['query']),
-  'getYearlyEntries' : IDL.Func([], [IDL.Vec(YearlyEntry)], ['query']),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'saveDailyPlannerEntry' : IDL.Func([DailyPlannerEntry], [], []),
+  'saveVisionBoardEntry' : IDL.Func([VisionBoardEntry], [], []),
   'updateMonthlyEntry' : IDL.Func([IDL.Int, IDL.Nat, MonthlyEntry], [], []),
   'updateVisionBoardProgress' : IDL.Func([IDL.Int, IDL.Nat], [], []),
   'updateWaterIntake' : IDL.Func([IDL.Int, IDL.Nat], [], []),
@@ -285,20 +326,6 @@ export const idlFactory = ({ IDL }) => {
   const Task = IDL.Record({
     'description' : IDL.Text,
     'isComplete' : IDL.Bool,
-  });
-  const ScheduleItem = IDL.Record({
-    'timeBlock' : IDL.Text,
-    'activity' : IDL.Text,
-  });
-  const DailyPlannerEntry = IDL.Record({
-    'tasks' : IDL.Vec(Task),
-    'waterIntake' : IDL.Nat,
-    'date' : IDL.Int,
-    'gratitudeEntries' : IDL.Vec(IDL.Text),
-    'journalEntry' : IDL.Text,
-    'notes' : IDL.Text,
-    'moodEmoji' : IDL.Text,
-    'schedule' : IDL.Vec(ScheduleItem),
   });
   const ImportantDate = IDL.Record({
     'date' : IDL.Int,
@@ -317,22 +344,6 @@ export const idlFactory = ({ IDL }) => {
     'importantDates' : IDL.Vec(ImportantDate),
     'budget' : Budget,
     'reflection' : IDL.Text,
-  });
-  const GoalCategory = IDL.Variant({
-    'relationship' : IDL.Null,
-    'spiritual' : IDL.Null,
-    'travel' : IDL.Null,
-    'personalGrowth' : IDL.Null,
-    'career' : IDL.Null,
-    'financial' : IDL.Null,
-    'health' : IDL.Null,
-  });
-  const VisionBoardEntry = IDL.Record({
-    'progressPercentage' : IDL.Nat,
-    'targetYear' : IDL.Int,
-    'category' : GoalCategory,
-    'whyThisMatters' : IDL.Text,
-    'milestones' : IDL.Vec(IDL.Text),
   });
   const HabitWeekly = IDL.Record({
     'name' : IDL.Text,
@@ -363,6 +374,12 @@ export const idlFactory = ({ IDL }) => {
     'admin' : IDL.Null,
     'user' : IDL.Null,
     'guest' : IDL.Null,
+  });
+  const CoupleCreateError = IDL.Variant({
+    'partnerAlreadyLinked' : IDL.Null,
+    'callerAlreadyLinked' : IDL.Null,
+    'unauthorized' : IDL.Null,
+    'anonymousNotPermitted' : IDL.Null,
   });
   const DailyJournalEntry = IDL.Record({
     'body' : IDL.Text,
@@ -426,16 +443,48 @@ export const idlFactory = ({ IDL }) => {
     'displayName' : IDL.Text,
     'name' : IDL.Text,
   });
+  const ScheduleItem = IDL.Record({
+    'timeBlock' : IDL.Text,
+    'activity' : IDL.Text,
+  });
+  const DailyPlannerEntry = IDL.Record({
+    'tasks' : IDL.Vec(Task),
+    'waterIntake' : IDL.Nat,
+    'date' : IDL.Int,
+    'gratitudeEntries' : IDL.Vec(IDL.Text),
+    'journalEntry' : IDL.Text,
+    'notes' : IDL.Text,
+    'moodEmoji' : IDL.Text,
+    'schedule' : IDL.Vec(ScheduleItem),
+  });
+  const GoalCategory = IDL.Variant({
+    'relationship' : IDL.Null,
+    'spiritual' : IDL.Null,
+    'travel' : IDL.Null,
+    'personalGrowth' : IDL.Null,
+    'career' : IDL.Null,
+    'financial' : IDL.Null,
+    'health' : IDL.Null,
+  });
+  const VisionBoardEntry = IDL.Record({
+    'progressPercentage' : IDL.Nat,
+    'targetYear' : IDL.Int,
+    'category' : GoalCategory,
+    'whyThisMatters' : IDL.Text,
+    'milestones' : IDL.Vec(IDL.Text),
+  });
   
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
-    'addDailyPlannerEntry' : IDL.Func([DailyPlannerEntry], [], []),
     'addMonthlyEntry' : IDL.Func([MonthlyEntry], [], []),
-    'addVisionBoardEntry' : IDL.Func([VisionBoardEntry], [], []),
     'addWeeklyEntry' : IDL.Func([WeeklyEntry], [], []),
     'addYearlyEntry' : IDL.Func([YearlyEntry], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
-    'createCouple' : IDL.Func([IDL.Principal, IDL.Principal], [], []),
+    'createCouple' : IDL.Func(
+        [IDL.Principal, IDL.Principal],
+        [IDL.Opt(CoupleCreateError)],
+        [],
+      ),
     'createOrUpdateDailyJournal' : IDL.Func([DailyJournalEntry], [], []),
     'createOrUpdateEmotionalJournal' : IDL.Func(
         [EmotionalJournalEntry],
@@ -453,14 +502,25 @@ export const idlFactory = ({ IDL }) => {
     'deleteVisionBoardEntry' : IDL.Func([IDL.Int], [], []),
     'deleteWeeklyEntry' : IDL.Func([IDL.Int, IDL.Nat], [], []),
     'deleteYearlyEntry' : IDL.Func([IDL.Int], [], []),
+    'dissolveCouple' : IDL.Func([], [IDL.Bool], []),
     'getAllCouples' : IDL.Func([], [IDL.Vec(Couple)], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getCouple' : IDL.Func([IDL.Principal], [IDL.Opt(Couple)], ['query']),
     'getDailyJournals' : IDL.Func([], [IDL.Vec(DailyJournalEntry)], ['query']),
+    'getDailyJournalsForOwner' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Vec(DailyJournalEntry)],
+        ['query'],
+      ),
     'getDailyJournalsForUser' : IDL.Func(
         [IDL.Principal],
         [IDL.Vec(DailyJournalEntry)],
+        ['query'],
+      ),
+    'getDailyPlannerEntries' : IDL.Func(
+        [],
+        [IDL.Vec(DailyPlannerEntry)],
         ['query'],
       ),
     'getDailyQuote' : IDL.Func([IDL.Nat], [IDL.Text], ['query']),
@@ -469,7 +529,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(EmotionalJournalEntry)],
         ['query'],
       ),
-    'getEmotionalJournalsForUser' : IDL.Func(
+    'getEmotionalJournalsForOwner' : IDL.Func(
         [IDL.Principal],
         [IDL.Vec(EmotionalJournalEntry)],
         ['query'],
@@ -479,7 +539,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(GrowthJournalEntry)],
         ['query'],
       ),
-    'getGrowthJournalsForUser' : IDL.Func(
+    'getGrowthJournalsForOwner' : IDL.Func(
         [IDL.Principal],
         [IDL.Vec(GrowthJournalEntry)],
         ['query'],
@@ -490,24 +550,14 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(NightReflectionJournalEntry)],
         ['query'],
       ),
-    'getNightReflectionsForUser' : IDL.Func(
+    'getNightReflectionsForOwner' : IDL.Func(
         [IDL.Principal],
         [IDL.Vec(NightReflectionJournalEntry)],
-        ['query'],
-      ),
-    'getOwnerDailyPlannerEntries' : IDL.Func(
-        [IDL.Principal],
-        [IDL.Vec(DailyPlannerEntry)],
         ['query'],
       ),
     'getOwnerMonthlyEntries' : IDL.Func(
         [IDL.Principal],
         [IDL.Vec(MonthlyEntry)],
-        ['query'],
-      ),
-    'getOwnerVisionBoardEntries' : IDL.Func(
-        [IDL.Principal],
-        [IDL.Vec(VisionBoardEntry)],
         ['query'],
       ),
     'getOwnerWeeklyEntries' : IDL.Func(
@@ -520,40 +570,76 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(YearlyEntry)],
         ['query'],
       ),
-    'getPartnerSpecificDailyPlannerEntries' : IDL.Func(
-        [IDL.Principal],
+    'getPartnerDailyJournals' : IDL.Func(
+        [],
+        [IDL.Vec(DailyJournalEntry)],
+        ['query'],
+      ),
+    'getPartnerDailyPlannerEntries' : IDL.Func(
+        [],
         [IDL.Vec(DailyPlannerEntry)],
         ['query'],
       ),
-    'getPartnerSpecificMonthlyEntries' : IDL.Func(
-        [IDL.Principal],
+    'getPartnerDailyPlannerEntryForDate' : IDL.Func(
+        [IDL.Int],
+        [IDL.Opt(DailyPlannerEntry)],
+        ['query'],
+      ),
+    'getPartnerEmotionalJournals' : IDL.Func(
+        [],
+        [IDL.Vec(EmotionalJournalEntry)],
+        ['query'],
+      ),
+    'getPartnerGrowthJournals' : IDL.Func(
+        [],
+        [IDL.Vec(GrowthJournalEntry)],
+        ['query'],
+      ),
+    'getPartnerJournals' : IDL.Func(
+        [],
+        [
+          IDL.Record({
+            'growth' : IDL.Vec(GrowthJournalEntry),
+            'night' : IDL.Vec(NightReflectionJournalEntry),
+            'emotional' : IDL.Vec(EmotionalJournalEntry),
+            'daily' : IDL.Vec(DailyJournalEntry),
+          }),
+        ],
+        ['query'],
+      ),
+    'getPartnerMonthlyEntries' : IDL.Func(
+        [],
         [IDL.Vec(MonthlyEntry)],
         ['query'],
       ),
-    'getPartnerSpecificWeeklyEntries' : IDL.Func(
-        [IDL.Principal],
-        [IDL.Vec(WeeklyEntry)],
+    'getPartnerNightReflections' : IDL.Func(
+        [],
+        [IDL.Vec(NightReflectionJournalEntry)],
         ['query'],
       ),
-    'getPartnerSpecificYearlyEntries' : IDL.Func(
-        [IDL.Principal],
-        [IDL.Vec(YearlyEntry)],
-        ['query'],
-      ),
+    'getPartnerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getPartnerVisionBoardEntries' : IDL.Func(
         [],
         [IDL.Vec(VisionBoardEntry)],
         ['query'],
       ),
+    'getPartnerWeeklyEntries' : IDL.Func([], [IDL.Vec(WeeklyEntry)], ['query']),
+    'getPartnerYearlyEntries' : IDL.Func([], [IDL.Vec(YearlyEntry)], ['query']),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(UserProfile)],
         ['query'],
       ),
+    'getVisionBoardEntries' : IDL.Func(
+        [],
+        [IDL.Vec(VisionBoardEntry)],
+        ['query'],
+      ),
     'getWeeklyEntries' : IDL.Func([], [IDL.Vec(WeeklyEntry)], ['query']),
-    'getYearlyEntries' : IDL.Func([], [IDL.Vec(YearlyEntry)], ['query']),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+    'saveDailyPlannerEntry' : IDL.Func([DailyPlannerEntry], [], []),
+    'saveVisionBoardEntry' : IDL.Func([VisionBoardEntry], [], []),
     'updateMonthlyEntry' : IDL.Func([IDL.Int, IDL.Nat, MonthlyEntry], [], []),
     'updateVisionBoardProgress' : IDL.Func([IDL.Int, IDL.Nat], [], []),
     'updateWaterIntake' : IDL.Func([IDL.Int, IDL.Nat], [], []),

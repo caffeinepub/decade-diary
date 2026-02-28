@@ -2,29 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-in-the-yearlyplanner-page-add-a-partner-view-tab-or-section-that-fetches-and-displays-the-partner-s-yearly-planner-entry-word-of-the-year-major-goals-vision-image-urls-monthly-habit-tracker-grid-and-year-end-reflection-as-read-only-content-the-partner-s-data-must-be-clearly-distinguished-from-the-current-user-s-own-data",
-      "featureTitle": "In the YearlyPlanner page, add a partner-view tab or section that fetches and displays the partner's yearly planner entry (word of the year, major goals, vision image URLs, monthly habit tracker grid, and year-end reflection) as read-only content. The partner's data must be clearly distinguished from the current user's own data.",
+      "featureId": "feature-add-a-react-query-hook-in-usequeries-ts-to-fetch-the-partner-s-journal-entries-from-the-new-backend-endpoint-following-the-same-pattern-used-for-partner-daily-planner-data",
+      "featureTitle": "Add a React Query hook in useQueries.ts to fetch the partner's journal entries from the new backend endpoint, following the same pattern used for partner daily planner data.",
       "files": [
-        "frontend/src/pages/YearlyPlanner.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-1"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-in-the-monthlyplanner-page-add-a-partner-view-tab-or-section-that-fetches-and-displays-the-partner-s-monthly-planner-entry-goals-important-dates-budget-entries-and-mood-tracker-for-the-currently-selected-month-as-read-only-content",
-      "featureTitle": "In the MonthlyPlanner page, add a partner-view tab or section that fetches and displays the partner's monthly planner entry (goals, important dates, budget entries, and mood tracker) for the currently selected month as read-only content.",
-      "files": [
-        "frontend/src/pages/MonthlyPlanner.tsx"
+        "frontend/src/hooks/useQueries.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -40,10 +21,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-in-the-weeklyplanner-page-add-a-partner-view-tab-or-section-that-fetches-and-displays-the-partner-s-weekly-planner-entry-priority-tasks-habit-tracker-grid-todos-energy-rating-and-reflection-for-the-currently-selected-iso-week-as-read-only-content",
-      "featureTitle": "In the WeeklyPlanner page, add a partner-view tab or section that fetches and displays the partner's weekly planner entry (priority tasks, habit tracker grid, todos, energy rating, and reflection) for the currently selected ISO week as read-only content.",
+      "featureId": "feature-add-a-read-only-partner-journal-view-tab-in-journalsection-tsx-that-displays-the-partner-s-journal-entries-across-all-four-journal-types-daily-emotional-night-reflection-growth-consistent-with-the-read-only-partner-view-pattern-used-in-dailyplanner-weeklyplanner-monthlyplanner-and-visionboard",
+      "featureTitle": "Add a read-only partner journal view tab in JournalSection.tsx that displays the partner's journal entries across all four journal types (daily, emotional, night reflection, growth), consistent with the read-only partner view pattern used in DailyPlanner, WeeklyPlanner, MonthlyPlanner, and VisionBoard.",
       "files": [
-        "frontend/src/pages/WeeklyPlanner.tsx"
+        "frontend/src/pages/JournalSection.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -55,25 +36,6 @@
       ],
       "testIds": [
         "REQ-3"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-react-query-hooks-in-usequeries-ts-for-the-new-partner-planner-query-functions-yearly-monthly-weekly-daily-by-partner-principal-so-the-frontend-components-can-consume-partner-data-consistently-with-the-existing-query-patterns",
-      "featureTitle": "Add React Query hooks in useQueries.ts for the new partner planner query functions (yearly, monthly, weekly, daily by partner principal), so the frontend components can consume partner data consistently with the existing query patterns.",
-      "files": [
-        "frontend/src/hooks/useQueries.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-6"
       ],
       "confidence": "high"
     }

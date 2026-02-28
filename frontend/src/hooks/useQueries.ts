@@ -1,18 +1,29 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
+import { useInternetIdentity } from './useInternetIdentity';
 import type {
+  UserProfile,
   VisionBoardEntry,
   DailyPlannerEntry,
   YearlyEntry,
   MonthlyEntry,
   WeeklyEntry,
-  UserProfile,
   DailyJournalEntry,
   EmotionalJournalEntry,
   NightReflectionJournalEntry,
   GrowthJournalEntry,
 } from '../backend';
+import { CoupleCreateError } from '../backend';
 import { Principal } from '@dfinity/principal';
+
+// ─── Custom Error ─────────────────────────────────────────────────────────────
+
+export class CoupleCreateErrorException extends Error {
+  constructor(public readonly variant: CoupleCreateError) {
+    super(variant);
+    this.name = 'CoupleCreateErrorException';
+  }
+}
 
 // ─── User Profile ────────────────────────────────────────────────────────────
 
@@ -51,25 +62,46 @@ export function useSaveCallerUserProfile() {
   });
 }
 
-// ─── Couple ──────────────────────────────────────────────────────────────────
-
-export function useGetCouple() {
+export function useGetPartnerUserProfile() {
   const { actor, isFetching } = useActor();
+  const { data: couple } = useGetCouple();
 
-  return useQuery<{ partner1: Principal; partner2: Principal } | null>({
-    queryKey: ['couple'],
+  const hasPartner = !!couple;
+
+  return useQuery<UserProfile | null>({
+    queryKey: ['partnerUserProfile', couple?.partner1?.toString(), couple?.partner2?.toString()],
     queryFn: async () => {
-      if (!actor) return null;
+      if (!actor) throw new Error('Actor not available');
       try {
-        const identity = (actor as any)._identity;
-        const principal = identity?.getPrincipal();
-        if (!principal) return null;
-        return actor.getCouple(principal);
+        return await actor.getPartnerUserProfile();
       } catch {
         return null;
       }
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor && !isFetching && hasPartner,
+    retry: false,
+  });
+}
+
+// ─── Couple ───────────────────────────────────────────────────────────────────
+
+export function useGetCouple() {
+  const { actor, isFetching } = useActor();
+  const { identity } = useInternetIdentity();
+
+  return useQuery({
+    queryKey: ['couple', identity?.getPrincipal().toString()],
+    queryFn: async () => {
+      if (!actor || !identity) return null;
+      const callerPrincipal = identity.getPrincipal();
+      if (callerPrincipal.isAnonymous()) return null;
+      try {
+        return await actor.getCouple(callerPrincipal);
+      } catch {
+        return null;
+      }
+    },
+    enabled: !!actor && !isFetching && !!identity,
     retry: false,
   });
 }
@@ -81,7 +113,11 @@ export function useCreateCouple() {
   return useMutation({
     mutationFn: async ({ partner1, partner2 }: { partner1: Principal; partner2: Principal }) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.createCouple(partner1, partner2);
+      const result = await actor.createCouple(partner1, partner2);
+      if (result !== null && result !== undefined) {
+        throw new CoupleCreateErrorException(result as CoupleCreateError);
+      }
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['couple'] });
@@ -89,49 +125,107 @@ export function useCreateCouple() {
   });
 }
 
-// ─── Vision Board ────────────────────────────────────────────────────────────
+export function useDissolveCouple() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
 
-export function useGetVisionBoardEntries(ownerPrincipal?: Principal) {
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      const dissolved = await actor.dissolveCouple();
+      if (!dissolved) {
+        throw new Error('You are not currently in a couple.');
+      }
+      return dissolved;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['couple'] });
+      queryClient.invalidateQueries({ queryKey: ['partnerVisionBoardEntries'] });
+      queryClient.invalidateQueries({ queryKey: ['partnerDailyPlannerEntries'] });
+      queryClient.invalidateQueries({ queryKey: ['partnerDailyPlannerForDate'] });
+      queryClient.invalidateQueries({ queryKey: ['partnerMonthlyEntries'] });
+      queryClient.invalidateQueries({ queryKey: ['partnerWeeklyEntries'] });
+      queryClient.invalidateQueries({ queryKey: ['partnerYearlyEntries'] });
+      queryClient.invalidateQueries({ queryKey: ['partnerJournals'] });
+      queryClient.invalidateQueries({ queryKey: ['partnerUserProfile'] });
+    },
+  });
+}
+
+// ─── Daily Quote ──────────────────────────────────────────────────────────────
+
+export function useGetDailyQuote() {
+  const { actor, isFetching } = useActor();
+
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  const diff = now.getTime() - start.getTime();
+  const oneDay = 1000 * 60 * 60 * 24;
+  const dayOfYear = Math.floor(diff / oneDay);
+
+  return useQuery<string>({
+    queryKey: ['dailyQuote', dayOfYear],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getDailyQuote(BigInt(dayOfYear));
+    },
+    enabled: !!actor && !isFetching,
+    staleTime: 1000 * 60 * 60,
+  });
+}
+
+// ─── Vision Board ─────────────────────────────────────────────────────────────
+
+export function useGetVisionBoardEntries() {
   const { actor, isFetching } = useActor();
 
   return useQuery<VisionBoardEntry[]>({
-    queryKey: ['visionBoardEntries', ownerPrincipal?.toString()],
+    queryKey: ['visionBoardEntries'],
     queryFn: async () => {
-      if (!actor || !ownerPrincipal) return [];
-      return actor.getOwnerVisionBoardEntries(ownerPrincipal);
+      if (!actor) throw new Error('Actor not available');
+      return actor.getVisionBoardEntries();
     },
-    enabled: !!actor && !isFetching && !!ownerPrincipal,
+    enabled: !!actor && !isFetching,
   });
 }
 
 export function useGetPartnerVisionBoardEntries() {
   const { actor, isFetching } = useActor();
+  const { data: couple } = useGetCouple();
+
+  const hasPartner = !!couple;
 
   return useQuery<VisionBoardEntry[]>({
-    queryKey: ['partnerVisionBoardEntries'],
+    queryKey: ['partnerVisionBoardEntries', couple?.partner1?.toString(), couple?.partner2?.toString()],
     queryFn: async () => {
-      if (!actor) return [];
-      return actor.getPartnerVisionBoardEntries();
+      if (!actor) throw new Error('Actor not available');
+      try {
+        return await actor.getPartnerVisionBoardEntries();
+      } catch {
+        return [];
+      }
     },
-    enabled: !!actor && !isFetching,
-    retry: false,
+    enabled: !!actor && !isFetching && hasPartner,
   });
 }
 
-export function useAddVisionBoardEntry() {
+export function useSaveVisionBoardEntry() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (entry: VisionBoardEntry) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.addVisionBoardEntry(entry);
+      return actor.saveVisionBoardEntry(entry);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['visionBoardEntries'] });
     },
   });
 }
+
+// Keep alias for backward compatibility
+export const useAddVisionBoardEntry = useSaveVisionBoardEntry;
 
 export function useUpdateVisionBoardProgress() {
   const { actor } = useActor();
@@ -163,43 +257,61 @@ export function useDeleteVisionBoardEntry() {
   });
 }
 
-// ─── Daily Planner ───────────────────────────────────────────────────────────
+// ─── Daily Planner ────────────────────────────────────────────────────────────
 
-export function useGetDailyPlannerEntries(ownerPrincipal?: Principal) {
+export function useGetDailyPlannerEntries() {
   const { actor, isFetching } = useActor();
 
   return useQuery<DailyPlannerEntry[]>({
-    queryKey: ['dailyPlannerEntries', ownerPrincipal?.toString()],
+    queryKey: ['dailyPlannerEntries'],
     queryFn: async () => {
-      if (!actor || !ownerPrincipal) return [];
-      return actor.getOwnerDailyPlannerEntries(ownerPrincipal);
+      if (!actor) throw new Error('Actor not available');
+      return actor.getDailyPlannerEntries();
     },
-    enabled: !!actor && !isFetching && !!ownerPrincipal,
+    enabled: !!actor && !isFetching,
   });
 }
 
-export function useGetPartnerDailyPlannerEntries(partnerPrincipal?: Principal) {
+export function useGetPartnerDailyPlannerEntries() {
   const { actor, isFetching } = useActor();
+  const { data: couple } = useGetCouple();
+
+  const hasPartner = !!couple;
 
   return useQuery<DailyPlannerEntry[]>({
-    queryKey: ['partnerDailyPlannerEntries', partnerPrincipal?.toString()],
+    queryKey: ['partnerDailyPlannerEntries', couple?.partner1?.toString(), couple?.partner2?.toString()],
     queryFn: async () => {
-      if (!actor || !partnerPrincipal) return [];
-      return actor.getPartnerSpecificDailyPlannerEntries(partnerPrincipal);
+      if (!actor) throw new Error('Actor not available');
+      return actor.getPartnerDailyPlannerEntries();
     },
-    enabled: !!actor && !isFetching && !!partnerPrincipal,
-    retry: false,
+    enabled: !!actor && !isFetching && hasPartner,
   });
 }
 
-export function useAddDailyPlannerEntry() {
+export function usePartnerDailyPlannerForDate(date: bigint) {
+  const { actor, isFetching } = useActor();
+  const { data: couple } = useGetCouple();
+
+  const hasPartner = !!couple;
+
+  return useQuery<DailyPlannerEntry | null>({
+    queryKey: ['partnerDailyPlannerForDate', couple?.partner1?.toString(), couple?.partner2?.toString(), date.toString()],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getPartnerDailyPlannerEntryForDate(date);
+    },
+    enabled: !!actor && !isFetching && hasPartner,
+  });
+}
+
+export function useSaveDailyPlannerEntry() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (entry: DailyPlannerEntry) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.addDailyPlannerEntry(entry);
+      return actor.saveDailyPlannerEntry(entry);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dailyPlannerEntries'] });
@@ -237,32 +349,37 @@ export function useDeleteDailyPlannerEntry() {
   });
 }
 
-// ─── Yearly Planner ──────────────────────────────────────────────────────────
+// ─── Yearly Planner ───────────────────────────────────────────────────────────
 
-export function useGetYearlyEntries(ownerPrincipal?: Principal) {
+export function useGetYearlyEntries() {
   const { actor, isFetching } = useActor();
+  const { identity } = useInternetIdentity();
 
   return useQuery<YearlyEntry[]>({
-    queryKey: ['yearlyEntries', ownerPrincipal?.toString()],
+    queryKey: ['yearlyEntries', identity?.getPrincipal().toString()],
     queryFn: async () => {
-      if (!actor || !ownerPrincipal) return [];
-      return actor.getOwnerYearlyEntries(ownerPrincipal);
+      if (!actor || !identity) return [];
+      const callerPrincipal = identity.getPrincipal();
+      if (callerPrincipal.isAnonymous()) return [];
+      return actor.getOwnerYearlyEntries(callerPrincipal);
     },
-    enabled: !!actor && !isFetching && !!ownerPrincipal,
+    enabled: !!actor && !isFetching && !!identity,
   });
 }
 
-export function useGetPartnerYearlyEntries(partnerPrincipal?: Principal) {
+export function useGetPartnerYearlyEntries() {
   const { actor, isFetching } = useActor();
+  const { data: couple } = useGetCouple();
+
+  const hasPartner = !!couple;
 
   return useQuery<YearlyEntry[]>({
-    queryKey: ['partnerYearlyEntries', partnerPrincipal?.toString()],
+    queryKey: ['partnerYearlyEntries', couple?.partner1?.toString(), couple?.partner2?.toString()],
     queryFn: async () => {
-      if (!actor || !partnerPrincipal) return [];
-      return actor.getPartnerSpecificYearlyEntries(partnerPrincipal);
+      if (!actor) throw new Error('Actor not available');
+      return actor.getPartnerYearlyEntries();
     },
-    enabled: !!actor && !isFetching && !!partnerPrincipal,
-    retry: false,
+    enabled: !!actor && !isFetching && hasPartner,
   });
 }
 
@@ -311,32 +428,34 @@ export function useDeleteYearlyEntry() {
   });
 }
 
-// ─── Monthly Planner ─────────────────────────────────────────────────────────
+// ─── Monthly Planner ──────────────────────────────────────────────────────────
 
-export function useGetMonthlyEntries(ownerPrincipal?: Principal) {
+export function useGetMonthlyEntries() {
   const { actor, isFetching } = useActor();
 
   return useQuery<MonthlyEntry[]>({
-    queryKey: ['monthlyEntries', ownerPrincipal?.toString()],
+    queryKey: ['monthlyEntries'],
     queryFn: async () => {
-      if (!actor || !ownerPrincipal) return [];
-      return actor.getOwnerMonthlyEntries(ownerPrincipal);
+      if (!actor) throw new Error('Actor not available');
+      return actor.getMonthlyEntries();
     },
-    enabled: !!actor && !isFetching && !!ownerPrincipal,
+    enabled: !!actor && !isFetching,
   });
 }
 
-export function useGetPartnerMonthlyEntries(partnerPrincipal?: Principal) {
+export function useGetPartnerMonthlyEntries() {
   const { actor, isFetching } = useActor();
+  const { data: couple } = useGetCouple();
+
+  const hasPartner = !!couple;
 
   return useQuery<MonthlyEntry[]>({
-    queryKey: ['partnerMonthlyEntries', partnerPrincipal?.toString()],
+    queryKey: ['partnerMonthlyEntries', couple?.partner1?.toString(), couple?.partner2?.toString()],
     queryFn: async () => {
-      if (!actor || !partnerPrincipal) return [];
-      return actor.getPartnerSpecificMonthlyEntries(partnerPrincipal);
+      if (!actor) throw new Error('Actor not available');
+      return actor.getPartnerMonthlyEntries();
     },
-    enabled: !!actor && !isFetching && !!partnerPrincipal,
-    retry: false,
+    enabled: !!actor && !isFetching && hasPartner,
   });
 }
 
@@ -385,32 +504,34 @@ export function useDeleteMonthlyEntry() {
   });
 }
 
-// ─── Weekly Planner ──────────────────────────────────────────────────────────
+// ─── Weekly Planner ───────────────────────────────────────────────────────────
 
-export function useGetWeeklyEntries(ownerPrincipal?: Principal) {
+export function useGetWeeklyEntries() {
   const { actor, isFetching } = useActor();
 
   return useQuery<WeeklyEntry[]>({
-    queryKey: ['weeklyEntries', ownerPrincipal?.toString()],
+    queryKey: ['weeklyEntries'],
     queryFn: async () => {
-      if (!actor || !ownerPrincipal) return [];
-      return actor.getOwnerWeeklyEntries(ownerPrincipal);
+      if (!actor) throw new Error('Actor not available');
+      return actor.getWeeklyEntries();
     },
-    enabled: !!actor && !isFetching && !!ownerPrincipal,
+    enabled: !!actor && !isFetching,
   });
 }
 
-export function useGetPartnerWeeklyEntries(partnerPrincipal?: Principal) {
+export function useGetPartnerWeeklyEntries() {
   const { actor, isFetching } = useActor();
+  const { data: couple } = useGetCouple();
+
+  const hasPartner = !!couple;
 
   return useQuery<WeeklyEntry[]>({
-    queryKey: ['partnerWeeklyEntries', partnerPrincipal?.toString()],
+    queryKey: ['partnerWeeklyEntries', couple?.partner1?.toString(), couple?.partner2?.toString()],
     queryFn: async () => {
-      if (!actor || !partnerPrincipal) return [];
-      return actor.getPartnerSpecificWeeklyEntries(partnerPrincipal);
+      if (!actor) throw new Error('Actor not available');
+      return actor.getPartnerWeeklyEntries();
     },
-    enabled: !!actor && !isFetching && !!partnerPrincipal,
-    retry: false,
+    enabled: !!actor && !isFetching && hasPartner,
   });
 }
 
@@ -459,7 +580,7 @@ export function useDeleteWeeklyEntry() {
   });
 }
 
-// ─── Daily Journal ───────────────────────────────────────────────────────────
+// ─── Journal ──────────────────────────────────────────────────────────────────
 
 export function useGetDailyJournals() {
   const { actor, isFetching } = useActor();
@@ -467,24 +588,10 @@ export function useGetDailyJournals() {
   return useQuery<DailyJournalEntry[]>({
     queryKey: ['dailyJournals'],
     queryFn: async () => {
-      if (!actor) return [];
+      if (!actor) throw new Error('Actor not available');
       return actor.getDailyJournals();
     },
     enabled: !!actor && !isFetching,
-  });
-}
-
-export function useGetPartnerDailyJournals(partnerPrincipal?: Principal) {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<DailyJournalEntry[]>({
-    queryKey: ['partnerDailyJournals', partnerPrincipal?.toString()],
-    queryFn: async () => {
-      if (!actor || !partnerPrincipal) return [];
-      return actor.getDailyJournalsForUser(partnerPrincipal);
-    },
-    enabled: !!actor && !isFetching && !!partnerPrincipal,
-    retry: false,
   });
 }
 
@@ -503,32 +610,16 @@ export function useCreateOrUpdateDailyJournal() {
   });
 }
 
-// ─── Emotional Journal ───────────────────────────────────────────────────────
-
 export function useGetEmotionalJournals() {
   const { actor, isFetching } = useActor();
 
   return useQuery<EmotionalJournalEntry[]>({
     queryKey: ['emotionalJournals'],
     queryFn: async () => {
-      if (!actor) return [];
+      if (!actor) throw new Error('Actor not available');
       return actor.getEmotionalJournals();
     },
     enabled: !!actor && !isFetching,
-  });
-}
-
-export function useGetPartnerEmotionalJournals(partnerPrincipal?: Principal) {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<EmotionalJournalEntry[]>({
-    queryKey: ['partnerEmotionalJournals', partnerPrincipal?.toString()],
-    queryFn: async () => {
-      if (!actor || !partnerPrincipal) return [];
-      return actor.getEmotionalJournalsForUser(partnerPrincipal);
-    },
-    enabled: !!actor && !isFetching && !!partnerPrincipal,
-    retry: false,
   });
 }
 
@@ -547,32 +638,16 @@ export function useCreateOrUpdateEmotionalJournal() {
   });
 }
 
-// ─── Night Reflection Journal ────────────────────────────────────────────────
-
 export function useGetNightReflections() {
   const { actor, isFetching } = useActor();
 
   return useQuery<NightReflectionJournalEntry[]>({
     queryKey: ['nightReflections'],
     queryFn: async () => {
-      if (!actor) return [];
+      if (!actor) throw new Error('Actor not available');
       return actor.getNightReflections();
     },
     enabled: !!actor && !isFetching,
-  });
-}
-
-export function useGetPartnerNightReflections(partnerPrincipal?: Principal) {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<NightReflectionJournalEntry[]>({
-    queryKey: ['partnerNightReflections', partnerPrincipal?.toString()],
-    queryFn: async () => {
-      if (!actor || !partnerPrincipal) return [];
-      return actor.getNightReflectionsForUser(partnerPrincipal);
-    },
-    enabled: !!actor && !isFetching && !!partnerPrincipal,
-    retry: false,
   });
 }
 
@@ -591,32 +666,16 @@ export function useCreateOrUpdateNightReflection() {
   });
 }
 
-// ─── Growth Journal ──────────────────────────────────────────────────────────
-
 export function useGetGrowthJournals() {
   const { actor, isFetching } = useActor();
 
   return useQuery<GrowthJournalEntry[]>({
     queryKey: ['growthJournals'],
     queryFn: async () => {
-      if (!actor) return [];
+      if (!actor) throw new Error('Actor not available');
       return actor.getGrowthJournals();
     },
     enabled: !!actor && !isFetching,
-  });
-}
-
-export function useGetPartnerGrowthJournals(partnerPrincipal?: Principal) {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<GrowthJournalEntry[]>({
-    queryKey: ['partnerGrowthJournals', partnerPrincipal?.toString()],
-    queryFn: async () => {
-      if (!actor || !partnerPrincipal) return [];
-      return actor.getGrowthJournalsForUser(partnerPrincipal);
-    },
-    enabled: !!actor && !isFetching && !!partnerPrincipal,
-    retry: false,
   });
 }
 
@@ -635,22 +694,29 @@ export function useCreateOrUpdateGrowthJournal() {
   });
 }
 
-// ─── Daily Quote ─────────────────────────────────────────────────────────────
+// ─── Partner Journals ─────────────────────────────────────────────────────────
 
-export function useGetDailyQuote() {
+export function useGetPartnerJournals(enabled: boolean) {
   const { actor, isFetching } = useActor();
-  const now = new Date();
-  const start = new Date(now.getFullYear(), 0, 0);
-  const diff = now.getTime() - start.getTime();
-  const oneDay = 1000 * 60 * 60 * 24;
-  const dayOfYear = Math.floor(diff / oneDay);
+  const { data: couple } = useGetCouple();
 
-  return useQuery<string>({
-    queryKey: ['dailyQuote', dayOfYear],
+  const hasPartner = !!couple;
+
+  return useQuery<{
+    daily: DailyJournalEntry[];
+    emotional: EmotionalJournalEntry[];
+    night: NightReflectionJournalEntry[];
+    growth: GrowthJournalEntry[];
+  }>({
+    queryKey: ['partnerJournals', couple?.partner1?.toString(), couple?.partner2?.toString()],
     queryFn: async () => {
-      if (!actor) return '';
-      return actor.getDailyQuote(BigInt(dayOfYear));
+      if (!actor) return { daily: [], emotional: [], night: [], growth: [] };
+      try {
+        return await actor.getPartnerJournals();
+      } catch {
+        return { daily: [], emotional: [], night: [], growth: [] };
+      }
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor && !isFetching && hasPartner && enabled,
   });
 }

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import {
   useGetVisionBoardEntries,
-  useAddVisionBoardEntry,
+  useSaveVisionBoardEntry,
   useUpdateVisionBoardProgress,
   useDeleteVisionBoardEntry,
   useGetCouple,
@@ -11,17 +11,22 @@ import {
 import { GoalCategory, type VisionBoardEntry } from '../backend';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Slider } from '@/components/ui/slider';
-import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import {
@@ -34,364 +39,122 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Label } from '@/components/ui/label';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, X, Loader2, Target, Heart, Users } from 'lucide-react';
+  Plus,
+  Target,
+  Trash2,
+  Edit3,
+  Users,
+  Heart,
+  Loader2,
+  TrendingUp,
+  Star,
+} from 'lucide-react';
 import { toast } from 'sonner';
+import { Principal } from '@dfinity/principal';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const CATEGORIES = [
-  { value: GoalCategory.career, label: 'Career', emoji: '💼' },
-  { value: GoalCategory.financial, label: 'Financial', emoji: '💰' },
-  { value: GoalCategory.health, label: 'Health', emoji: '💪' },
-  { value: GoalCategory.relationship, label: 'Relationship', emoji: '❤️' },
-  { value: GoalCategory.personalGrowth, label: 'Personal Growth', emoji: '🌱' },
-  { value: GoalCategory.travel, label: 'Travel', emoji: '✈️' },
-  { value: GoalCategory.spiritual, label: 'Spiritual', emoji: '🕊️' },
-];
+const CATEGORY_LABELS: Record<GoalCategory, string> = {
+  [GoalCategory.career]: '💼 Career',
+  [GoalCategory.financial]: '💰 Financial',
+  [GoalCategory.health]: '💪 Health',
+  [GoalCategory.relationship]: '❤️ Relationship',
+  [GoalCategory.personalGrowth]: '🌱 Personal Growth',
+  [GoalCategory.travel]: '✈️ Travel',
+  [GoalCategory.spiritual]: '🙏 Spiritual',
+};
 
-const CATEGORY_COLORS: Record<string, string> = {
-  [GoalCategory.career]: 'bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800',
-  [GoalCategory.financial]: 'bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800',
-  [GoalCategory.health]: 'bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800',
-  [GoalCategory.relationship]: 'bg-pink-50 border-pink-200 dark:bg-pink-950/30 dark:border-pink-800',
-  [GoalCategory.personalGrowth]: 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800',
-  [GoalCategory.travel]: 'bg-sky-50 border-sky-200 dark:bg-sky-950/30 dark:border-sky-800',
-  [GoalCategory.spiritual]: 'bg-purple-50 border-purple-200 dark:bg-purple-950/30 dark:border-purple-800',
+const CATEGORY_COLORS: Record<GoalCategory, string> = {
+  [GoalCategory.career]: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+  [GoalCategory.financial]: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+  [GoalCategory.health]: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+  [GoalCategory.relationship]: 'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300',
+  [GoalCategory.personalGrowth]: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+  [GoalCategory.travel]: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+  [GoalCategory.spiritual]: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
 };
 
 const CURRENT_YEAR = new Date().getFullYear();
+const YEAR_OPTIONS = Array.from({ length: 11 }, (_, i) => CURRENT_YEAR + i);
 
-// ─── Add Goal Modal ───────────────────────────────────────────────────────────
+// ─── Helper ───────────────────────────────────────────────────────────────────
 
-interface AddGoalModalProps {
-  open: boolean;
-  onClose: () => void;
+function getPartnerPrincipal(
+  couple: { partner1: Principal; partner2: Principal } | null | undefined,
+  myPrincipal: string
+): Principal | undefined {
+  if (!couple) return undefined;
+  const p1 = couple.partner1.toString();
+  const p2 = couple.partner2.toString();
+  if (p1 === myPrincipal) return couple.partner2;
+  if (p2 === myPrincipal) return couple.partner1;
+  return undefined;
 }
 
-function AddGoalModal({ open, onClose }: AddGoalModalProps) {
-  const addEntry = useAddVisionBoardEntry();
-  const [category, setCategory] = useState<GoalCategory>(GoalCategory.career);
-  const [targetYear, setTargetYear] = useState(CURRENT_YEAR + 1);
-  const [milestones, setMilestones] = useState(['']);
-  const [whyThisMatters, setWhyThisMatters] = useState('');
-  const [progress, setProgress] = useState(0);
+// ─── Goal Card ────────────────────────────────────────────────────────────────
 
-  const handleAddMilestone = () => setMilestones([...milestones, '']);
-  const handleRemoveMilestone = (i: number) => setMilestones(milestones.filter((_, idx) => idx !== i));
-  const handleMilestoneChange = (i: number, val: string) => {
-    const updated = [...milestones];
-    updated[i] = val;
-    setMilestones(updated);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const entry: VisionBoardEntry = {
-      category,
-      targetYear: BigInt(targetYear),
-      milestones: milestones.filter((m) => m.trim()),
-      whyThisMatters,
-      progressPercentage: BigInt(progress),
-    };
-    try {
-      await addEntry.mutateAsync(entry);
-      toast.success('Goal added to your vision board!');
-      onClose();
-      setCategory(GoalCategory.career);
-      setTargetYear(CURRENT_YEAR + 1);
-      setMilestones(['']);
-      setWhyThisMatters('');
-      setProgress(0);
-    } catch {
-      toast.error('Failed to add goal. Please try again.');
-    }
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="font-display text-2xl">Add Vision Goal</DialogTitle>
-          <DialogDescription className="font-body text-muted-foreground">
-            Define a goal that will shape your future.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-5 pt-2">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label className="label-warm">Category</Label>
-              <Select value={category} onValueChange={(v) => setCategory(v as GoalCategory)}>
-                <SelectTrigger className="font-body">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CATEGORIES.map((c) => (
-                    <SelectItem key={c.value} value={c.value} className="font-body">
-                      {c.emoji} {c.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="label-warm">Target Year</Label>
-              <Select
-                value={String(targetYear)}
-                onValueChange={(v) => setTargetYear(parseInt(v))}
-              >
-                <SelectTrigger className="font-body">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 21 }, (_, i) => CURRENT_YEAR + i).map((yr) => (
-                    <SelectItem key={yr} value={String(yr)} className="font-body">
-                      {yr}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label className="label-warm">Why This Matters 💭</Label>
-            <Textarea
-              placeholder="What drives this goal? How will it change your life?"
-              value={whyThisMatters}
-              onChange={(e) => setWhyThisMatters(e.target.value)}
-              className="font-body resize-none"
-              rows={3}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="label-warm">Milestones</Label>
-              <Button type="button" variant="ghost" size="sm" onClick={handleAddMilestone} className="font-body text-xs">
-                <Plus className="w-3 h-3 mr-1" /> Add
-              </Button>
-            </div>
-            {milestones.map((m, i) => (
-              <div key={i} className="flex gap-2">
-                <Input
-                  placeholder={`Milestone ${i + 1}`}
-                  value={m}
-                  onChange={(e) => handleMilestoneChange(i, e.target.value)}
-                  className="font-body text-sm"
-                />
-                {milestones.length > 1 && (
-                  <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveMilestone(i)}>
-                    <X className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
-            ))}
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="label-warm">Initial Progress</Label>
-              <span className="text-sm font-body font-semibold text-primary">{progress}%</span>
-            </div>
-            <Slider
-              value={[progress]}
-              onValueChange={([v]) => setProgress(v)}
-              min={0}
-              max={100}
-              step={5}
-              className="w-full"
-            />
-          </div>
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose} className="font-body">
-              Cancel
-            </Button>
-            <Button type="submit" disabled={addEntry.isPending} className="font-body">
-              {addEntry.isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Adding...</> : 'Add Goal'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// ─── Vision Goal Card (editable) ──────────────────────────────────────────────
-
-interface VisionGoalCardProps {
+interface GoalCardProps {
   entry: VisionBoardEntry;
+  isOwner: boolean;
+  onEdit?: (entry: VisionBoardEntry) => void;
+  onDelete?: (targetYear: bigint) => void;
+  onProgressUpdate?: (targetYear: bigint, progress: number) => void;
 }
 
-function VisionGoalCard({ entry }: VisionGoalCardProps) {
-  const updateProgress = useUpdateVisionBoardProgress();
-  const deleteEntry = useDeleteVisionBoardEntry();
-  const [localProgress, setLocalProgress] = useState(Number(entry.progressPercentage));
-  const [deleteOpen, setDeleteOpen] = useState(false);
-
-  const cat = CATEGORIES.find((c) => c.value === (entry.category as unknown as string));
-  const colorClass = CATEGORY_COLORS[entry.category as unknown as string] || '';
-
-  const handleProgressCommit = async (val: number) => {
-    try {
-      await updateProgress.mutateAsync({ targetYear: entry.targetYear, progress: BigInt(val) });
-    } catch {
-      toast.error('Failed to update progress.');
-      setLocalProgress(Number(entry.progressPercentage));
-    }
-  };
-
-  const handleDelete = async () => {
-    try {
-      await deleteEntry.mutateAsync(entry.targetYear);
-      toast.success('Goal removed from vision board.');
-    } catch {
-      toast.error('Failed to delete goal.');
-    }
-    setDeleteOpen(false);
-  };
-
-  return (
-    <>
-      <div className={`rounded-2xl border p-5 space-y-4 shadow-warm transition-shadow hover:shadow-warm-lg ${colorClass}`}>
-        {/* Header */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xl">{cat?.emoji || '🎯'}</span>
-            <Badge variant="secondary" className="font-body text-xs">
-              {cat?.label || entry.category as unknown as string}
-            </Badge>
-            <Badge variant="outline" className="font-body text-xs">
-              {String(entry.targetYear)}
-            </Badge>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="shrink-0 text-muted-foreground hover:text-destructive h-7 w-7"
-            onClick={() => setDeleteOpen(true)}
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </Button>
-        </div>
-
-        {/* Why this matters */}
-        {entry.whyThisMatters && (
-          <p className="text-sm font-body text-foreground/80 italic leading-relaxed">
-            "{entry.whyThisMatters}"
-          </p>
-        )}
-
-        {/* Milestones */}
-        {entry.milestones.length > 0 && (
-          <div className="space-y-1.5">
-            <p className="label-warm text-xs">Milestones</p>
-            <ul className="space-y-1">
-              {entry.milestones.map((m, i) => (
-                <li key={i} className="flex items-start gap-1.5 text-xs font-body text-foreground/70">
-                  <span className="text-primary mt-0.5">•</span>
-                  <span>{m}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Progress */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <p className="label-warm text-xs">Progress</p>
-            <span className="text-sm font-body font-bold text-primary">{localProgress}%</span>
-          </div>
-          <Progress value={localProgress} className="h-2" />
-          <Slider
-            value={[localProgress]}
-            onValueChange={([v]) => setLocalProgress(v)}
-            onValueCommit={([v]) => handleProgressCommit(v)}
-            min={0}
-            max={100}
-            step={5}
-            className="w-full"
-            disabled={updateProgress.isPending}
-          />
-        </div>
-      </div>
-
-      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="font-display">Delete this goal?</AlertDialogTitle>
-            <AlertDialogDescription className="font-body">
-              This will permanently remove this vision goal. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="font-body">Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="font-body bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleteEntry.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Delete'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
-  );
-}
-
-// ─── Partner Vision Goal Card (read-only) ─────────────────────────────────────
-
-interface PartnerVisionGoalCardProps {
-  entry: VisionBoardEntry;
-}
-
-function PartnerVisionGoalCard({ entry }: PartnerVisionGoalCardProps) {
-  const cat = CATEGORIES.find((c) => c.value === (entry.category as unknown as string));
-  const colorClass = CATEGORY_COLORS[entry.category as unknown as string] || '';
+function GoalCard({ entry, isOwner, onEdit, onDelete, onProgressUpdate }: GoalCardProps) {
   const progress = Number(entry.progressPercentage);
 
   return (
-    <div className={`rounded-2xl border p-5 space-y-4 shadow-warm ${colorClass} opacity-90`}>
+    <div className="bg-card rounded-2xl p-5 shadow-warm border border-border space-y-4">
       {/* Header */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xl">{cat?.emoji || '🎯'}</span>
-          <Badge variant="secondary" className="font-body text-xs">
-            {cat?.label || entry.category as unknown as string}
-          </Badge>
-          <Badge variant="outline" className="font-body text-xs">
-            {String(entry.targetYear)}
-          </Badge>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap mb-1">
+            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${CATEGORY_COLORS[entry.category as GoalCategory]}`}>
+              {CATEGORY_LABELS[entry.category as GoalCategory]}
+            </span>
+            <Badge variant="outline" className="text-xs font-body">
+              {Number(entry.targetYear)}
+            </Badge>
+          </div>
         </div>
-        <Badge variant="outline" className="font-body text-xs text-muted-foreground shrink-0">
-          read-only
-        </Badge>
+        {isOwner && (
+          <div className="flex items-center gap-1 shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              onClick={() => onEdit?.(entry)}
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-muted-foreground hover:text-destructive"
+              onClick={() => onDelete?.(entry.targetYear)}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        )}
       </div>
 
-      {/* Why this matters */}
+      {/* Why This Matters */}
       {entry.whyThisMatters && (
-        <p className="text-sm font-body text-foreground/80 italic leading-relaxed">
-          "{entry.whyThisMatters}"
-        </p>
+        <p className="text-sm font-body text-foreground leading-relaxed">{entry.whyThisMatters}</p>
       )}
 
       {/* Milestones */}
       {entry.milestones.length > 0 && (
         <div className="space-y-1.5">
-          <p className="label-warm text-xs">Milestones</p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Milestones</p>
           <ul className="space-y-1">
             {entry.milestones.map((m, i) => (
-              <li key={i} className="flex items-start gap-1.5 text-xs font-body text-foreground/70">
-                <span className="text-primary mt-0.5">•</span>
+              <li key={i} className="flex items-start gap-2 text-sm font-body text-foreground">
+                <Star className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
                 <span>{m}</span>
               </li>
             ))}
@@ -399,100 +162,307 @@ function PartnerVisionGoalCard({ entry }: PartnerVisionGoalCardProps) {
         </div>
       )}
 
-      {/* Progress (display only) */}
+      {/* Progress */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <p className="label-warm text-xs">Progress</p>
-          <span className="text-sm font-body font-bold text-primary">{progress}%</span>
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Progress</span>
+          <span className="text-sm font-bold text-primary">{progress}%</span>
         </div>
         <Progress value={progress} className="h-2" />
+        {isOwner && (
+          <div className="flex gap-1 flex-wrap">
+            {[0, 25, 50, 75, 100].map((p) => (
+              <button
+                key={p}
+                onClick={() => onProgressUpdate?.(entry.targetYear, p)}
+                className={`text-xs px-2 py-0.5 rounded-full border transition-colors font-body ${
+                  progress === p
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'border-border text-muted-foreground hover:border-primary hover:text-primary'
+                }`}
+              >
+                {p}%
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-// ─── Goals Grid ───────────────────────────────────────────────────────────────
+// ─── Goal Form Dialog ─────────────────────────────────────────────────────────
 
-interface GoalsGridProps {
-  entries: VisionBoardEntry[];
-  readOnly?: boolean;
+interface GoalFormDialogProps {
+  open: boolean;
+  onClose: () => void;
+  onSave: (entry: VisionBoardEntry) => Promise<void>;
+  initial?: VisionBoardEntry | null;
+  isSaving: boolean;
 }
 
-function GoalsGrid({ entries, readOnly = false }: GoalsGridProps) {
-  const grouped: Record<string, VisionBoardEntry[]> = {};
-  for (const entry of entries) {
-    const cat = entry.category as unknown as string;
-    if (!grouped[cat]) grouped[cat] = [];
-    grouped[cat].push(entry);
-  }
+function GoalFormDialog({ open, onClose, onSave, initial, isSaving }: GoalFormDialogProps) {
+  const [category, setCategory] = useState<GoalCategory>(initial?.category as GoalCategory ?? GoalCategory.personalGrowth);
+  const [targetYear, setTargetYear] = useState(initial ? Number(initial.targetYear) : CURRENT_YEAR + 1);
+  const [whyThisMatters, setWhyThisMatters] = useState(initial?.whyThisMatters ?? '');
+  const [milestones, setMilestones] = useState<string[]>(initial?.milestones ?? ['']);
+  const [progressPercentage, setProgressPercentage] = useState(initial ? Number(initial.progressPercentage) : 0);
+
+  // Reset when dialog opens with new initial
+  useState(() => {
+    if (initial) {
+      setCategory(initial.category as GoalCategory);
+      setTargetYear(Number(initial.targetYear));
+      setWhyThisMatters(initial.whyThisMatters);
+      setMilestones(initial.milestones.length > 0 ? [...initial.milestones] : ['']);
+      setProgressPercentage(Number(initial.progressPercentage));
+    } else {
+      setCategory(GoalCategory.personalGrowth);
+      setTargetYear(CURRENT_YEAR + 1);
+      setWhyThisMatters('');
+      setMilestones(['']);
+      setProgressPercentage(0);
+    }
+  });
+
+  const handleSave = async () => {
+    const entry: VisionBoardEntry = {
+      category,
+      targetYear: BigInt(targetYear),
+      whyThisMatters,
+      milestones: milestones.filter((m) => m.trim()),
+      progressPercentage: BigInt(progressPercentage),
+    };
+    await onSave(entry);
+  };
 
   return (
-    <div className="space-y-8">
-      {CATEGORIES.map(({ value, label, emoji }) => {
-        const catEntries = grouped[value] || [];
-        if (catEntries.length === 0) return null;
-        return (
-          <section key={value}>
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-2xl">{emoji}</span>
-              <h2 className="font-display text-xl font-semibold text-foreground">{label}</h2>
-              <Badge variant="secondary" className="font-body text-xs ml-1">
-                {catEntries.length}
-              </Badge>
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="font-display text-xl">
+            {initial ? 'Edit Goal' : 'Add New Goal'}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          {/* Category */}
+          <div className="space-y-1.5">
+            <Label className="label-warm">Category</Label>
+            <Select value={category} onValueChange={(v) => setCategory(v as GoalCategory)}>
+              <SelectTrigger className="font-body">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(CATEGORY_LABELS).map(([val, label]) => (
+                  <SelectItem key={val} value={val} className="font-body">{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Target Year */}
+          <div className="space-y-1.5">
+            <Label className="label-warm">Target Year</Label>
+            <Select value={String(targetYear)} onValueChange={(v) => setTargetYear(Number(v))}>
+              <SelectTrigger className="font-body">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {YEAR_OPTIONS.map((y) => (
+                  <SelectItem key={y} value={String(y)} className="font-body">{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Why This Matters */}
+          <div className="space-y-1.5">
+            <Label className="label-warm">Why This Matters</Label>
+            <Textarea
+              value={whyThisMatters}
+              onChange={(e) => setWhyThisMatters(e.target.value)}
+              placeholder="Describe why this goal is important to you..."
+              className="font-body resize-none"
+              rows={3}
+            />
+          </div>
+
+          {/* Milestones */}
+          <div className="space-y-2">
+            <Label className="label-warm">Milestones</Label>
+            {milestones.map((m, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <Input
+                  value={m}
+                  onChange={(e) => {
+                    const updated = [...milestones];
+                    updated[i] = e.target.value;
+                    setMilestones(updated);
+                  }}
+                  placeholder={`Milestone ${i + 1}...`}
+                  className="font-body flex-1"
+                />
+                {milestones.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
+                    onClick={() => setMilestones(milestones.filter((_, idx) => idx !== i))}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                )}
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setMilestones([...milestones, ''])}
+              className="font-body text-xs"
+            >
+              <Plus className="w-3 h-3 mr-1" /> Add Milestone
+            </Button>
+          </div>
+
+          {/* Progress */}
+          <div className="space-y-1.5">
+            <Label className="label-warm">Current Progress: {progressPercentage}%</Label>
+            <div className="flex gap-2 flex-wrap">
+              {[0, 10, 25, 50, 75, 90, 100].map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setProgressPercentage(p)}
+                  className={`text-xs px-2.5 py-1 rounded-full border transition-colors font-body ${
+                    progressPercentage === p
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'border-border text-muted-foreground hover:border-primary hover:text-primary'
+                  }`}
+                >
+                  {p}%
+                </button>
+              ))}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {catEntries.map((entry, i) =>
-                readOnly ? (
-                  <PartnerVisionGoalCard key={`${value}-${i}`} entry={entry} />
-                ) : (
-                  <VisionGoalCard key={`${value}-${i}`} entry={entry} />
-                )
-              )}
-            </div>
-          </section>
-        );
-      })}
-    </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} className="font-body" disabled={isSaving}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={isSaving || !whyThisMatters.trim()} className="font-body">
+            {isSaving ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>
+            ) : (
+              initial ? 'Update Goal' : 'Add Goal'
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-// ─── Vision Board Page ────────────────────────────────────────────────────────
+// ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function VisionBoard() {
   const { identity } = useInternetIdentity();
   const myPrincipal = identity?.getPrincipal();
+  const myPrincipalStr = myPrincipal?.toString() ?? '';
 
-  // Fetch my own entries using my principal
-  const { data: entries = [], isLoading: myLoading } = useGetVisionBoardEntries(myPrincipal);
   const { data: couple } = useGetCouple();
-  const [addOpen, setAddOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'mine' | 'partner'>('mine');
+  const partnerPrincipal = getPartnerPrincipal(couple ?? null, myPrincipalStr);
+  const hasPartner = !!partnerPrincipal;
 
-  const isCouple = !!couple;
-
-  // Partner entries — uses the no-arg backend call that resolves partner from caller context
+  const { data: entries = [], isLoading: myLoading } = useGetVisionBoardEntries();
   const { data: partnerEntries = [], isLoading: partnerLoading } = useGetPartnerVisionBoardEntries();
+
+  const saveEntry = useSaveVisionBoardEntry();
+  const updateProgress = useUpdateVisionBoardProgress();
+  const deleteEntry = useDeleteVisionBoardEntry();
+
+  const [activeTab, setActiveTab] = useState<'mine' | 'partner'>('mine');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<VisionBoardEntry | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<bigint | null>(null);
+  const [isSavingEntry, setIsSavingEntry] = useState(false);
 
   if (!identity) return null;
 
-  const isLoading = viewMode === 'mine' ? myLoading : partnerLoading;
-  const activeEntries = viewMode === 'mine' ? entries : partnerEntries;
+  const handleSaveEntry = async (entry: VisionBoardEntry) => {
+    setIsSavingEntry(true);
+    try {
+      await saveEntry.mutateAsync(entry);
+      toast.success(editingEntry ? 'Goal updated! 🎯' : 'Goal added! 🎯');
+      setDialogOpen(false);
+      setEditingEntry(null);
+    } catch {
+      toast.error('Failed to save goal. Please try again.');
+    } finally {
+      setIsSavingEntry(false);
+    }
+  };
+
+  const handleEdit = (entry: VisionBoardEntry) => {
+    setEditingEntry(entry);
+    setDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (deleteTarget === null) return;
+    try {
+      await deleteEntry.mutateAsync(deleteTarget);
+      toast.success('Goal removed.');
+      setDeleteTarget(null);
+    } catch {
+      toast.error('Failed to delete goal.');
+    }
+  };
+
+  const handleProgressUpdate = async (targetYear: bigint, progress: number) => {
+    try {
+      await updateProgress.mutateAsync({ targetYear, progress: BigInt(progress) });
+    } catch {
+      toast.error('Failed to update progress.');
+    }
+  };
+
+  const groupedEntries = entries.reduce<Record<string, VisionBoardEntry[]>>((acc, entry) => {
+    const cat = entry.category as string;
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(entry);
+    return acc;
+  }, {});
+
+  const groupedPartnerEntries = partnerEntries.reduce<Record<string, VisionBoardEntry[]>>((acc, entry) => {
+    const cat = entry.category as string;
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(entry);
+    return acc;
+  }, {});
+
+  const totalProgress = entries.length > 0
+    ? Math.round(entries.reduce((sum, e) => sum + Number(e.progressPercentage), 0) / entries.length)
+    : 0;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fade-in">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+      <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl sm:text-4xl font-bold text-foreground">
             Vision Board 🎯
           </h1>
           <p className="font-body text-muted-foreground mt-1">
-            Map your goals across every dimension of life.
+            Map your long-term goals and track your journey.
           </p>
         </div>
-        {viewMode === 'mine' && (
+        {activeTab === 'mine' && (
           <Button
-            onClick={() => setAddOpen(true)}
+            onClick={() => { setEditingEntry(null); setDialogOpen(true); }}
             className="font-body font-semibold rounded-2xl shadow-warm shrink-0"
           >
             <Plus className="w-4 h-4 mr-2" /> Add Goal
@@ -500,77 +470,178 @@ export default function VisionBoard() {
         )}
       </div>
 
-      {/* Couple Toggle */}
-      {isCouple && (
-        <div className="flex items-center gap-2 p-1 bg-secondary/50 rounded-2xl w-fit">
-          <button
-            onClick={() => setViewMode('mine')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-body font-semibold transition-all ${
-              viewMode === 'mine'
-                ? 'bg-card shadow-warm text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <Target className="w-4 h-4" />
-            My Goals
-          </button>
-          <button
-            onClick={() => setViewMode('partner')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-body font-semibold transition-all ${
-              viewMode === 'partner'
-                ? 'bg-card shadow-warm text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            Partner's Goals
-          </button>
+      {/* Overall Progress */}
+      {entries.length > 0 && (
+        <div className="card-warm p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-primary" />
+            <h2 className="section-title">Overall Progress</h2>
+            <span className="ml-auto font-bold text-primary text-lg">{totalProgress}%</span>
+          </div>
+          <Progress value={totalProgress} className="h-3" />
+          <p className="text-xs font-body text-muted-foreground">
+            {entries.length} goal{entries.length !== 1 ? 's' : ''} across {Object.keys(groupedEntries).length} categor{Object.keys(groupedEntries).length !== 1 ? 'ies' : 'y'}
+          </p>
         </div>
       )}
 
-      {/* Content */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Skeleton key={i} className="h-48 rounded-2xl" />
-          ))}
-        </div>
-      ) : activeEntries.length === 0 ? (
-        <div className="text-center py-20 space-y-4">
-          <div className="text-6xl">🌟</div>
-          <h2 className="font-display text-2xl font-semibold text-foreground">
-            {viewMode === 'partner' ? "Your partner hasn't added any goals yet" : 'Your vision board is empty'}
-          </h2>
-          <p className="font-body text-muted-foreground max-w-md mx-auto">
-            {viewMode === 'partner'
-              ? 'Check back later when your partner adds their vision goals.'
-              : 'Start by adding your first vision goal. Dream big — your future self will thank you!'}
-          </p>
-          {viewMode === 'mine' && (
-            <Button
-              onClick={() => setAddOpen(true)}
-              size="lg"
-              className="font-body font-semibold rounded-2xl shadow-warm mt-2"
+      {/* Tabs */}
+      {hasPartner ? (
+        <div className="space-y-6">
+          <div className="flex gap-2 p-1 bg-muted rounded-xl">
+            <button
+              onClick={() => setActiveTab('mine')}
+              className={`flex-1 py-2 px-4 rounded-lg text-sm font-body font-medium transition-all ${
+                activeTab === 'mine'
+                  ? 'bg-card shadow-sm text-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
             >
-              <Plus className="w-4 h-4 mr-2" /> Add Your First Goal
-            </Button>
+              My Goals
+            </button>
+            <button
+              onClick={() => setActiveTab('partner')}
+              className={`flex-1 py-2 px-4 rounded-lg text-sm font-body font-medium transition-all flex items-center justify-center gap-2 ${
+                activeTab === 'partner'
+                  ? 'bg-card shadow-sm text-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              Partner's Goals
+            </button>
+          </div>
+
+          {activeTab === 'mine' ? (
+            myLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[1, 2, 3].map((i) => <Skeleton key={i} className="h-48 rounded-2xl" />)}
+              </div>
+            ) : entries.length === 0 ? (
+              <EmptyState onAdd={() => { setEditingEntry(null); setDialogOpen(true); }} />
+            ) : (
+              <GoalGrid groups={groupedEntries} isOwner={true} onEdit={handleEdit} onDelete={setDeleteTarget} onProgressUpdate={handleProgressUpdate} />
+            )
+          ) : (
+            partnerLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[1, 2, 3].map((i) => <Skeleton key={i} className="h-48 rounded-2xl" />)}
+              </div>
+            ) : partnerEntries.length === 0 ? (
+              <PartnerEmptyState />
+            ) : (
+              <GoalGrid groups={groupedPartnerEntries} isOwner={false} />
+            )
           )}
         </div>
       ) : (
-        <>
-          {viewMode === 'partner' && (
-            <div className="flex items-center gap-2 px-1">
-              <Heart className="w-4 h-4 text-rose-dusty fill-current" />
-              <span className="font-body text-sm font-semibold text-muted-foreground">
-                Partner's Goals (read-only)
-              </span>
-            </div>
-          )}
-          <GoalsGrid entries={activeEntries} readOnly={viewMode === 'partner'} />
-        </>
+        myLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-48 rounded-2xl" />)}
+          </div>
+        ) : entries.length === 0 ? (
+          <EmptyState onAdd={() => { setEditingEntry(null); setDialogOpen(true); }} />
+        ) : (
+          <GoalGrid groups={groupedEntries} isOwner={true} onEdit={handleEdit} onDelete={setDeleteTarget} onProgressUpdate={handleProgressUpdate} />
+        )
       )}
 
-      <AddGoalModal open={addOpen} onClose={() => setAddOpen(false)} />
+      {/* Goal Form Dialog */}
+      <GoalFormDialog
+        open={dialogOpen}
+        onClose={() => { setDialogOpen(false); setEditingEntry(null); }}
+        onSave={handleSaveEntry}
+        initial={editingEntry}
+        isSaving={isSavingEntry}
+      />
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={deleteTarget !== null} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display">Delete this goal?</AlertDialogTitle>
+            <AlertDialogDescription className="font-body">
+              This action cannot be undone. The goal and all its milestones will be permanently removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="font-body">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="font-body bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleDelete}
+            >
+              Delete Goal
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+interface GoalGridProps {
+  groups: Record<string, VisionBoardEntry[]>;
+  isOwner: boolean;
+  onEdit?: (entry: VisionBoardEntry) => void;
+  onDelete?: (targetYear: bigint) => void;
+  onProgressUpdate?: (targetYear: bigint, progress: number) => void;
+}
+
+function GoalGrid({ groups, isOwner, onEdit, onDelete, onProgressUpdate }: GoalGridProps) {
+  return (
+    <div className="space-y-6">
+      {Object.entries(groups).map(([category, categoryEntries]) => (
+        <div key={category} className="space-y-3">
+          <h3 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
+            {CATEGORY_LABELS[category as GoalCategory]}
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {categoryEntries.map((entry) => (
+              <GoalCard
+                key={`${entry.category}-${entry.targetYear}`}
+                entry={entry}
+                isOwner={isOwner}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onProgressUpdate={onProgressUpdate}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function EmptyState({ onAdd }: { onAdd: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+      <Target className="w-16 h-16 text-muted-foreground/30" />
+      <div>
+        <h3 className="font-display text-xl font-semibold text-foreground mb-2">No goals yet</h3>
+        <p className="font-body text-muted-foreground max-w-sm">
+          Start building your vision board by adding your first long-term goal.
+        </p>
+      </div>
+      <Button onClick={onAdd} className="font-body rounded-2xl">
+        <Plus className="w-4 h-4 mr-2" /> Add Your First Goal
+      </Button>
+    </div>
+  );
+}
+
+function PartnerEmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+      <Heart className="w-16 h-16 text-muted-foreground/30" />
+      <div>
+        <h3 className="font-display text-xl font-semibold text-foreground mb-2">No goals yet</h3>
+        <p className="font-body text-muted-foreground max-w-sm">
+          Your partner hasn't added any vision board goals yet. Check back later!
+        </p>
+      </div>
     </div>
   );
 }

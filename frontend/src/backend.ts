@@ -194,6 +194,12 @@ export interface HabitYearly {
     name: string;
     monthlyCheckIns: Array<boolean>;
 }
+export enum CoupleCreateError {
+    partnerAlreadyLinked = "partnerAlreadyLinked",
+    callerAlreadyLinked = "callerAlreadyLinked",
+    unauthorized = "unauthorized",
+    anonymousNotPermitted = "anonymousNotPermitted"
+}
 export enum EmotionTag {
     sad = "sad",
     fearful = "fearful",
@@ -235,13 +241,11 @@ export enum UserRole {
 }
 export interface backendInterface {
     _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
-    addDailyPlannerEntry(entry: DailyPlannerEntry): Promise<void>;
     addMonthlyEntry(entry: MonthlyEntry): Promise<void>;
-    addVisionBoardEntry(entry: VisionBoardEntry): Promise<void>;
     addWeeklyEntry(entry: WeeklyEntry): Promise<void>;
     addYearlyEntry(entry: YearlyEntry): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
-    createCouple(partner1: Principal, partner2: Principal): Promise<void>;
+    createCouple(partner1: Principal, partner2: Principal): Promise<CoupleCreateError | null>;
     createOrUpdateDailyJournal(entry: DailyJournalEntry): Promise<void>;
     createOrUpdateEmotionalJournal(entry: EmotionalJournalEntry): Promise<void>;
     createOrUpdateGrowthJournal(entry: GrowthJournalEntry): Promise<void>;
@@ -251,42 +255,57 @@ export interface backendInterface {
     deleteVisionBoardEntry(targetYear: bigint): Promise<void>;
     deleteWeeklyEntry(year: bigint, weekNumber: bigint): Promise<void>;
     deleteYearlyEntry(year: bigint): Promise<void>;
+    dissolveCouple(): Promise<boolean>;
     getAllCouples(): Promise<Array<Couple>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getCouple(partner: Principal): Promise<Couple | null>;
     getDailyJournals(): Promise<Array<DailyJournalEntry>>;
+    getDailyJournalsForOwner(owner: Principal): Promise<Array<DailyJournalEntry>>;
     getDailyJournalsForUser(user: Principal): Promise<Array<DailyJournalEntry>>;
+    getDailyPlannerEntries(): Promise<Array<DailyPlannerEntry>>;
     getDailyQuote(dayOfYear: bigint): Promise<string>;
     getEmotionalJournals(): Promise<Array<EmotionalJournalEntry>>;
-    getEmotionalJournalsForUser(user: Principal): Promise<Array<EmotionalJournalEntry>>;
+    getEmotionalJournalsForOwner(owner: Principal): Promise<Array<EmotionalJournalEntry>>;
     getGrowthJournals(): Promise<Array<GrowthJournalEntry>>;
-    getGrowthJournalsForUser(user: Principal): Promise<Array<GrowthJournalEntry>>;
+    getGrowthJournalsForOwner(owner: Principal): Promise<Array<GrowthJournalEntry>>;
     getMonthlyEntries(): Promise<Array<MonthlyEntry>>;
     getNightReflections(): Promise<Array<NightReflectionJournalEntry>>;
-    getNightReflectionsForUser(user: Principal): Promise<Array<NightReflectionJournalEntry>>;
-    getOwnerDailyPlannerEntries(owner: Principal): Promise<Array<DailyPlannerEntry>>;
+    getNightReflectionsForOwner(owner: Principal): Promise<Array<NightReflectionJournalEntry>>;
     getOwnerMonthlyEntries(owner: Principal): Promise<Array<MonthlyEntry>>;
-    getOwnerVisionBoardEntries(owner: Principal): Promise<Array<VisionBoardEntry>>;
     getOwnerWeeklyEntries(owner: Principal): Promise<Array<WeeklyEntry>>;
     getOwnerYearlyEntries(owner: Principal): Promise<Array<YearlyEntry>>;
-    getPartnerSpecificDailyPlannerEntries(owner: Principal): Promise<Array<DailyPlannerEntry>>;
-    getPartnerSpecificMonthlyEntries(owner: Principal): Promise<Array<MonthlyEntry>>;
-    getPartnerSpecificWeeklyEntries(owner: Principal): Promise<Array<WeeklyEntry>>;
-    getPartnerSpecificYearlyEntries(owner: Principal): Promise<Array<YearlyEntry>>;
+    getPartnerDailyJournals(): Promise<Array<DailyJournalEntry>>;
+    getPartnerDailyPlannerEntries(): Promise<Array<DailyPlannerEntry>>;
+    getPartnerDailyPlannerEntryForDate(date: bigint): Promise<DailyPlannerEntry | null>;
+    getPartnerEmotionalJournals(): Promise<Array<EmotionalJournalEntry>>;
+    getPartnerGrowthJournals(): Promise<Array<GrowthJournalEntry>>;
+    getPartnerJournals(): Promise<{
+        growth: Array<GrowthJournalEntry>;
+        night: Array<NightReflectionJournalEntry>;
+        emotional: Array<EmotionalJournalEntry>;
+        daily: Array<DailyJournalEntry>;
+    }>;
+    getPartnerMonthlyEntries(): Promise<Array<MonthlyEntry>>;
+    getPartnerNightReflections(): Promise<Array<NightReflectionJournalEntry>>;
+    getPartnerUserProfile(): Promise<UserProfile | null>;
     getPartnerVisionBoardEntries(): Promise<Array<VisionBoardEntry>>;
+    getPartnerWeeklyEntries(): Promise<Array<WeeklyEntry>>;
+    getPartnerYearlyEntries(): Promise<Array<YearlyEntry>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
+    getVisionBoardEntries(): Promise<Array<VisionBoardEntry>>;
     getWeeklyEntries(): Promise<Array<WeeklyEntry>>;
-    getYearlyEntries(): Promise<Array<YearlyEntry>>;
     isCallerAdmin(): Promise<boolean>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    saveDailyPlannerEntry(entry: DailyPlannerEntry): Promise<void>;
+    saveVisionBoardEntry(entry: VisionBoardEntry): Promise<void>;
     updateMonthlyEntry(year: bigint, month: bigint, updatedEntry: MonthlyEntry): Promise<void>;
     updateVisionBoardProgress(targetYear: bigint, progress: bigint): Promise<void>;
     updateWaterIntake(date: bigint, intake: bigint): Promise<void>;
     updateWeeklyEntry(year: bigint, weekNumber: bigint, updatedEntry: WeeklyEntry): Promise<void>;
     updateYearlyEntry(year: bigint, updatedEntry: YearlyEntry): Promise<void>;
 }
-import type { Couple as _Couple, EmotionTag as _EmotionTag, EmotionalJournalEntry as _EmotionalJournalEntry, GoalCategory as _GoalCategory, GrowthArea as _GrowthArea, GrowthJournalEntry as _GrowthJournalEntry, UserProfile as _UserProfile, UserRole as _UserRole, VisionBoardEntry as _VisionBoardEntry } from "./declarations/backend.did.d.ts";
+import type { Couple as _Couple, CoupleCreateError as _CoupleCreateError, DailyJournalEntry as _DailyJournalEntry, DailyPlannerEntry as _DailyPlannerEntry, EmotionTag as _EmotionTag, EmotionalJournalEntry as _EmotionalJournalEntry, GoalCategory as _GoalCategory, GrowthArea as _GrowthArea, GrowthJournalEntry as _GrowthJournalEntry, NightReflectionJournalEntry as _NightReflectionJournalEntry, UserProfile as _UserProfile, UserRole as _UserRole, VisionBoardEntry as _VisionBoardEntry } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
     async _initializeAccessControlWithSecret(arg0: string): Promise<void> {
@@ -303,20 +322,6 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async addDailyPlannerEntry(arg0: DailyPlannerEntry): Promise<void> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.addDailyPlannerEntry(arg0);
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.addDailyPlannerEntry(arg0);
-            return result;
-        }
-    }
     async addMonthlyEntry(arg0: MonthlyEntry): Promise<void> {
         if (this.processError) {
             try {
@@ -328,20 +333,6 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.addMonthlyEntry(arg0);
-            return result;
-        }
-    }
-    async addVisionBoardEntry(arg0: VisionBoardEntry): Promise<void> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.addVisionBoardEntry(to_candid_VisionBoardEntry_n1(this._uploadFile, this._downloadFile, arg0));
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.addVisionBoardEntry(to_candid_VisionBoardEntry_n1(this._uploadFile, this._downloadFile, arg0));
             return result;
         }
     }
@@ -376,29 +367,29 @@ export class Backend implements backendInterface {
     async assignCallerUserRole(arg0: Principal, arg1: UserRole): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.assignCallerUserRole(arg0, to_candid_UserRole_n5(this._uploadFile, this._downloadFile, arg1));
+                const result = await this.actor.assignCallerUserRole(arg0, to_candid_UserRole_n1(this._uploadFile, this._downloadFile, arg1));
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.assignCallerUserRole(arg0, to_candid_UserRole_n5(this._uploadFile, this._downloadFile, arg1));
+            const result = await this.actor.assignCallerUserRole(arg0, to_candid_UserRole_n1(this._uploadFile, this._downloadFile, arg1));
             return result;
         }
     }
-    async createCouple(arg0: Principal, arg1: Principal): Promise<void> {
+    async createCouple(arg0: Principal, arg1: Principal): Promise<CoupleCreateError | null> {
         if (this.processError) {
             try {
                 const result = await this.actor.createCouple(arg0, arg1);
-                return result;
+                return from_candid_opt_n3(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.createCouple(arg0, arg1);
-            return result;
+            return from_candid_opt_n3(this._uploadFile, this._downloadFile, result);
         }
     }
     async createOrUpdateDailyJournal(arg0: DailyJournalEntry): Promise<void> {
@@ -418,28 +409,28 @@ export class Backend implements backendInterface {
     async createOrUpdateEmotionalJournal(arg0: EmotionalJournalEntry): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.createOrUpdateEmotionalJournal(to_candid_EmotionalJournalEntry_n7(this._uploadFile, this._downloadFile, arg0));
+                const result = await this.actor.createOrUpdateEmotionalJournal(to_candid_EmotionalJournalEntry_n6(this._uploadFile, this._downloadFile, arg0));
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.createOrUpdateEmotionalJournal(to_candid_EmotionalJournalEntry_n7(this._uploadFile, this._downloadFile, arg0));
+            const result = await this.actor.createOrUpdateEmotionalJournal(to_candid_EmotionalJournalEntry_n6(this._uploadFile, this._downloadFile, arg0));
             return result;
         }
     }
     async createOrUpdateGrowthJournal(arg0: GrowthJournalEntry): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.createOrUpdateGrowthJournal(to_candid_GrowthJournalEntry_n11(this._uploadFile, this._downloadFile, arg0));
+                const result = await this.actor.createOrUpdateGrowthJournal(to_candid_GrowthJournalEntry_n10(this._uploadFile, this._downloadFile, arg0));
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.createOrUpdateGrowthJournal(to_candid_GrowthJournalEntry_n11(this._uploadFile, this._downloadFile, arg0));
+            const result = await this.actor.createOrUpdateGrowthJournal(to_candid_GrowthJournalEntry_n10(this._uploadFile, this._downloadFile, arg0));
             return result;
         }
     }
@@ -527,6 +518,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async dissolveCouple(): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.dissolveCouple();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.dissolveCouple();
+            return result;
+        }
+    }
     async getAllCouples(): Promise<Array<Couple>> {
         if (this.processError) {
             try {
@@ -545,42 +550,42 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getCallerUserProfile();
-                return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n14(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getCallerUserProfile();
-            return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n14(this._uploadFile, this._downloadFile, result);
         }
     }
     async getCallerUserRole(): Promise<UserRole> {
         if (this.processError) {
             try {
                 const result = await this.actor.getCallerUserRole();
-                return from_candid_UserRole_n16(this._uploadFile, this._downloadFile, result);
+                return from_candid_UserRole_n15(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getCallerUserRole();
-            return from_candid_UserRole_n16(this._uploadFile, this._downloadFile, result);
+            return from_candid_UserRole_n15(this._uploadFile, this._downloadFile, result);
         }
     }
     async getCouple(arg0: Principal): Promise<Couple | null> {
         if (this.processError) {
             try {
                 const result = await this.actor.getCouple(arg0);
-                return from_candid_opt_n18(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n17(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getCouple(arg0);
-            return from_candid_opt_n18(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n17(this._uploadFile, this._downloadFile, result);
         }
     }
     async getDailyJournals(): Promise<Array<DailyJournalEntry>> {
@@ -597,6 +602,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async getDailyJournalsForOwner(arg0: Principal): Promise<Array<DailyJournalEntry>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getDailyJournalsForOwner(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getDailyJournalsForOwner(arg0);
+            return result;
+        }
+    }
     async getDailyJournalsForUser(arg0: Principal): Promise<Array<DailyJournalEntry>> {
         if (this.processError) {
             try {
@@ -608,6 +627,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.getDailyJournalsForUser(arg0);
+            return result;
+        }
+    }
+    async getDailyPlannerEntries(): Promise<Array<DailyPlannerEntry>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getDailyPlannerEntries();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getDailyPlannerEntries();
             return result;
         }
     }
@@ -629,56 +662,56 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getEmotionalJournals();
-                return from_candid_vec_n19(this._uploadFile, this._downloadFile, result);
+                return from_candid_vec_n18(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getEmotionalJournals();
-            return from_candid_vec_n19(this._uploadFile, this._downloadFile, result);
+            return from_candid_vec_n18(this._uploadFile, this._downloadFile, result);
         }
     }
-    async getEmotionalJournalsForUser(arg0: Principal): Promise<Array<EmotionalJournalEntry>> {
+    async getEmotionalJournalsForOwner(arg0: Principal): Promise<Array<EmotionalJournalEntry>> {
         if (this.processError) {
             try {
-                const result = await this.actor.getEmotionalJournalsForUser(arg0);
-                return from_candid_vec_n19(this._uploadFile, this._downloadFile, result);
+                const result = await this.actor.getEmotionalJournalsForOwner(arg0);
+                return from_candid_vec_n18(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getEmotionalJournalsForUser(arg0);
-            return from_candid_vec_n19(this._uploadFile, this._downloadFile, result);
+            const result = await this.actor.getEmotionalJournalsForOwner(arg0);
+            return from_candid_vec_n18(this._uploadFile, this._downloadFile, result);
         }
     }
     async getGrowthJournals(): Promise<Array<GrowthJournalEntry>> {
         if (this.processError) {
             try {
                 const result = await this.actor.getGrowthJournals();
-                return from_candid_vec_n24(this._uploadFile, this._downloadFile, result);
+                return from_candid_vec_n23(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getGrowthJournals();
-            return from_candid_vec_n24(this._uploadFile, this._downloadFile, result);
+            return from_candid_vec_n23(this._uploadFile, this._downloadFile, result);
         }
     }
-    async getGrowthJournalsForUser(arg0: Principal): Promise<Array<GrowthJournalEntry>> {
+    async getGrowthJournalsForOwner(arg0: Principal): Promise<Array<GrowthJournalEntry>> {
         if (this.processError) {
             try {
-                const result = await this.actor.getGrowthJournalsForUser(arg0);
-                return from_candid_vec_n24(this._uploadFile, this._downloadFile, result);
+                const result = await this.actor.getGrowthJournalsForOwner(arg0);
+                return from_candid_vec_n23(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getGrowthJournalsForUser(arg0);
-            return from_candid_vec_n24(this._uploadFile, this._downloadFile, result);
+            const result = await this.actor.getGrowthJournalsForOwner(arg0);
+            return from_candid_vec_n23(this._uploadFile, this._downloadFile, result);
         }
     }
     async getMonthlyEntries(): Promise<Array<MonthlyEntry>> {
@@ -709,31 +742,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async getNightReflectionsForUser(arg0: Principal): Promise<Array<NightReflectionJournalEntry>> {
+    async getNightReflectionsForOwner(arg0: Principal): Promise<Array<NightReflectionJournalEntry>> {
         if (this.processError) {
             try {
-                const result = await this.actor.getNightReflectionsForUser(arg0);
+                const result = await this.actor.getNightReflectionsForOwner(arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getNightReflectionsForUser(arg0);
-            return result;
-        }
-    }
-    async getOwnerDailyPlannerEntries(arg0: Principal): Promise<Array<DailyPlannerEntry>> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getOwnerDailyPlannerEntries(arg0);
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getOwnerDailyPlannerEntries(arg0);
+            const result = await this.actor.getNightReflectionsForOwner(arg0);
             return result;
         }
     }
@@ -749,20 +768,6 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getOwnerMonthlyEntries(arg0);
             return result;
-        }
-    }
-    async getOwnerVisionBoardEntries(arg0: Principal): Promise<Array<VisionBoardEntry>> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getOwnerVisionBoardEntries(arg0);
-                return from_candid_vec_n29(this._uploadFile, this._downloadFile, result);
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getOwnerVisionBoardEntries(arg0);
-            return from_candid_vec_n29(this._uploadFile, this._downloadFile, result);
         }
     }
     async getOwnerWeeklyEntries(arg0: Principal): Promise<Array<WeeklyEntry>> {
@@ -793,88 +798,205 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async getPartnerSpecificDailyPlannerEntries(arg0: Principal): Promise<Array<DailyPlannerEntry>> {
+    async getPartnerDailyJournals(): Promise<Array<DailyJournalEntry>> {
         if (this.processError) {
             try {
-                const result = await this.actor.getPartnerSpecificDailyPlannerEntries(arg0);
+                const result = await this.actor.getPartnerDailyJournals();
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getPartnerSpecificDailyPlannerEntries(arg0);
+            const result = await this.actor.getPartnerDailyJournals();
             return result;
         }
     }
-    async getPartnerSpecificMonthlyEntries(arg0: Principal): Promise<Array<MonthlyEntry>> {
+    async getPartnerDailyPlannerEntries(): Promise<Array<DailyPlannerEntry>> {
         if (this.processError) {
             try {
-                const result = await this.actor.getPartnerSpecificMonthlyEntries(arg0);
+                const result = await this.actor.getPartnerDailyPlannerEntries();
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getPartnerSpecificMonthlyEntries(arg0);
+            const result = await this.actor.getPartnerDailyPlannerEntries();
             return result;
         }
     }
-    async getPartnerSpecificWeeklyEntries(arg0: Principal): Promise<Array<WeeklyEntry>> {
+    async getPartnerDailyPlannerEntryForDate(arg0: bigint): Promise<DailyPlannerEntry | null> {
         if (this.processError) {
             try {
-                const result = await this.actor.getPartnerSpecificWeeklyEntries(arg0);
+                const result = await this.actor.getPartnerDailyPlannerEntryForDate(arg0);
+                return from_candid_opt_n28(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPartnerDailyPlannerEntryForDate(arg0);
+            return from_candid_opt_n28(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getPartnerEmotionalJournals(): Promise<Array<EmotionalJournalEntry>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPartnerEmotionalJournals();
+                return from_candid_vec_n18(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPartnerEmotionalJournals();
+            return from_candid_vec_n18(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getPartnerGrowthJournals(): Promise<Array<GrowthJournalEntry>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPartnerGrowthJournals();
+                return from_candid_vec_n23(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPartnerGrowthJournals();
+            return from_candid_vec_n23(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getPartnerJournals(): Promise<{
+        growth: Array<GrowthJournalEntry>;
+        night: Array<NightReflectionJournalEntry>;
+        emotional: Array<EmotionalJournalEntry>;
+        daily: Array<DailyJournalEntry>;
+    }> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPartnerJournals();
+                return from_candid_record_n29(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPartnerJournals();
+            return from_candid_record_n29(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getPartnerMonthlyEntries(): Promise<Array<MonthlyEntry>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPartnerMonthlyEntries();
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getPartnerSpecificWeeklyEntries(arg0);
+            const result = await this.actor.getPartnerMonthlyEntries();
             return result;
         }
     }
-    async getPartnerSpecificYearlyEntries(arg0: Principal): Promise<Array<YearlyEntry>> {
+    async getPartnerNightReflections(): Promise<Array<NightReflectionJournalEntry>> {
         if (this.processError) {
             try {
-                const result = await this.actor.getPartnerSpecificYearlyEntries(arg0);
+                const result = await this.actor.getPartnerNightReflections();
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getPartnerSpecificYearlyEntries(arg0);
+            const result = await this.actor.getPartnerNightReflections();
             return result;
+        }
+    }
+    async getPartnerUserProfile(): Promise<UserProfile | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPartnerUserProfile();
+                return from_candid_opt_n14(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPartnerUserProfile();
+            return from_candid_opt_n14(this._uploadFile, this._downloadFile, result);
         }
     }
     async getPartnerVisionBoardEntries(): Promise<Array<VisionBoardEntry>> {
         if (this.processError) {
             try {
                 const result = await this.actor.getPartnerVisionBoardEntries();
-                return from_candid_vec_n29(this._uploadFile, this._downloadFile, result);
+                return from_candid_vec_n30(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getPartnerVisionBoardEntries();
-            return from_candid_vec_n29(this._uploadFile, this._downloadFile, result);
+            return from_candid_vec_n30(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getPartnerWeeklyEntries(): Promise<Array<WeeklyEntry>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPartnerWeeklyEntries();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPartnerWeeklyEntries();
+            return result;
+        }
+    }
+    async getPartnerYearlyEntries(): Promise<Array<YearlyEntry>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPartnerYearlyEntries();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPartnerYearlyEntries();
+            return result;
         }
     }
     async getUserProfile(arg0: Principal): Promise<UserProfile | null> {
         if (this.processError) {
             try {
                 const result = await this.actor.getUserProfile(arg0);
-                return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n14(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getUserProfile(arg0);
-            return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n14(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getVisionBoardEntries(): Promise<Array<VisionBoardEntry>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getVisionBoardEntries();
+                return from_candid_vec_n30(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getVisionBoardEntries();
+            return from_candid_vec_n30(this._uploadFile, this._downloadFile, result);
         }
     }
     async getWeeklyEntries(): Promise<Array<WeeklyEntry>> {
@@ -888,20 +1010,6 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.getWeeklyEntries();
-            return result;
-        }
-    }
-    async getYearlyEntries(): Promise<Array<YearlyEntry>> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getYearlyEntries();
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getYearlyEntries();
             return result;
         }
     }
@@ -930,6 +1038,34 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.saveCallerUserProfile(arg0);
+            return result;
+        }
+    }
+    async saveDailyPlannerEntry(arg0: DailyPlannerEntry): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.saveDailyPlannerEntry(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.saveDailyPlannerEntry(arg0);
+            return result;
+        }
+    }
+    async saveVisionBoardEntry(arg0: VisionBoardEntry): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.saveVisionBoardEntry(to_candid_VisionBoardEntry_n35(this._uploadFile, this._downloadFile, arg0));
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.saveVisionBoardEntry(to_candid_VisionBoardEntry_n35(this._uploadFile, this._downloadFile, arg0));
             return result;
         }
     }
@@ -1004,34 +1140,43 @@ export class Backend implements backendInterface {
         }
     }
 }
-function from_candid_EmotionTag_n22(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _EmotionTag): EmotionTag {
-    return from_candid_variant_n23(_uploadFile, _downloadFile, value);
+function from_candid_CoupleCreateError_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _CoupleCreateError): CoupleCreateError {
+    return from_candid_variant_n5(_uploadFile, _downloadFile, value);
 }
-function from_candid_EmotionalJournalEntry_n20(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _EmotionalJournalEntry): EmotionalJournalEntry {
-    return from_candid_record_n21(_uploadFile, _downloadFile, value);
+function from_candid_EmotionTag_n21(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _EmotionTag): EmotionTag {
+    return from_candid_variant_n22(_uploadFile, _downloadFile, value);
 }
-function from_candid_GoalCategory_n32(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _GoalCategory): GoalCategory {
-    return from_candid_variant_n33(_uploadFile, _downloadFile, value);
+function from_candid_EmotionalJournalEntry_n19(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _EmotionalJournalEntry): EmotionalJournalEntry {
+    return from_candid_record_n20(_uploadFile, _downloadFile, value);
 }
-function from_candid_GrowthArea_n27(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _GrowthArea): GrowthArea {
-    return from_candid_variant_n28(_uploadFile, _downloadFile, value);
+function from_candid_GoalCategory_n33(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _GoalCategory): GoalCategory {
+    return from_candid_variant_n34(_uploadFile, _downloadFile, value);
 }
-function from_candid_GrowthJournalEntry_n25(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _GrowthJournalEntry): GrowthJournalEntry {
-    return from_candid_record_n26(_uploadFile, _downloadFile, value);
+function from_candid_GrowthArea_n26(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _GrowthArea): GrowthArea {
+    return from_candid_variant_n27(_uploadFile, _downloadFile, value);
 }
-function from_candid_UserRole_n16(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole): UserRole {
-    return from_candid_variant_n17(_uploadFile, _downloadFile, value);
+function from_candid_GrowthJournalEntry_n24(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _GrowthJournalEntry): GrowthJournalEntry {
+    return from_candid_record_n25(_uploadFile, _downloadFile, value);
 }
-function from_candid_VisionBoardEntry_n30(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _VisionBoardEntry): VisionBoardEntry {
-    return from_candid_record_n31(_uploadFile, _downloadFile, value);
+function from_candid_UserRole_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole): UserRole {
+    return from_candid_variant_n16(_uploadFile, _downloadFile, value);
 }
-function from_candid_opt_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_UserProfile]): UserProfile | null {
+function from_candid_VisionBoardEntry_n31(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _VisionBoardEntry): VisionBoardEntry {
+    return from_candid_record_n32(_uploadFile, _downloadFile, value);
+}
+function from_candid_opt_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_UserProfile]): UserProfile | null {
     return value.length === 0 ? null : value[0];
 }
-function from_candid_opt_n18(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_Couple]): Couple | null {
+function from_candid_opt_n17(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_Couple]): Couple | null {
     return value.length === 0 ? null : value[0];
 }
-function from_candid_record_n21(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_opt_n28(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_DailyPlannerEntry]): DailyPlannerEntry | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_CoupleCreateError]): CoupleCreateError | null {
+    return value.length === 0 ? null : from_candid_CoupleCreateError_n4(_uploadFile, _downloadFile, value[0]);
+}
+function from_candid_record_n20(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     trigger: string;
     emotion: _EmotionTag;
     date: bigint;
@@ -1048,14 +1193,14 @@ function from_candid_record_n21(_uploadFile: (file: ExternalBlob) => Promise<Uin
 } {
     return {
         trigger: value.trigger,
-        emotion: from_candid_EmotionTag_n22(_uploadFile, _downloadFile, value.emotion),
+        emotion: from_candid_EmotionTag_n21(_uploadFile, _downloadFile, value.emotion),
         date: value.date,
         isPublic: value.isPublic,
         reflection: value.reflection,
         intensity: value.intensity
     };
 }
-function from_candid_record_n26(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_record_n25(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     growthRating: bigint;
     date: bigint;
     actionStep: string;
@@ -1076,10 +1221,28 @@ function from_candid_record_n26(_uploadFile: (file: ExternalBlob) => Promise<Uin
         actionStep: value.actionStep,
         lesson: value.lesson,
         isPublic: value.isPublic,
-        growthArea: from_candid_GrowthArea_n27(_uploadFile, _downloadFile, value.growthArea)
+        growthArea: from_candid_GrowthArea_n26(_uploadFile, _downloadFile, value.growthArea)
     };
 }
-function from_candid_record_n31(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_record_n29(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    growth: Array<_GrowthJournalEntry>;
+    night: Array<_NightReflectionJournalEntry>;
+    emotional: Array<_EmotionalJournalEntry>;
+    daily: Array<_DailyJournalEntry>;
+}): {
+    growth: Array<GrowthJournalEntry>;
+    night: Array<NightReflectionJournalEntry>;
+    emotional: Array<EmotionalJournalEntry>;
+    daily: Array<DailyJournalEntry>;
+} {
+    return {
+        growth: from_candid_vec_n23(_uploadFile, _downloadFile, value.growth),
+        night: value.night,
+        emotional: from_candid_vec_n18(_uploadFile, _downloadFile, value.emotional),
+        daily: value.daily
+    };
+}
+function from_candid_record_n32(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     progressPercentage: bigint;
     targetYear: bigint;
     category: _GoalCategory;
@@ -1095,12 +1258,12 @@ function from_candid_record_n31(_uploadFile: (file: ExternalBlob) => Promise<Uin
     return {
         progressPercentage: value.progressPercentage,
         targetYear: value.targetYear,
-        category: from_candid_GoalCategory_n32(_uploadFile, _downloadFile, value.category),
+        category: from_candid_GoalCategory_n33(_uploadFile, _downloadFile, value.category),
         whyThisMatters: value.whyThisMatters,
         milestones: value.milestones
     };
 }
-function from_candid_variant_n17(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_variant_n16(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     admin: null;
 } | {
     user: null;
@@ -1109,7 +1272,7 @@ function from_candid_variant_n17(_uploadFile: (file: ExternalBlob) => Promise<Ui
 }): UserRole {
     return "admin" in value ? UserRole.admin : "user" in value ? UserRole.user : "guest" in value ? UserRole.guest : value;
 }
-function from_candid_variant_n23(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_variant_n22(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     sad: null;
 } | {
     fearful: null;
@@ -1142,7 +1305,7 @@ function from_candid_variant_n23(_uploadFile: (file: ExternalBlob) => Promise<Ui
 }): EmotionTag {
     return "sad" in value ? EmotionTag.sad : "fearful" in value ? EmotionTag.fearful : "content" in value ? EmotionTag.content : "anxious" in value ? EmotionTag.anxious : "happy" in value ? EmotionTag.happy : "angry" in value ? EmotionTag.angry : "disappointed" in value ? EmotionTag.disappointed : "calm" in value ? EmotionTag.calm : "grateful" in value ? EmotionTag.grateful : "peaceful" in value ? EmotionTag.peaceful : "overwhelmed" in value ? EmotionTag.overwhelmed : "motivated" in value ? EmotionTag.motivated : "frustrated" in value ? EmotionTag.frustrated : "excited" in value ? EmotionTag.excited : "optimistic" in value ? EmotionTag.optimistic : value;
 }
-function from_candid_variant_n28(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_variant_n27(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     spiritual: null;
 } | {
     other: null;
@@ -1157,7 +1320,7 @@ function from_candid_variant_n28(_uploadFile: (file: ExternalBlob) => Promise<Ui
 }): GrowthArea {
     return "spiritual" in value ? GrowthArea.spiritual : "other" in value ? GrowthArea.other : "mindset" in value ? GrowthArea.mindset : "career" in value ? GrowthArea.career : "relationships" in value ? GrowthArea.relationships : "health" in value ? GrowthArea.health : value;
 }
-function from_candid_variant_n33(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_variant_n34(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     relationship: null;
 } | {
     spiritual: null;
@@ -1174,37 +1337,48 @@ function from_candid_variant_n33(_uploadFile: (file: ExternalBlob) => Promise<Ui
 }): GoalCategory {
     return "relationship" in value ? GoalCategory.relationship : "spiritual" in value ? GoalCategory.spiritual : "travel" in value ? GoalCategory.travel : "personalGrowth" in value ? GoalCategory.personalGrowth : "career" in value ? GoalCategory.career : "financial" in value ? GoalCategory.financial : "health" in value ? GoalCategory.health : value;
 }
-function from_candid_vec_n19(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_EmotionalJournalEntry>): Array<EmotionalJournalEntry> {
-    return value.map((x)=>from_candid_EmotionalJournalEntry_n20(_uploadFile, _downloadFile, x));
+function from_candid_variant_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    partnerAlreadyLinked: null;
+} | {
+    callerAlreadyLinked: null;
+} | {
+    unauthorized: null;
+} | {
+    anonymousNotPermitted: null;
+}): CoupleCreateError {
+    return "partnerAlreadyLinked" in value ? CoupleCreateError.partnerAlreadyLinked : "callerAlreadyLinked" in value ? CoupleCreateError.callerAlreadyLinked : "unauthorized" in value ? CoupleCreateError.unauthorized : "anonymousNotPermitted" in value ? CoupleCreateError.anonymousNotPermitted : value;
 }
-function from_candid_vec_n24(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_GrowthJournalEntry>): Array<GrowthJournalEntry> {
-    return value.map((x)=>from_candid_GrowthJournalEntry_n25(_uploadFile, _downloadFile, x));
+function from_candid_vec_n18(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_EmotionalJournalEntry>): Array<EmotionalJournalEntry> {
+    return value.map((x)=>from_candid_EmotionalJournalEntry_n19(_uploadFile, _downloadFile, x));
 }
-function from_candid_vec_n29(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_VisionBoardEntry>): Array<VisionBoardEntry> {
-    return value.map((x)=>from_candid_VisionBoardEntry_n30(_uploadFile, _downloadFile, x));
+function from_candid_vec_n23(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_GrowthJournalEntry>): Array<GrowthJournalEntry> {
+    return value.map((x)=>from_candid_GrowthJournalEntry_n24(_uploadFile, _downloadFile, x));
 }
-function to_candid_EmotionTag_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: EmotionTag): _EmotionTag {
-    return to_candid_variant_n10(_uploadFile, _downloadFile, value);
+function from_candid_vec_n30(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_VisionBoardEntry>): Array<VisionBoardEntry> {
+    return value.map((x)=>from_candid_VisionBoardEntry_n31(_uploadFile, _downloadFile, x));
 }
-function to_candid_EmotionalJournalEntry_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: EmotionalJournalEntry): _EmotionalJournalEntry {
-    return to_candid_record_n8(_uploadFile, _downloadFile, value);
+function to_candid_EmotionTag_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: EmotionTag): _EmotionTag {
+    return to_candid_variant_n9(_uploadFile, _downloadFile, value);
 }
-function to_candid_GoalCategory_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: GoalCategory): _GoalCategory {
-    return to_candid_variant_n4(_uploadFile, _downloadFile, value);
+function to_candid_EmotionalJournalEntry_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: EmotionalJournalEntry): _EmotionalJournalEntry {
+    return to_candid_record_n7(_uploadFile, _downloadFile, value);
 }
-function to_candid_GrowthArea_n13(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: GrowthArea): _GrowthArea {
-    return to_candid_variant_n14(_uploadFile, _downloadFile, value);
+function to_candid_GoalCategory_n37(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: GoalCategory): _GoalCategory {
+    return to_candid_variant_n38(_uploadFile, _downloadFile, value);
 }
-function to_candid_GrowthJournalEntry_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: GrowthJournalEntry): _GrowthJournalEntry {
-    return to_candid_record_n12(_uploadFile, _downloadFile, value);
+function to_candid_GrowthArea_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: GrowthArea): _GrowthArea {
+    return to_candid_variant_n13(_uploadFile, _downloadFile, value);
 }
-function to_candid_UserRole_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): _UserRole {
-    return to_candid_variant_n6(_uploadFile, _downloadFile, value);
+function to_candid_GrowthJournalEntry_n10(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: GrowthJournalEntry): _GrowthJournalEntry {
+    return to_candid_record_n11(_uploadFile, _downloadFile, value);
 }
-function to_candid_VisionBoardEntry_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: VisionBoardEntry): _VisionBoardEntry {
-    return to_candid_record_n2(_uploadFile, _downloadFile, value);
+function to_candid_UserRole_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): _UserRole {
+    return to_candid_variant_n2(_uploadFile, _downloadFile, value);
 }
-function to_candid_record_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function to_candid_VisionBoardEntry_n35(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: VisionBoardEntry): _VisionBoardEntry {
+    return to_candid_record_n36(_uploadFile, _downloadFile, value);
+}
+function to_candid_record_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     growthRating: bigint;
     date: bigint;
     actionStep: string;
@@ -1225,10 +1399,10 @@ function to_candid_record_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8
         actionStep: value.actionStep,
         lesson: value.lesson,
         isPublic: value.isPublic,
-        growthArea: to_candid_GrowthArea_n13(_uploadFile, _downloadFile, value.growthArea)
+        growthArea: to_candid_GrowthArea_n12(_uploadFile, _downloadFile, value.growthArea)
     };
 }
-function to_candid_record_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function to_candid_record_n36(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     progressPercentage: bigint;
     targetYear: bigint;
     category: GoalCategory;
@@ -1244,12 +1418,12 @@ function to_candid_record_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8A
     return {
         progressPercentage: value.progressPercentage,
         targetYear: value.targetYear,
-        category: to_candid_GoalCategory_n3(_uploadFile, _downloadFile, value.category),
+        category: to_candid_GoalCategory_n37(_uploadFile, _downloadFile, value.category),
         whyThisMatters: value.whyThisMatters,
         milestones: value.milestones
     };
 }
-function to_candid_record_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function to_candid_record_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     trigger: string;
     emotion: EmotionTag;
     date: bigint;
@@ -1266,14 +1440,87 @@ function to_candid_record_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8A
 } {
     return {
         trigger: value.trigger,
-        emotion: to_candid_EmotionTag_n9(_uploadFile, _downloadFile, value.emotion),
+        emotion: to_candid_EmotionTag_n8(_uploadFile, _downloadFile, value.emotion),
         date: value.date,
         isPublic: value.isPublic,
         reflection: value.reflection,
         intensity: value.intensity
     };
 }
-function to_candid_variant_n10(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: EmotionTag): {
+function to_candid_variant_n13(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: GrowthArea): {
+    spiritual: null;
+} | {
+    other: null;
+} | {
+    mindset: null;
+} | {
+    career: null;
+} | {
+    relationships: null;
+} | {
+    health: null;
+} {
+    return value == GrowthArea.spiritual ? {
+        spiritual: null
+    } : value == GrowthArea.other ? {
+        other: null
+    } : value == GrowthArea.mindset ? {
+        mindset: null
+    } : value == GrowthArea.career ? {
+        career: null
+    } : value == GrowthArea.relationships ? {
+        relationships: null
+    } : value == GrowthArea.health ? {
+        health: null
+    } : value;
+}
+function to_candid_variant_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): {
+    admin: null;
+} | {
+    user: null;
+} | {
+    guest: null;
+} {
+    return value == UserRole.admin ? {
+        admin: null
+    } : value == UserRole.user ? {
+        user: null
+    } : value == UserRole.guest ? {
+        guest: null
+    } : value;
+}
+function to_candid_variant_n38(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: GoalCategory): {
+    relationship: null;
+} | {
+    spiritual: null;
+} | {
+    travel: null;
+} | {
+    personalGrowth: null;
+} | {
+    career: null;
+} | {
+    financial: null;
+} | {
+    health: null;
+} {
+    return value == GoalCategory.relationship ? {
+        relationship: null
+    } : value == GoalCategory.spiritual ? {
+        spiritual: null
+    } : value == GoalCategory.travel ? {
+        travel: null
+    } : value == GoalCategory.personalGrowth ? {
+        personalGrowth: null
+    } : value == GoalCategory.career ? {
+        career: null
+    } : value == GoalCategory.financial ? {
+        financial: null
+    } : value == GoalCategory.health ? {
+        health: null
+    } : value;
+}
+function to_candid_variant_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: EmotionTag): {
     sad: null;
 } | {
     fearful: null;
@@ -1334,79 +1581,6 @@ function to_candid_variant_n10(_uploadFile: (file: ExternalBlob) => Promise<Uint
         excited: null
     } : value == EmotionTag.optimistic ? {
         optimistic: null
-    } : value;
-}
-function to_candid_variant_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: GrowthArea): {
-    spiritual: null;
-} | {
-    other: null;
-} | {
-    mindset: null;
-} | {
-    career: null;
-} | {
-    relationships: null;
-} | {
-    health: null;
-} {
-    return value == GrowthArea.spiritual ? {
-        spiritual: null
-    } : value == GrowthArea.other ? {
-        other: null
-    } : value == GrowthArea.mindset ? {
-        mindset: null
-    } : value == GrowthArea.career ? {
-        career: null
-    } : value == GrowthArea.relationships ? {
-        relationships: null
-    } : value == GrowthArea.health ? {
-        health: null
-    } : value;
-}
-function to_candid_variant_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: GoalCategory): {
-    relationship: null;
-} | {
-    spiritual: null;
-} | {
-    travel: null;
-} | {
-    personalGrowth: null;
-} | {
-    career: null;
-} | {
-    financial: null;
-} | {
-    health: null;
-} {
-    return value == GoalCategory.relationship ? {
-        relationship: null
-    } : value == GoalCategory.spiritual ? {
-        spiritual: null
-    } : value == GoalCategory.travel ? {
-        travel: null
-    } : value == GoalCategory.personalGrowth ? {
-        personalGrowth: null
-    } : value == GoalCategory.career ? {
-        career: null
-    } : value == GoalCategory.financial ? {
-        financial: null
-    } : value == GoalCategory.health ? {
-        health: null
-    } : value;
-}
-function to_candid_variant_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): {
-    admin: null;
-} | {
-    user: null;
-} | {
-    guest: null;
-} {
-    return value == UserRole.admin ? {
-        admin: null
-    } : value == UserRole.user ? {
-        user: null
-    } : value == UserRole.guest ? {
-        guest: null
     } : value;
 }
 export interface CreateActorOptions {

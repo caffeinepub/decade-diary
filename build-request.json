@@ -1,141 +1,75 @@
 {
   "kind": "build_request",
-  "title": "Display partner's yearly, monthly, weekly, and daily planner entries in sharing sections",
+  "title": "Allow partners to view each other's journal entries",
   "projectName": "Future Us",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "In the YearlyPlanner page, add a partner-view tab or section that fetches and displays the partner's yearly planner entry (word of the year, major goals, vision image URLs, monthly habit tracker grid, and year-end reflection) as read-only content. The partner's data must be clearly distinguished from the current user's own data.",
-      "target": "frontend",
+      "text": "Add a backend endpoint that retrieves journal entries for a given user's partner, enforcing couple-based access control so only linked partners can read each other's journal data.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-7"
+          "msg-6"
         ],
         "quotes": [
-          "Share me the partners yearly monthly weekly and daily planner section"
+          "Allow partner to see the jouranal of each other"
         ]
       },
       "acceptanceCriteria": [
-        "A 'Partner's Plan' tab or section is visible in YearlyPlanner",
-        "The partner's word of the year, goals, vision URLs, habit tracker, and reflection are displayed",
-        "The section is read-only — the current user cannot edit the partner's data",
-        "If no partner is linked or the partner has no entry, a friendly empty state message is shown",
-        "The current user's own planner data is unaffected"
+        "A query function exists that returns all journal entry types (daily, emotional, night reflection, growth) for the caller's linked partner.",
+        "The function returns an error or empty result if the caller is not in a couple with the target user.",
+        "Unlinked users cannot access any journal entries of another user."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "In the MonthlyPlanner page, add a partner-view tab or section that fetches and displays the partner's monthly planner entry (goals, important dates, budget entries, and mood tracker) for the currently selected month as read-only content.",
+      "text": "Add a React Query hook in useQueries.ts to fetch the partner's journal entries from the new backend endpoint, following the same pattern used for partner daily planner data.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-7"
+          "msg-6"
         ],
         "quotes": [
-          "Share me the partners yearly monthly weekly and daily planner section"
+          "Allow partner to see the jouranal of each other"
         ]
       },
       "acceptanceCriteria": [
-        "A 'Partner's Plan' tab or section is visible in MonthlyPlanner",
-        "The partner's goals, important dates, budget, and mood tracker for the selected month are displayed",
-        "The section is read-only",
-        "If no partner is linked or the partner has no entry for the month, a friendly empty state message is shown",
-        "Month navigation applies to the partner view as well"
+        "A useQuery hook exists that fetches partner journal entries.",
+        "The hook is only active when the user is in a coupled state.",
+        "Loading and error states are handled."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "In the WeeklyPlanner page, add a partner-view tab or section that fetches and displays the partner's weekly planner entry (priority tasks, habit tracker grid, todos, energy rating, and reflection) for the currently selected ISO week as read-only content.",
+      "text": "Add a read-only partner journal view tab in JournalSection.tsx that displays the partner's journal entries across all four journal types (daily, emotional, night reflection, growth), consistent with the read-only partner view pattern used in DailyPlanner, WeeklyPlanner, MonthlyPlanner, and VisionBoard.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-7"
+          "msg-6"
         ],
         "quotes": [
-          "Share me the partners yearly monthly weekly and daily planner section"
+          "Allow partner to see the jouranal of each other"
         ]
       },
       "acceptanceCriteria": [
-        "A 'Partner's Plan' tab or section is visible in WeeklyPlanner",
-        "The partner's priority tasks, habit tracker, todos, energy rating, and reflection for the selected week are displayed",
-        "The section is read-only",
-        "If no partner is linked or the partner has no entry for the week, a friendly empty state message is shown",
-        "ISO-week navigation applies to the partner view as well"
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "In the DailyPlanner page, add a partner-view tab or section that fetches and displays the partner's daily planner entry (schedule items, tasks, notes, water intake, mood, gratitude entries, and journal entry) for the currently selected date as read-only content.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-7"
-        ],
-        "quotes": [
-          "Share me the partners yearly monthly weekly and daily planner section"
-        ]
-      },
-      "acceptanceCriteria": [
-        "A 'Partner's Plan' tab or section is visible in DailyPlanner",
-        "The partner's schedule, tasks, notes, water intake, mood, gratitude, and journal entry for the selected date are displayed",
-        "The section is read-only",
-        "If no partner is linked or the partner has no entry for the date, a friendly empty state message is shown",
-        "Date navigation applies to the partner view as well"
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "text": "Ensure the backend exposes query functions that allow fetching another user's (partner's) yearly, monthly, weekly, and daily planner entries by principal ID. If these queries do not already exist, add them to the main actor with appropriate read-only access (no mutation allowed via these endpoints).",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-7"
-        ],
-        "quotes": [
-          "Share me the partners yearly monthly weekly and daily planner section"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Query functions exist for retrieving a partner's yearly planner entry by principal and year",
-        "Query functions exist for retrieving a partner's monthly planner entry by principal and month/year",
-        "Query functions exist for retrieving a partner's weekly planner entry by principal and ISO week/year",
-        "Query functions exist for retrieving a partner's daily planner entry by principal and date",
-        "These are query (not update) calls — they do not mutate any state",
-        "Access is restricted so that only a linked couple partner can fetch the other's entries"
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "text": "Add React Query hooks in useQueries.ts for the new partner planner query functions (yearly, monthly, weekly, daily by partner principal), so the frontend components can consume partner data consistently with the existing query patterns.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-7"
-        ],
-        "quotes": [
-          "Share me the partners yearly monthly weekly and daily planner section"
-        ]
-      },
-      "acceptanceCriteria": [
-        "A hook exists to fetch the partner's yearly planner entry",
-        "A hook exists to fetch the partner's monthly planner entry",
-        "A hook exists to fetch the partner's weekly planner entry",
-        "A hook exists to fetch the partner's daily planner entry",
-        "Hooks follow the same pattern as existing hooks in useQueries.ts",
-        "Hooks return loading, error, and data states"
+        "A 'Partner's Journal' tab or toggle appears in JournalSection only when the user is linked to a partner.",
+        "All four journal types are viewable in read-only mode from the partner's perspective.",
+        "No edit or save controls are shown in the partner view.",
+        "Date navigation works in the partner view to browse different entries.",
+        "The partner view is visually consistent with other partner view tabs in the app."
       ]
     }
   ],
   "constraints": [
-    "Do not allow the current user to edit or mutate the partner's planner entries from any of these views",
-    "Partner-view sections must only be visible when a couple relationship is established",
-    "Do not modify files in frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui"
+    "Do not allow any user to edit or delete a partner's journal entries.",
+    "Partner journal access must be gated on an active couple relationship — unlinked users must not see any partner journal data.",
+    "Follow the existing read-only partner view pattern established in DailyPlanner, WeeklyPlanner, MonthlyPlanner, and VisionBoard."
   ],
   "nonGoals": [
-    "Allowing the current user to comment on or react to the partner's planner entries",
-    "Real-time sync of partner planner data",
-    "Modifying the VisionBoard or JournalSection partner sharing behavior"
+    "Real-time sync or notifications when a partner updates their journal.",
+    "Shared or collaborative journal entries.",
+    "Any changes to the existing journal entry creation or editing flow."
   ],
   "imageRequirements": {
     "required": [],

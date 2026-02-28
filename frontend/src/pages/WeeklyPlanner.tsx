@@ -192,10 +192,10 @@ export default function WeeklyPlanner() {
   const partnerPrincipal = getPartnerPrincipal(couple ?? null, myPrincipalStr);
   const hasPartner = !!partnerPrincipal;
 
-  const { data: myEntries = [], isLoading: myLoading } = useGetWeeklyEntries(myPrincipal);
+  const { data: myEntries = [], isLoading: myLoading } = useGetWeeklyEntries();
   const myEntry = myEntries.find(e => Number(e.weekNumber) === week && Number(e.year) === year);
 
-  const { data: partnerEntries = [], isLoading: partnerLoading } = useGetPartnerWeeklyEntries(partnerPrincipal);
+  const { data: partnerEntries = [], isLoading: partnerLoading } = useGetPartnerWeeklyEntries();
   const partnerEntry = partnerEntries.find(e => Number(e.weekNumber) === week && Number(e.year) === year);
 
   const addEntry = useAddWeeklyEntry();
@@ -430,13 +430,13 @@ function MyWeeklyPlanForm({
       <div className="bg-card rounded-2xl p-6 shadow-warm border border-border">
         <div className="flex items-center gap-2 mb-4">
           <CheckSquare className="w-5 h-5 text-primary" />
-          <h3 className="font-playfair text-lg font-semibold text-foreground">Weekly Habit Tracker</h3>
+          <h3 className="font-playfair text-lg font-semibold text-foreground">Habit Tracker</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
               <tr>
-                <th className="text-left py-1 pr-3 text-muted-foreground font-medium min-w-[120px]">Habit</th>
+                <th className="text-left py-1 pr-3 text-muted-foreground font-medium">Habit</th>
                 {DAY_LABELS.map(d => (
                   <th key={d} className="text-center py-1 px-2 text-muted-foreground font-medium">{d}</th>
                 ))}
@@ -458,9 +458,9 @@ function MyWeeklyPlanForm({
                     <td key={di} className="text-center py-2 px-2">
                       <button
                         onClick={() => toggleHabit(hi, di)}
-                        className={`w-5 h-5 rounded-full border transition-colors ${habit.dailyCheckIns[di] ? 'bg-primary border-primary' : 'border-muted-foreground/40 hover:border-primary'}`}
+                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center mx-auto transition-colors ${habit.dailyCheckIns[di] ? 'bg-primary border-primary' : 'border-muted-foreground/40 hover:border-primary'}`}
                       >
-                        {habit.dailyCheckIns[di] && <span className="text-white text-xs flex items-center justify-center h-full">✓</span>}
+                        {habit.dailyCheckIns[di] && <span className="text-white text-xs">✓</span>}
                       </button>
                     </td>
                   ))}
@@ -471,14 +471,17 @@ function MyWeeklyPlanForm({
         </div>
       </div>
 
-      {/* Todos */}
+      {/* To-Do List */}
       <div className="bg-card rounded-2xl p-6 shadow-warm border border-border">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <List className="w-5 h-5 text-primary" />
             <h3 className="font-playfair text-lg font-semibold text-foreground">To-Do List</h3>
           </div>
-          <button onClick={() => setTodos([...todos, { description: '', isComplete: false }])} className="text-sm text-primary hover:underline">+ Add</button>
+          <button
+            onClick={() => setTodos([...todos, { description: '', isComplete: false }])}
+            className="text-sm text-primary hover:underline"
+          >+ Add</button>
         </div>
         <div className="space-y-2">
           {todos.map((todo, i) => (
@@ -493,8 +496,8 @@ function MyWeeklyPlanForm({
                 type="text"
                 value={todo.description}
                 onChange={e => setTodos(todos.map((t, idx) => idx === i ? { ...t, description: e.target.value } : t))}
-                placeholder="Add a task..."
-                className={`flex-1 bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 ${todo.isComplete ? 'line-through text-muted-foreground' : ''}`}
+                placeholder={`Task ${i + 1}`}
+                className={`flex-1 bg-background border border-border rounded-xl px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 ${todo.isComplete ? 'line-through text-muted-foreground' : ''}`}
               />
               {todos.length > 1 && (
                 <button onClick={() => setTodos(todos.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-destructive text-lg leading-none">×</button>
@@ -515,7 +518,7 @@ function MyWeeklyPlanForm({
             <button
               key={n}
               onClick={() => setEnergyRating(n)}
-              className={`w-10 h-10 rounded-full font-semibold text-sm border-2 transition-colors ${energyRating >= n ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground/30 text-muted-foreground hover:border-primary'}`}
+              className={`w-12 h-12 rounded-full flex items-center justify-center font-semibold text-sm border-2 transition-colors ${energyRating >= n ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground/30 text-muted-foreground hover:border-primary'}`}
             >
               {n}
             </button>
@@ -526,32 +529,37 @@ function MyWeeklyPlanForm({
 
       {/* Reflection */}
       <div className="bg-card rounded-2xl p-6 shadow-warm border border-border">
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-2 mb-4">
           <BookOpen className="w-5 h-5 text-primary" />
           <h3 className="font-playfair text-lg font-semibold text-foreground">Weekly Reflection</h3>
         </div>
         <textarea
           value={reflection}
           onChange={e => setReflection(e.target.value)}
-          placeholder="What did you learn this week? What would you do differently?"
+          placeholder="How did this week go? What did you learn? What are you proud of?"
           rows={4}
           className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
         />
       </div>
 
-      {/* Save */}
-      <button
-        onClick={onSave}
-        disabled={isSaving}
-        className="w-full bg-primary text-primary-foreground rounded-xl py-3 font-semibold hover:bg-primary/90 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
-      >
-        {isSaving ? (
-          <>
-            <span className="w-4 h-4 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full animate-spin" />
-            Saving...
-          </>
-        ) : 'Save Weekly Plan'}
-      </button>
+      {/* Save Button */}
+      <div className="flex justify-end">
+        <button
+          onClick={onSave}
+          disabled={isSaving}
+          className="bg-primary text-primary-foreground px-8 py-3 rounded-2xl font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
+        >
+          {isSaving ? (
+            <>
+              <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              Saving...
+            </>
+          ) : 'Save Weekly Plan'}
+        </button>
+      </div>
     </div>
   );
 }

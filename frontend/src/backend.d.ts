@@ -112,6 +112,12 @@ export interface HabitYearly {
     name: string;
     monthlyCheckIns: Array<boolean>;
 }
+export enum CoupleCreateError {
+    partnerAlreadyLinked = "partnerAlreadyLinked",
+    callerAlreadyLinked = "callerAlreadyLinked",
+    unauthorized = "unauthorized",
+    anonymousNotPermitted = "anonymousNotPermitted"
+}
 export enum EmotionTag {
     sad = "sad",
     fearful = "fearful",
@@ -152,13 +158,11 @@ export enum UserRole {
     guest = "guest"
 }
 export interface backendInterface {
-    addDailyPlannerEntry(entry: DailyPlannerEntry): Promise<void>;
     addMonthlyEntry(entry: MonthlyEntry): Promise<void>;
-    addVisionBoardEntry(entry: VisionBoardEntry): Promise<void>;
     addWeeklyEntry(entry: WeeklyEntry): Promise<void>;
     addYearlyEntry(entry: YearlyEntry): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
-    createCouple(partner1: Principal, partner2: Principal): Promise<void>;
+    createCouple(partner1: Principal, partner2: Principal): Promise<CoupleCreateError | null>;
     createOrUpdateDailyJournal(entry: DailyJournalEntry): Promise<void>;
     createOrUpdateEmotionalJournal(entry: EmotionalJournalEntry): Promise<void>;
     createOrUpdateGrowthJournal(entry: GrowthJournalEntry): Promise<void>;
@@ -168,35 +172,50 @@ export interface backendInterface {
     deleteVisionBoardEntry(targetYear: bigint): Promise<void>;
     deleteWeeklyEntry(year: bigint, weekNumber: bigint): Promise<void>;
     deleteYearlyEntry(year: bigint): Promise<void>;
+    dissolveCouple(): Promise<boolean>;
     getAllCouples(): Promise<Array<Couple>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getCouple(partner: Principal): Promise<Couple | null>;
     getDailyJournals(): Promise<Array<DailyJournalEntry>>;
+    getDailyJournalsForOwner(owner: Principal): Promise<Array<DailyJournalEntry>>;
     getDailyJournalsForUser(user: Principal): Promise<Array<DailyJournalEntry>>;
+    getDailyPlannerEntries(): Promise<Array<DailyPlannerEntry>>;
     getDailyQuote(dayOfYear: bigint): Promise<string>;
     getEmotionalJournals(): Promise<Array<EmotionalJournalEntry>>;
-    getEmotionalJournalsForUser(user: Principal): Promise<Array<EmotionalJournalEntry>>;
+    getEmotionalJournalsForOwner(owner: Principal): Promise<Array<EmotionalJournalEntry>>;
     getGrowthJournals(): Promise<Array<GrowthJournalEntry>>;
-    getGrowthJournalsForUser(user: Principal): Promise<Array<GrowthJournalEntry>>;
+    getGrowthJournalsForOwner(owner: Principal): Promise<Array<GrowthJournalEntry>>;
     getMonthlyEntries(): Promise<Array<MonthlyEntry>>;
     getNightReflections(): Promise<Array<NightReflectionJournalEntry>>;
-    getNightReflectionsForUser(user: Principal): Promise<Array<NightReflectionJournalEntry>>;
-    getOwnerDailyPlannerEntries(owner: Principal): Promise<Array<DailyPlannerEntry>>;
+    getNightReflectionsForOwner(owner: Principal): Promise<Array<NightReflectionJournalEntry>>;
     getOwnerMonthlyEntries(owner: Principal): Promise<Array<MonthlyEntry>>;
-    getOwnerVisionBoardEntries(owner: Principal): Promise<Array<VisionBoardEntry>>;
     getOwnerWeeklyEntries(owner: Principal): Promise<Array<WeeklyEntry>>;
     getOwnerYearlyEntries(owner: Principal): Promise<Array<YearlyEntry>>;
-    getPartnerSpecificDailyPlannerEntries(owner: Principal): Promise<Array<DailyPlannerEntry>>;
-    getPartnerSpecificMonthlyEntries(owner: Principal): Promise<Array<MonthlyEntry>>;
-    getPartnerSpecificWeeklyEntries(owner: Principal): Promise<Array<WeeklyEntry>>;
-    getPartnerSpecificYearlyEntries(owner: Principal): Promise<Array<YearlyEntry>>;
+    getPartnerDailyJournals(): Promise<Array<DailyJournalEntry>>;
+    getPartnerDailyPlannerEntries(): Promise<Array<DailyPlannerEntry>>;
+    getPartnerDailyPlannerEntryForDate(date: bigint): Promise<DailyPlannerEntry | null>;
+    getPartnerEmotionalJournals(): Promise<Array<EmotionalJournalEntry>>;
+    getPartnerGrowthJournals(): Promise<Array<GrowthJournalEntry>>;
+    getPartnerJournals(): Promise<{
+        growth: Array<GrowthJournalEntry>;
+        night: Array<NightReflectionJournalEntry>;
+        emotional: Array<EmotionalJournalEntry>;
+        daily: Array<DailyJournalEntry>;
+    }>;
+    getPartnerMonthlyEntries(): Promise<Array<MonthlyEntry>>;
+    getPartnerNightReflections(): Promise<Array<NightReflectionJournalEntry>>;
+    getPartnerUserProfile(): Promise<UserProfile | null>;
     getPartnerVisionBoardEntries(): Promise<Array<VisionBoardEntry>>;
+    getPartnerWeeklyEntries(): Promise<Array<WeeklyEntry>>;
+    getPartnerYearlyEntries(): Promise<Array<YearlyEntry>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
+    getVisionBoardEntries(): Promise<Array<VisionBoardEntry>>;
     getWeeklyEntries(): Promise<Array<WeeklyEntry>>;
-    getYearlyEntries(): Promise<Array<YearlyEntry>>;
     isCallerAdmin(): Promise<boolean>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    saveDailyPlannerEntry(entry: DailyPlannerEntry): Promise<void>;
+    saveVisionBoardEntry(entry: VisionBoardEntry): Promise<void>;
     updateMonthlyEntry(year: bigint, month: bigint, updatedEntry: MonthlyEntry): Promise<void>;
     updateVisionBoardProgress(targetYear: bigint, progress: bigint): Promise<void>;
     updateWaterIntake(date: bigint, intake: bigint): Promise<void>;

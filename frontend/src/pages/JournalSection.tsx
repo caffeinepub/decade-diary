@@ -1,31 +1,13 @@
-import { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { format } from 'date-fns';
+import { Calendar, Heart, Moon, Sprout, ChevronLeft, ChevronRight, Users, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  BookOpen,
-  Heart,
-  Moon,
-  Sprout,
-  ChevronLeft,
-  ChevronRight,
-  Plus,
-  X,
-  Loader2,
-  Star,
-} from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   useGetDailyJournals,
   useCreateOrUpdateDailyJournal,
@@ -35,644 +17,788 @@ import {
   useCreateOrUpdateNightReflection,
   useGetGrowthJournals,
   useCreateOrUpdateGrowthJournal,
-} from '@/hooks/useQueries';
+  useGetCouple,
+  useGetPartnerUserProfile,
+  useGetPartnerJournals,
+} from '../hooks/useQueries';
 import { EmotionTag, GrowthArea } from '../backend';
+import type {
+  DailyJournalEntry,
+  EmotionalJournalEntry,
+  NightReflectionJournalEntry,
+  GrowthJournalEntry,
+} from '../backend';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function dateToTimestamp(dateStr: string): bigint {
-  return BigInt(new Date(dateStr).setHours(0, 0, 0, 0));
+function dateToInt(date: Date): bigint {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  return BigInt(d.getTime());
 }
 
-function todayStr(): string {
-  return new Date().toISOString().split('T')[0];
+function formatDisplayDate(date: Date): string {
+  return format(date, 'MMMM d, yyyy');
 }
 
-function formatDisplayDate(dateStr: string): string {
-  return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-}
-
-function shiftDate(dateStr: string, days: number): string {
-  const d = new Date(dateStr + 'T00:00:00');
+function addDays(date: Date, days: number): Date {
+  const d = new Date(date);
   d.setDate(d.getDate() + days);
-  return d.toISOString().split('T')[0];
+  return d;
 }
 
-// ─── Date Picker Bar ──────────────────────────────────────────────────────────
-
-interface DatePickerBarProps {
-  date: string;
-  onChange: (d: string) => void;
-}
-
-function DatePickerBar({ date, onChange }: DatePickerBarProps) {
-  return (
-    <div className="flex items-center gap-3 mb-6">
-      <button
-        onClick={() => onChange(shiftDate(date, -1))}
-        className="p-2 rounded-xl hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
-        aria-label="Previous day"
-      >
-        <ChevronLeft className="w-4 h-4" />
-      </button>
-      <div className="flex-1 text-center">
-        <p className="font-display text-lg font-semibold text-foreground">
-          {formatDisplayDate(date)}
-        </p>
-      </div>
-      <button
-        onClick={() => onChange(shiftDate(date, 1))}
-        className="p-2 rounded-xl hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
-        aria-label="Next day"
-        disabled={date >= todayStr()}
-      >
-        <ChevronRight className="w-4 h-4" />
-      </button>
-      <input
-        type="date"
-        value={date}
-        max={todayStr()}
-        onChange={(e) => onChange(e.target.value)}
-        className="text-sm font-body border border-border rounded-xl px-3 py-1.5 bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
-      />
-    </div>
-  );
-}
-
-// ─── Daily Journal Tab ────────────────────────────────────────────────────────
-
-function DailyJournalTab() {
-  const [date, setDate] = useState(todayStr());
-  const [body, setBody] = useState('');
-  const [isPublic, setIsPublic] = useState(false);
-
-  const { data: entries = [] } = useGetDailyJournals();
-  const saveMutation = useCreateOrUpdateDailyJournal();
-
-  useEffect(() => {
-    const ts = dateToTimestamp(date);
-    const existing = entries.find((e) => e.date === ts);
-    setBody(existing?.body ?? '');
-    setIsPublic(existing?.isPublic ?? false);
-  }, [date, entries]);
-
-  const handleSave = () => {
-    saveMutation.mutate(
-      { date: dateToTimestamp(date), body, isPublic },
-      {
-        onSuccess: () => toast.success('Daily journal saved ✨'),
-        onError: () => toast.error('Failed to save journal entry'),
-      }
-    );
-  };
-
-  return (
-    <div className="space-y-5">
-      <DatePickerBar date={date} onChange={setDate} />
-      <div className="bg-card rounded-2xl p-6 shadow-warm border border-border/60 space-y-4">
-        <div className="flex items-center gap-2 mb-1">
-          <BookOpen className="w-5 h-5 text-primary" />
-          <h3 className="font-display text-lg font-semibold text-foreground">Today's Thoughts</h3>
-        </div>
-        <p className="text-sm font-body text-muted-foreground">
-          Write freely — this is your private space to reflect, dream, and process.
-        </p>
-        <Textarea
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          placeholder="What's on your mind today? How are you feeling? What happened that was meaningful..."
-          className="min-h-[220px] font-body text-base resize-none leading-relaxed"
-        />
-        <div className="flex items-center justify-between pt-1">
-          <label className="flex items-center gap-2 text-sm font-body text-muted-foreground cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={isPublic}
-              onChange={(e) => setIsPublic(e.target.checked)}
-              className="rounded"
-            />
-            Share with partner
-          </label>
-          <Button
-            onClick={handleSave}
-            disabled={saveMutation.isPending || !body.trim()}
-            className="font-body"
-          >
-            {saveMutation.isPending ? (
-              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>
-            ) : (
-              'Save Entry'
-            )}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Emotion Tag Selector ─────────────────────────────────────────────────────
-
-const EMOTION_OPTIONS: { value: EmotionTag; label: string; emoji: string }[] = [
-  { value: EmotionTag.happy, label: 'Happy', emoji: '😊' },
-  { value: EmotionTag.grateful, label: 'Grateful', emoji: '🙏' },
-  { value: EmotionTag.calm, label: 'Calm', emoji: '😌' },
-  { value: EmotionTag.excited, label: 'Excited', emoji: '🤩' },
-  { value: EmotionTag.peaceful, label: 'Peaceful', emoji: '☮️' },
-  { value: EmotionTag.motivated, label: 'Motivated', emoji: '💪' },
-  { value: EmotionTag.optimistic, label: 'Optimistic', emoji: '🌟' },
-  { value: EmotionTag.content, label: 'Content', emoji: '😊' },
-  { value: EmotionTag.anxious, label: 'Anxious', emoji: '😰' },
-  { value: EmotionTag.sad, label: 'Sad', emoji: '😢' },
-  { value: EmotionTag.angry, label: 'Angry', emoji: '😠' },
-  { value: EmotionTag.frustrated, label: 'Frustrated', emoji: '😤' },
-  { value: EmotionTag.overwhelmed, label: 'Overwhelmed', emoji: '😵' },
-  { value: EmotionTag.fearful, label: 'Fearful', emoji: '😨' },
-  { value: EmotionTag.disappointed, label: 'Disappointed', emoji: '😞' },
+const EMOTION_OPTIONS: EmotionTag[] = [
+  EmotionTag.happy, EmotionTag.anxious, EmotionTag.grateful, EmotionTag.sad, EmotionTag.calm, EmotionTag.angry,
+  EmotionTag.excited, EmotionTag.frustrated, EmotionTag.peaceful, EmotionTag.motivated, EmotionTag.overwhelmed,
+  EmotionTag.content, EmotionTag.fearful, EmotionTag.optimistic, EmotionTag.disappointed,
 ];
 
-// ─── Emotional Journal Tab ────────────────────────────────────────────────────
+const GROWTH_AREA_OPTIONS: GrowthArea[] = [
+  GrowthArea.career, GrowthArea.relationships, GrowthArea.health,
+  GrowthArea.mindset, GrowthArea.spiritual, GrowthArea.other,
+];
 
-function EmotionalJournalTab() {
-  const [date, setDate] = useState(todayStr());
-  const [emotion, setEmotion] = useState<EmotionTag>(EmotionTag.calm);
-  const [intensity, setIntensity] = useState(3);
-  const [trigger, setTrigger] = useState('');
-  const [reflection, setReflection] = useState('');
-  const [isPublic, setIsPublic] = useState(false);
+const EMOTION_EMOJI: Record<EmotionTag, string> = {
+  [EmotionTag.happy]: '😊',
+  [EmotionTag.anxious]: '😰',
+  [EmotionTag.grateful]: '🙏',
+  [EmotionTag.sad]: '😢',
+  [EmotionTag.calm]: '😌',
+  [EmotionTag.angry]: '😠',
+  [EmotionTag.excited]: '🤩',
+  [EmotionTag.frustrated]: '😤',
+  [EmotionTag.peaceful]: '☮️',
+  [EmotionTag.motivated]: '💪',
+  [EmotionTag.overwhelmed]: '😵',
+  [EmotionTag.content]: '😊',
+  [EmotionTag.fearful]: '😨',
+  [EmotionTag.optimistic]: '🌟',
+  [EmotionTag.disappointed]: '😞',
+};
 
-  const { data: entries = [] } = useGetEmotionalJournals();
-  const saveMutation = useCreateOrUpdateEmotionalJournal();
+// ─── Date Navigator ───────────────────────────────────────────────────────────
 
-  useEffect(() => {
-    const ts = dateToTimestamp(date);
-    const existing = entries.find((e) => e.date === ts);
-    if (existing) {
-      setEmotion(existing.emotion as EmotionTag);
-      setIntensity(Number(existing.intensity));
-      setTrigger(existing.trigger);
-      setReflection(existing.reflection);
-      setIsPublic(existing.isPublic);
-    } else {
-      setEmotion(EmotionTag.calm);
-      setIntensity(3);
-      setTrigger('');
-      setReflection('');
-      setIsPublic(false);
-    }
-  }, [date, entries]);
+interface DateNavigatorProps {
+  date: Date;
+  onChange: (date: Date) => void;
+}
 
-  const handleSave = () => {
-    saveMutation.mutate(
-      {
-        date: dateToTimestamp(date),
-        emotion,
-        intensity: BigInt(intensity),
-        trigger,
-        reflection,
-        isPublic,
-      },
-      {
-        onSuccess: () => toast.success('Emotional journal saved 💛'),
-        onError: () => toast.error('Failed to save emotional journal'),
-      }
-    );
-  };
-
-  const selectedEmoji = EMOTION_OPTIONS.find((e) => e.value === emotion)?.emoji ?? '😌';
-
+function DateNavigator({ date, onChange }: DateNavigatorProps) {
   return (
-    <div className="space-y-5">
-      <DatePickerBar date={date} onChange={setDate} />
-      <div className="bg-card rounded-2xl p-6 shadow-warm border border-border/60 space-y-6">
-        <div className="flex items-center gap-2 mb-1">
-          <Heart className="w-5 h-5 text-rose-dusty" />
-          <h3 className="font-display text-lg font-semibold text-foreground">Emotional Check-In</h3>
-        </div>
+    <div className="flex items-center gap-3">
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => onChange(addDays(date, -1))}
+        className="text-warm-brown hover:bg-warm-cream"
+      >
+        <ChevronLeft className="w-4 h-4" />
+      </Button>
+      <span className="font-lato text-sm text-warm-brown font-medium min-w-[160px] text-center">
+        {formatDisplayDate(date)}
+      </span>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => onChange(addDays(date, 1))}
+        className="text-warm-brown hover:bg-warm-cream"
+      >
+        <ChevronRight className="w-4 h-4" />
+      </Button>
+    </div>
+  );
+}
 
-        {/* Emotion Tag Selector */}
-        <div className="space-y-2">
-          <Label className="label-warm">How are you feeling?</Label>
-          <div className="flex flex-wrap gap-2">
-            {EMOTION_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => setEmotion(opt.value)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-body border transition-all ${
-                  emotion === opt.value
-                    ? 'bg-primary text-primary-foreground border-primary shadow-warm'
-                    : 'bg-secondary text-muted-foreground border-border/60 hover:border-primary/40 hover:text-foreground'
-                }`}
-              >
-                <span>{opt.emoji}</span>
-                <span>{opt.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+// ─── Read-only field ──────────────────────────────────────────────────────────
 
-        {/* Intensity Slider */}
-        <div className="space-y-3">
-          <Label className="label-warm">
-            Intensity: <span className="text-primary font-semibold">{intensity}/5</span>
-            <span className="ml-2 text-lg">{selectedEmoji}</span>
-          </Label>
-          <Slider
-            min={1}
-            max={5}
-            step={1}
-            value={[intensity]}
-            onValueChange={([v]) => setIntensity(v)}
-            className="w-full"
-          />
-          <div className="flex justify-between text-xs font-body text-muted-foreground">
-            <span>Mild</span>
-            <span>Moderate</span>
-            <span>Intense</span>
-          </div>
-        </div>
-
-        {/* Trigger */}
-        <div className="space-y-2">
-          <Label htmlFor="trigger" className="label-warm">What triggered this feeling?</Label>
-          <Input
-            id="trigger"
-            value={trigger}
-            onChange={(e) => setTrigger(e.target.value)}
-            placeholder="e.g. A conversation, a situation, a thought..."
-            className="font-body"
-          />
-        </div>
-
-        {/* Reflection */}
-        <div className="space-y-2">
-          <Label htmlFor="reflection" className="label-warm">Reflection</Label>
-          <Textarea
-            id="reflection"
-            value={reflection}
-            onChange={(e) => setReflection(e.target.value)}
-            placeholder="What does this emotion tell you? How can you respond with compassion?"
-            className="min-h-[120px] font-body resize-none"
-          />
-        </div>
-
-        <div className="flex items-center justify-between pt-1">
-          <label className="flex items-center gap-2 text-sm font-body text-muted-foreground cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={isPublic}
-              onChange={(e) => setIsPublic(e.target.checked)}
-              className="rounded"
-            />
-            Share with partner
-          </label>
-          <Button
-            onClick={handleSave}
-            disabled={saveMutation.isPending}
-            className="font-body"
-          >
-            {saveMutation.isPending ? (
-              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>
-            ) : (
-              'Save Entry'
-            )}
-          </Button>
-        </div>
+function ReadOnlyField({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="space-y-1">
+      <Label className="font-lato text-xs text-warm-brown/70 uppercase tracking-wide">{label}</Label>
+      <div className="rounded-lg bg-warm-cream/60 border border-warm-sand/40 px-3 py-2 font-lato text-sm text-warm-brown min-h-[40px]">
+        {value || <span className="text-warm-brown/40 italic">No entry</span>}
       </div>
     </div>
   );
 }
 
-// ─── Night Reflection Tab ─────────────────────────────────────────────────────
+function ReadOnlyTextArea({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="space-y-1">
+      <Label className="font-lato text-xs text-warm-brown/70 uppercase tracking-wide">{label}</Label>
+      <div className="rounded-lg bg-warm-cream/60 border border-warm-sand/40 px-3 py-2 font-lato text-sm text-warm-brown min-h-[80px] whitespace-pre-wrap">
+        {value || <span className="text-warm-brown/40 italic">No entry</span>}
+      </div>
+    </div>
+  );
+}
+
+// ─── Partner Journal Views ────────────────────────────────────────────────────
+
+interface PartnerDailyViewProps {
+  entries: DailyJournalEntry[];
+  date: Date;
+  onDateChange: (d: Date) => void;
+}
+
+function PartnerDailyView({ entries, date, onDateChange }: PartnerDailyViewProps) {
+  const dateInt = dateToInt(date);
+  const entry = entries.find(e => e.date === dateInt);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h3 className="font-playfair text-lg text-warm-brown font-semibold">Daily Journal</h3>
+        <DateNavigator date={date} onChange={onDateChange} />
+      </div>
+      <div className="rounded-2xl bg-white/70 border border-warm-sand/30 p-5 shadow-soft space-y-4">
+        {entry ? (
+          <ReadOnlyTextArea label="Journal Entry" value={entry.body} />
+        ) : (
+          <p className="font-lato text-sm text-warm-brown/50 italic text-center py-6">
+            No daily journal entry for this date.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+interface PartnerEmotionalViewProps {
+  entries: EmotionalJournalEntry[];
+  date: Date;
+  onDateChange: (d: Date) => void;
+}
+
+function PartnerEmotionalView({ entries, date, onDateChange }: PartnerEmotionalViewProps) {
+  const dateInt = dateToInt(date);
+  const entry = entries.find(e => e.date === dateInt);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h3 className="font-playfair text-lg text-warm-brown font-semibold">Emotional Journal</h3>
+        <DateNavigator date={date} onChange={onDateChange} />
+      </div>
+      <div className="rounded-2xl bg-white/70 border border-warm-sand/30 p-5 shadow-soft space-y-4">
+        {entry ? (
+          <>
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{EMOTION_EMOJI[entry.emotion as EmotionTag] ?? '💭'}</span>
+              <div>
+                <p className="font-lato text-sm font-semibold text-warm-brown capitalize">{entry.emotion}</p>
+                <p className="font-lato text-xs text-warm-brown/60">Intensity: {Number(entry.intensity)}/10</p>
+              </div>
+            </div>
+            <ReadOnlyField label="Trigger" value={entry.trigger} />
+            <ReadOnlyTextArea label="Reflection" value={entry.reflection} />
+          </>
+        ) : (
+          <p className="font-lato text-sm text-warm-brown/50 italic text-center py-6">
+            No emotional journal entry for this date.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+interface PartnerNightViewProps {
+  entries: NightReflectionJournalEntry[];
+  date: Date;
+  onDateChange: (d: Date) => void;
+}
+
+function PartnerNightView({ entries, date, onDateChange }: PartnerNightViewProps) {
+  const dateInt = dateToInt(date);
+  const entry = entries.find(e => e.date === dateInt);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h3 className="font-playfair text-lg text-warm-brown font-semibold">Night Reflection</h3>
+        <DateNavigator date={date} onChange={onDateChange} />
+      </div>
+      <div className="rounded-2xl bg-white/70 border border-warm-sand/30 p-5 shadow-soft space-y-4">
+        {entry ? (
+          <>
+            <div className="space-y-1">
+              <Label className="font-lato text-xs text-warm-brown/70 uppercase tracking-wide">Highlights</Label>
+              {entry.highlights.length > 0 ? (
+                <ul className="space-y-1">
+                  {entry.highlights.map((h, i) => (
+                    <li key={i} className="font-lato text-sm text-warm-brown bg-warm-cream/60 border border-warm-sand/40 rounded-lg px-3 py-2">
+                      {h}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="font-lato text-sm text-warm-brown/40 italic">No highlights</p>
+              )}
+            </div>
+            <ReadOnlyTextArea label="Improvements" value={entry.improvements} />
+            <ReadOnlyTextArea label="Gratitude" value={entry.gratitude} />
+            <ReadOnlyField label="Tomorrow's Intention" value={entry.intention} />
+          </>
+        ) : (
+          <p className="font-lato text-sm text-warm-brown/50 italic text-center py-6">
+            No night reflection for this date.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+interface PartnerGrowthViewProps {
+  entries: GrowthJournalEntry[];
+  date: Date;
+  onDateChange: (d: Date) => void;
+}
+
+function PartnerGrowthView({ entries, date, onDateChange }: PartnerGrowthViewProps) {
+  const dateInt = dateToInt(date);
+  const entry = entries.find(e => e.date === dateInt);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h3 className="font-playfair text-lg text-warm-brown font-semibold">Growth Journal</h3>
+        <DateNavigator date={date} onChange={onDateChange} />
+      </div>
+      <div className="rounded-2xl bg-white/70 border border-warm-sand/30 p-5 shadow-soft space-y-4">
+        {entry ? (
+          <>
+            <div className="flex items-center gap-3">
+              <Badge variant="secondary" className="capitalize font-lato text-xs">
+                {entry.growthArea}
+              </Badge>
+              <span className="font-lato text-xs text-warm-brown/60">
+                Growth Rating: {Number(entry.growthRating)}/10
+              </span>
+            </div>
+            <ReadOnlyTextArea label="Lesson Learned" value={entry.lesson} />
+            <ReadOnlyField label="Action Step" value={entry.actionStep} />
+          </>
+        ) : (
+          <p className="font-lato text-sm text-warm-brown/50 italic text-center py-6">
+            No growth journal entry for this date.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── My Journal Tab Forms ─────────────────────────────────────────────────────
+
+function DailyJournalTab() {
+  const [date, setDate] = useState<Date>(new Date());
+  const [body, setBody] = useState('');
+
+  const { data: entries = [], isLoading } = useGetDailyJournals();
+  const saveMutation = useCreateOrUpdateDailyJournal();
+
+  const dateInt = dateToInt(date);
+
+  React.useEffect(() => {
+    const entry = entries.find(e => e.date === dateInt);
+    setBody(entry?.body ?? '');
+  }, [dateInt, entries]);
+
+  const handleSave = async () => {
+    const entry: DailyJournalEntry = {
+      date: dateInt,
+      body,
+      isPublic: false,
+    };
+    try {
+      await saveMutation.mutateAsync(entry);
+      toast.success('Daily journal saved!');
+    } catch {
+      toast.error('Failed to save journal entry.');
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h3 className="font-playfair text-lg text-warm-brown font-semibold">Daily Journal</h3>
+        <DateNavigator date={date} onChange={setDate} />
+      </div>
+      <div className="rounded-2xl bg-white/70 border border-warm-sand/30 p-5 shadow-soft space-y-4">
+        {isLoading ? (
+          <Skeleton className="h-32 w-full" />
+        ) : (
+          <>
+            <div className="space-y-1">
+              <Label className="font-lato text-xs text-warm-brown/70 uppercase tracking-wide">
+                What's on your mind today?
+              </Label>
+              <Textarea
+                value={body}
+                onChange={e => setBody(e.target.value)}
+                placeholder="Write freely..."
+                className="min-h-[160px] font-lato text-sm text-warm-brown bg-warm-cream/40 border-warm-sand/40 resize-none"
+              />
+            </div>
+            <Button
+              onClick={handleSave}
+              disabled={saveMutation.isPending}
+              className="bg-warm-terracotta hover:bg-warm-terracotta/90 text-white font-lato"
+            >
+              {saveMutation.isPending ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>
+              ) : 'Save Entry'}
+            </Button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function EmotionalJournalTab() {
+  const [date, setDate] = useState<Date>(new Date());
+  const [emotion, setEmotion] = useState<EmotionTag>(EmotionTag.happy);
+  const [intensity, setIntensity] = useState(5);
+  const [trigger, setTrigger] = useState('');
+  const [reflection, setReflection] = useState('');
+
+  const { data: entries = [], isLoading } = useGetEmotionalJournals();
+  const saveMutation = useCreateOrUpdateEmotionalJournal();
+
+  const dateInt = dateToInt(date);
+
+  React.useEffect(() => {
+    const entry = entries.find(e => e.date === dateInt);
+    if (entry) {
+      setEmotion(entry.emotion as EmotionTag);
+      setIntensity(Number(entry.intensity));
+      setTrigger(entry.trigger);
+      setReflection(entry.reflection);
+    } else {
+      setEmotion(EmotionTag.happy);
+      setIntensity(5);
+      setTrigger('');
+      setReflection('');
+    }
+  }, [dateInt, entries]);
+
+  const handleSave = async () => {
+    const entry: EmotionalJournalEntry = {
+      date: dateInt,
+      emotion,
+      intensity: BigInt(intensity),
+      trigger,
+      reflection,
+      isPublic: false,
+    };
+    try {
+      await saveMutation.mutateAsync(entry);
+      toast.success('Emotional journal saved!');
+    } catch {
+      toast.error('Failed to save emotional journal.');
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h3 className="font-playfair text-lg text-warm-brown font-semibold">Emotional Journal</h3>
+        <DateNavigator date={date} onChange={setDate} />
+      </div>
+      <div className="rounded-2xl bg-white/70 border border-warm-sand/30 p-5 shadow-soft space-y-4">
+        {isLoading ? (
+          <Skeleton className="h-32 w-full" />
+        ) : (
+          <>
+            <div className="space-y-2">
+              <Label className="font-lato text-xs text-warm-brown/70 uppercase tracking-wide">Emotion</Label>
+              <div className="flex flex-wrap gap-2">
+                {EMOTION_OPTIONS.map(e => (
+                  <button
+                    key={e}
+                    onClick={() => setEmotion(e)}
+                    className={`px-3 py-1 rounded-full text-xs font-lato border transition-colors ${
+                      emotion === e
+                        ? 'bg-warm-terracotta text-white border-warm-terracotta'
+                        : 'bg-warm-cream/60 text-warm-brown border-warm-sand/40 hover:bg-warm-sand/30'
+                    }`}
+                  >
+                    {EMOTION_EMOJI[e]} {e}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label className="font-lato text-xs text-warm-brown/70 uppercase tracking-wide">
+                Intensity: {intensity}/10
+              </Label>
+              <input
+                type="range"
+                min={1}
+                max={10}
+                value={intensity}
+                onChange={e => setIntensity(Number(e.target.value))}
+                className="w-full accent-warm-terracotta"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="font-lato text-xs text-warm-brown/70 uppercase tracking-wide">Trigger</Label>
+              <Textarea
+                value={trigger}
+                onChange={e => setTrigger(e.target.value)}
+                placeholder="What triggered this emotion?"
+                className="min-h-[80px] font-lato text-sm text-warm-brown bg-warm-cream/40 border-warm-sand/40 resize-none"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="font-lato text-xs text-warm-brown/70 uppercase tracking-wide">Reflection</Label>
+              <Textarea
+                value={reflection}
+                onChange={e => setReflection(e.target.value)}
+                placeholder="Reflect on this emotion..."
+                className="min-h-[100px] font-lato text-sm text-warm-brown bg-warm-cream/40 border-warm-sand/40 resize-none"
+              />
+            </div>
+            <Button
+              onClick={handleSave}
+              disabled={saveMutation.isPending}
+              className="bg-warm-terracotta hover:bg-warm-terracotta/90 text-white font-lato"
+            >
+              {saveMutation.isPending ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>
+              ) : 'Save Entry'}
+            </Button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function NightReflectionTab() {
-  const [date, setDate] = useState(todayStr());
-  const [highlights, setHighlights] = useState<string[]>(['']);
+  const [date, setDate] = useState<Date>(new Date());
+  const [highlights, setHighlights] = useState<string[]>(['', '', '']);
   const [improvements, setImprovements] = useState('');
   const [gratitude, setGratitude] = useState('');
   const [intention, setIntention] = useState('');
-  const [isPublic, setIsPublic] = useState(false);
 
-  const { data: entries = [] } = useGetNightReflections();
+  const { data: entries = [], isLoading } = useGetNightReflections();
   const saveMutation = useCreateOrUpdateNightReflection();
 
-  useEffect(() => {
-    const ts = dateToTimestamp(date);
-    const existing = entries.find((e) => e.date === ts);
-    if (existing) {
-      setHighlights(existing.highlights.length > 0 ? [...existing.highlights] : ['']);
-      setImprovements(existing.improvements);
-      setGratitude(existing.gratitude);
-      setIntention(existing.intention);
-      setIsPublic(existing.isPublic);
+  const dateInt = dateToInt(date);
+
+  React.useEffect(() => {
+    const entry = entries.find(e => e.date === dateInt);
+    if (entry) {
+      const h = [...entry.highlights];
+      while (h.length < 3) h.push('');
+      setHighlights(h.slice(0, 3));
+      setImprovements(entry.improvements);
+      setGratitude(entry.gratitude);
+      setIntention(entry.intention);
     } else {
-      setHighlights(['']);
+      setHighlights(['', '', '']);
       setImprovements('');
       setGratitude('');
       setIntention('');
-      setIsPublic(false);
     }
-  }, [date, entries]);
+  }, [dateInt, entries]);
 
-  const addHighlight = () => setHighlights((prev) => [...prev, '']);
-  const removeHighlight = (i: number) =>
-    setHighlights((prev) => prev.filter((_, idx) => idx !== i));
-  const updateHighlight = (i: number, val: string) =>
-    setHighlights((prev) => prev.map((h, idx) => (idx === i ? val : h)));
-
-  const handleSave = () => {
-    const cleanHighlights = highlights.filter((h) => h.trim() !== '');
-    saveMutation.mutate(
-      {
-        date: dateToTimestamp(date),
-        highlights: cleanHighlights,
-        improvements,
-        gratitude,
-        intention,
-        isPublic,
-      },
-      {
-        onSuccess: () => toast.success('Night reflection saved 🌙'),
-        onError: () => toast.error('Failed to save night reflection'),
-      }
-    );
+  const handleSave = async () => {
+    const entry: NightReflectionJournalEntry = {
+      date: dateInt,
+      highlights: highlights.filter(h => h.trim() !== ''),
+      improvements,
+      gratitude,
+      intention,
+      isPublic: false,
+    };
+    try {
+      await saveMutation.mutateAsync(entry);
+      toast.success('Night reflection saved!');
+    } catch {
+      toast.error('Failed to save night reflection.');
+    }
   };
 
   return (
-    <div className="space-y-5">
-      <DatePickerBar date={date} onChange={setDate} />
-      <div className="bg-card rounded-2xl p-6 shadow-warm border border-border/60 space-y-6">
-        <div className="flex items-center gap-2 mb-1">
-          <Moon className="w-5 h-5 text-primary" />
-          <h3 className="font-display text-lg font-semibold text-foreground">Night Reflection</h3>
-        </div>
-
-        {/* Highlights */}
-        <div className="space-y-3">
-          <Label className="label-warm">✨ Today's Highlights</Label>
-          <div className="space-y-2">
-            {highlights.map((h, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <span className="text-primary font-semibold text-sm w-5 shrink-0">{i + 1}.</span>
-                <Input
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h3 className="font-playfair text-lg text-warm-brown font-semibold">Night Reflection</h3>
+        <DateNavigator date={date} onChange={setDate} />
+      </div>
+      <div className="rounded-2xl bg-white/70 border border-warm-sand/30 p-5 shadow-soft space-y-4">
+        {isLoading ? (
+          <Skeleton className="h-32 w-full" />
+        ) : (
+          <>
+            <div className="space-y-2">
+              <Label className="font-lato text-xs text-warm-brown/70 uppercase tracking-wide">
+                Today's Highlights
+              </Label>
+              {highlights.map((h, i) => (
+                <input
+                  key={i}
                   value={h}
-                  onChange={(e) => updateHighlight(i, e.target.value)}
-                  placeholder={`Highlight ${i + 1}...`}
-                  className="font-body flex-1"
+                  onChange={e => {
+                    const updated = [...highlights];
+                    updated[i] = e.target.value;
+                    setHighlights(updated);
+                  }}
+                  placeholder={`Highlight ${i + 1}`}
+                  className="w-full rounded-lg bg-warm-cream/40 border border-warm-sand/40 px-3 py-2 font-lato text-sm text-warm-brown placeholder:text-warm-brown/40 focus:outline-none focus:ring-1 focus:ring-warm-terracotta/40"
                 />
-                {highlights.length > 1 && (
-                  <button
-                    onClick={() => removeHighlight(i)}
-                    className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                    aria-label="Remove highlight"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={addHighlight}
-            className="font-body text-xs"
-          >
-            <Plus className="w-3.5 h-3.5 mr-1.5" /> Add Highlight
-          </Button>
-        </div>
-
-        {/* What could have gone better */}
-        <div className="space-y-2">
-          <Label htmlFor="improvements" className="label-warm">🔄 What could have gone better?</Label>
-          <Textarea
-            id="improvements"
-            value={improvements}
-            onChange={(e) => setImprovements(e.target.value)}
-            placeholder="Reflect on moments you'd handle differently..."
-            className="min-h-[100px] font-body resize-none"
-          />
-        </div>
-
-        {/* Gratitude */}
-        <div className="space-y-2">
-          <Label htmlFor="gratitude" className="label-warm">🙏 Gratitude Note</Label>
-          <Input
-            id="gratitude"
-            value={gratitude}
-            onChange={(e) => setGratitude(e.target.value)}
-            placeholder="I am grateful for..."
-            className="font-body"
-          />
-        </div>
-
-        {/* Tomorrow's Intention */}
-        <div className="space-y-2">
-          <Label htmlFor="intention" className="label-warm">🌅 Tomorrow's Intention</Label>
-          <Input
-            id="intention"
-            value={intention}
-            onChange={(e) => setIntention(e.target.value)}
-            placeholder="Tomorrow I intend to..."
-            className="font-body"
-          />
-        </div>
-
-        <div className="flex items-center justify-between pt-1">
-          <label className="flex items-center gap-2 text-sm font-body text-muted-foreground cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={isPublic}
-              onChange={(e) => setIsPublic(e.target.checked)}
-              className="rounded"
-            />
-            Share with partner
-          </label>
-          <Button
-            onClick={handleSave}
-            disabled={saveMutation.isPending}
-            className="font-body"
-          >
-            {saveMutation.isPending ? (
-              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>
-            ) : (
-              'Save Entry'
-            )}
-          </Button>
-        </div>
+              ))}
+            </div>
+            <div className="space-y-1">
+              <Label className="font-lato text-xs text-warm-brown/70 uppercase tracking-wide">
+                What could be improved?
+              </Label>
+              <Textarea
+                value={improvements}
+                onChange={e => setImprovements(e.target.value)}
+                placeholder="Areas for improvement..."
+                className="min-h-[80px] font-lato text-sm text-warm-brown bg-warm-cream/40 border-warm-sand/40 resize-none"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="font-lato text-xs text-warm-brown/70 uppercase tracking-wide">Gratitude</Label>
+              <Textarea
+                value={gratitude}
+                onChange={e => setGratitude(e.target.value)}
+                placeholder="What are you grateful for?"
+                className="min-h-[80px] font-lato text-sm text-warm-brown bg-warm-cream/40 border-warm-sand/40 resize-none"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="font-lato text-xs text-warm-brown/70 uppercase tracking-wide">
+                Tomorrow's Intention
+              </Label>
+              <input
+                value={intention}
+                onChange={e => setIntention(e.target.value)}
+                placeholder="Set your intention for tomorrow..."
+                className="w-full rounded-lg bg-warm-cream/40 border border-warm-sand/40 px-3 py-2 font-lato text-sm text-warm-brown placeholder:text-warm-brown/40 focus:outline-none focus:ring-1 focus:ring-warm-terracotta/40"
+              />
+            </div>
+            <Button
+              onClick={handleSave}
+              disabled={saveMutation.isPending}
+              className="bg-warm-terracotta hover:bg-warm-terracotta/90 text-white font-lato"
+            >
+              {saveMutation.isPending ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>
+              ) : 'Save Entry'}
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );
 }
 
-// ─── Growth Journal Tab ───────────────────────────────────────────────────────
-
-const GROWTH_AREA_OPTIONS: { value: GrowthArea; label: string; emoji: string }[] = [
-  { value: GrowthArea.career, label: 'Career', emoji: '💼' },
-  { value: GrowthArea.relationships, label: 'Relationships', emoji: '💑' },
-  { value: GrowthArea.health, label: 'Health', emoji: '🏃' },
-  { value: GrowthArea.mindset, label: 'Mindset', emoji: '🧠' },
-  { value: GrowthArea.spiritual, label: 'Spiritual', emoji: '✨' },
-  { value: GrowthArea.other, label: 'Other', emoji: '🌱' },
-];
-
 function GrowthJournalTab() {
-  const [date, setDate] = useState(todayStr());
+  const [date, setDate] = useState<Date>(new Date());
   const [lesson, setLesson] = useState('');
   const [growthArea, setGrowthArea] = useState<GrowthArea>(GrowthArea.mindset);
   const [actionStep, setActionStep] = useState('');
-  const [growthRating, setGrowthRating] = useState(3);
-  const [isPublic, setIsPublic] = useState(false);
+  const [growthRating, setGrowthRating] = useState(5);
 
-  const { data: entries = [] } = useGetGrowthJournals();
+  const { data: entries = [], isLoading } = useGetGrowthJournals();
   const saveMutation = useCreateOrUpdateGrowthJournal();
 
-  useEffect(() => {
-    const ts = dateToTimestamp(date);
-    const existing = entries.find((e) => e.date === ts);
-    if (existing) {
-      setLesson(existing.lesson);
-      setGrowthArea(existing.growthArea as GrowthArea);
-      setActionStep(existing.actionStep);
-      setGrowthRating(Number(existing.growthRating));
-      setIsPublic(existing.isPublic);
+  const dateInt = dateToInt(date);
+
+  React.useEffect(() => {
+    const entry = entries.find(e => e.date === dateInt);
+    if (entry) {
+      setLesson(entry.lesson);
+      setGrowthArea(entry.growthArea as GrowthArea);
+      setActionStep(entry.actionStep);
+      setGrowthRating(Number(entry.growthRating));
     } else {
       setLesson('');
       setGrowthArea(GrowthArea.mindset);
       setActionStep('');
-      setGrowthRating(3);
-      setIsPublic(false);
+      setGrowthRating(5);
     }
-  }, [date, entries]);
+  }, [dateInt, entries]);
 
-  const handleSave = () => {
-    saveMutation.mutate(
-      {
-        date: dateToTimestamp(date),
-        lesson,
-        growthArea,
-        actionStep,
-        growthRating: BigInt(growthRating),
-        isPublic,
-      },
-      {
-        onSuccess: () => toast.success('Growth journal saved 🌱'),
-        onError: () => toast.error('Failed to save growth journal'),
-      }
-    );
+  const handleSave = async () => {
+    const entry: GrowthJournalEntry = {
+      date: dateInt,
+      lesson,
+      growthArea,
+      actionStep,
+      growthRating: BigInt(growthRating),
+      isPublic: false,
+    };
+    try {
+      await saveMutation.mutateAsync(entry);
+      toast.success('Growth journal saved!');
+    } catch {
+      toast.error('Failed to save growth journal.');
+    }
   };
 
   return (
-    <div className="space-y-5">
-      <DatePickerBar date={date} onChange={setDate} />
-      <div className="bg-card rounded-2xl p-6 shadow-warm border border-border/60 space-y-6">
-        <div className="flex items-center gap-2 mb-1">
-          <Sprout className="w-5 h-5 text-primary" />
-          <h3 className="font-display text-lg font-semibold text-foreground">Growth Journal</h3>
-        </div>
-
-        {/* Lesson Learned */}
-        <div className="space-y-2">
-          <Label htmlFor="lesson" className="label-warm">📚 Lesson Learned</Label>
-          <Textarea
-            id="lesson"
-            value={lesson}
-            onChange={(e) => setLesson(e.target.value)}
-            placeholder="What did you learn today? What insight or wisdom did you gain?"
-            className="min-h-[120px] font-body resize-none"
-          />
-        </div>
-
-        {/* Area of Growth */}
-        <div className="space-y-2">
-          <Label className="label-warm">🌿 Area of Growth</Label>
-          <div className="flex flex-wrap gap-2">
-            {GROWTH_AREA_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => setGrowthArea(opt.value)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-body border transition-all ${
-                  growthArea === opt.value
-                    ? 'bg-primary text-primary-foreground border-primary shadow-warm'
-                    : 'bg-secondary text-muted-foreground border-border/60 hover:border-primary/40 hover:text-foreground'
-                }`}
-              >
-                <span>{opt.emoji}</span>
-                <span>{opt.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Action Step */}
-        <div className="space-y-2">
-          <Label htmlFor="actionStep" className="label-warm">🎯 Action Step</Label>
-          <Input
-            id="actionStep"
-            value={actionStep}
-            onChange={(e) => setActionStep(e.target.value)}
-            placeholder="What concrete action will you take based on this lesson?"
-            className="font-body"
-          />
-        </div>
-
-        {/* Growth Rating */}
-        <div className="space-y-3">
-          <Label className="label-warm">
-            🌟 Personal Growth Rating:{' '}
-            <span className="text-primary font-semibold">{growthRating}/5</span>
-          </Label>
-          <div className="flex items-center gap-2">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                key={star}
-                onClick={() => setGrowthRating(star)}
-                className="transition-transform hover:scale-110 focus:outline-none"
-                aria-label={`Rate ${star} out of 5`}
-              >
-                <Star
-                  className={`w-8 h-8 transition-colors ${
-                    star <= growthRating
-                      ? 'text-amber fill-amber'
-                      : 'text-muted-foreground/40'
-                  }`}
-                />
-              </button>
-            ))}
-          </div>
-          <div className="flex justify-between text-xs font-body text-muted-foreground">
-            <span>Small step</span>
-            <span>Breakthrough</span>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between pt-1">
-          <label className="flex items-center gap-2 text-sm font-body text-muted-foreground cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={isPublic}
-              onChange={(e) => setIsPublic(e.target.checked)}
-              className="rounded"
-            />
-            Share with partner
-          </label>
-          <Button
-            onClick={handleSave}
-            disabled={saveMutation.isPending || !lesson.trim()}
-            className="font-body"
-          >
-            {saveMutation.isPending ? (
-              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>
-            ) : (
-              'Save Entry'
-            )}
-          </Button>
-        </div>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h3 className="font-playfair text-lg text-warm-brown font-semibold">Growth Journal</h3>
+        <DateNavigator date={date} onChange={setDate} />
       </div>
+      <div className="rounded-2xl bg-white/70 border border-warm-sand/30 p-5 shadow-soft space-y-4">
+        {isLoading ? (
+          <Skeleton className="h-32 w-full" />
+        ) : (
+          <>
+            <div className="space-y-2">
+              <Label className="font-lato text-xs text-warm-brown/70 uppercase tracking-wide">Growth Area</Label>
+              <div className="flex flex-wrap gap-2">
+                {GROWTH_AREA_OPTIONS.map(area => (
+                  <button
+                    key={area}
+                    onClick={() => setGrowthArea(area)}
+                    className={`px-3 py-1 rounded-full text-xs font-lato border transition-colors ${
+                      growthArea === area
+                        ? 'bg-warm-terracotta text-white border-warm-terracotta'
+                        : 'bg-warm-cream/60 text-warm-brown border-warm-sand/40 hover:bg-warm-sand/30'
+                    }`}
+                  >
+                    {area}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label className="font-lato text-xs text-warm-brown/70 uppercase tracking-wide">
+                Lesson Learned
+              </Label>
+              <Textarea
+                value={lesson}
+                onChange={e => setLesson(e.target.value)}
+                placeholder="What did you learn today?"
+                className="min-h-[100px] font-lato text-sm text-warm-brown bg-warm-cream/40 border-warm-sand/40 resize-none"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="font-lato text-xs text-warm-brown/70 uppercase tracking-wide">Action Step</Label>
+              <input
+                value={actionStep}
+                onChange={e => setActionStep(e.target.value)}
+                placeholder="What will you do with this lesson?"
+                className="w-full rounded-lg bg-warm-cream/40 border border-warm-sand/40 px-3 py-2 font-lato text-sm text-warm-brown placeholder:text-warm-brown/40 focus:outline-none focus:ring-1 focus:ring-warm-terracotta/40"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="font-lato text-xs text-warm-brown/70 uppercase tracking-wide">
+                Growth Rating: {growthRating}/10
+              </Label>
+              <input
+                type="range"
+                min={1}
+                max={10}
+                value={growthRating}
+                onChange={e => setGrowthRating(Number(e.target.value))}
+                className="w-full accent-warm-terracotta"
+              />
+            </div>
+            <Button
+              onClick={handleSave}
+              disabled={saveMutation.isPending}
+              className="bg-warm-terracotta hover:bg-warm-terracotta/90 text-white font-lato"
+            >
+              {saveMutation.isPending ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>
+              ) : 'Save Entry'}
+            </Button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Partner Journal Section ──────────────────────────────────────────────────
+
+interface PartnerJournalSectionProps {
+  partnerName: string;
+}
+
+function PartnerJournalSection({ partnerName }: PartnerJournalSectionProps) {
+  const [partnerDate, setPartnerDate] = useState<Date>(new Date());
+  const { data: partnerJournals, isLoading } = useGetPartnerJournals(true);
+
+  const daily = partnerJournals?.daily ?? [];
+  const emotional = partnerJournals?.emotional ?? [];
+  const night = partnerJournals?.night ?? [];
+  const growth = partnerJournals?.growth ?? [];
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-2 mb-2">
+        <Users className="w-4 h-4 text-warm-terracotta" />
+        <span className="font-lato text-sm text-warm-brown/70">
+          Viewing <span className="font-semibold text-warm-brown">{partnerName}'s</span> journal entries
+        </span>
+      </div>
+
+      <Tabs defaultValue="daily" className="w-full">
+        <TabsList className="bg-warm-cream/60 border border-warm-sand/30 rounded-xl p-1 mb-4 flex flex-wrap gap-1 h-auto">
+          <TabsTrigger
+            value="daily"
+            className="flex items-center gap-1.5 font-lato text-xs data-[state=active]:bg-white data-[state=active]:text-warm-terracotta data-[state=active]:shadow-sm rounded-lg px-3 py-1.5"
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            Daily
+          </TabsTrigger>
+          <TabsTrigger
+            value="emotional"
+            className="flex items-center gap-1.5 font-lato text-xs data-[state=active]:bg-white data-[state=active]:text-warm-terracotta data-[state=active]:shadow-sm rounded-lg px-3 py-1.5"
+          >
+            <Heart className="w-3.5 h-3.5" />
+            Emotional
+          </TabsTrigger>
+          <TabsTrigger
+            value="night"
+            className="flex items-center gap-1.5 font-lato text-xs data-[state=active]:bg-white data-[state=active]:text-warm-terracotta data-[state=active]:shadow-sm rounded-lg px-3 py-1.5"
+          >
+            <Moon className="w-3.5 h-3.5" />
+            Night
+          </TabsTrigger>
+          <TabsTrigger
+            value="growth"
+            className="flex items-center gap-1.5 font-lato text-xs data-[state=active]:bg-white data-[state=active]:text-warm-terracotta data-[state=active]:shadow-sm rounded-lg px-3 py-1.5"
+          >
+            <Sprout className="w-3.5 h-3.5" />
+            Growth
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="daily">
+          <PartnerDailyView entries={daily} date={partnerDate} onDateChange={setPartnerDate} />
+        </TabsContent>
+        <TabsContent value="emotional">
+          <PartnerEmotionalView entries={emotional} date={partnerDate} onDateChange={setPartnerDate} />
+        </TabsContent>
+        <TabsContent value="night">
+          <PartnerNightView entries={night} date={partnerDate} onDateChange={setPartnerDate} />
+        </TabsContent>
+        <TabsContent value="growth">
+          <PartnerGrowthView entries={growth} date={partnerDate} onDateChange={setPartnerDate} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
@@ -680,81 +806,113 @@ function GrowthJournalTab() {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function JournalSection() {
+  const [viewMode, setViewMode] = useState<'mine' | 'partner'>('mine');
+
+  const { data: couple } = useGetCouple();
+  const { data: partnerProfile } = useGetPartnerUserProfile();
+
+  const isInCouple = !!couple;
+  const partnerName = partnerProfile?.displayName || partnerProfile?.name || 'Partner';
+
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
-      {/* Page Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="p-2.5 rounded-2xl bg-primary/10">
-            <BookOpen className="w-6 h-6 text-primary" />
-          </div>
+    <div className="min-h-screen bg-warm-cream/30">
+      <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+        {/* Header */}
+        <div className="flex items-start justify-between flex-wrap gap-4">
           <div>
-            <h1 className="font-display text-3xl font-bold text-foreground">Journal</h1>
-            <p className="font-body text-sm text-muted-foreground">
-              Reflect, grow, and capture your inner world
+            <h1 className="font-playfair text-3xl font-bold text-warm-brown">Journal</h1>
+            <p className="font-lato text-sm text-warm-brown/60 mt-1">
+              Reflect, grow, and capture your inner world.
             </p>
           </div>
+
+          {isInCouple && (
+            <div className="flex items-center gap-1 bg-white/80 border border-warm-sand/40 rounded-xl p-1 shadow-soft">
+              <button
+                onClick={() => setViewMode('mine')}
+                className={`px-4 py-1.5 rounded-lg font-lato text-sm transition-colors ${
+                  viewMode === 'mine'
+                    ? 'bg-warm-terracotta text-white shadow-sm'
+                    : 'text-warm-brown hover:bg-warm-cream/60'
+                }`}
+              >
+                My Journal
+              </button>
+              <button
+                onClick={() => setViewMode('partner')}
+                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg font-lato text-sm transition-colors ${
+                  viewMode === 'partner'
+                    ? 'bg-warm-terracotta text-white shadow-sm'
+                    : 'text-warm-brown hover:bg-warm-cream/60'
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                {partnerName}'s Journal
+              </button>
+            </div>
+          )}
         </div>
-        <div className="flex flex-wrap gap-2 mt-4">
-          {[
-            { label: 'Daily', emoji: '📝' },
-            { label: 'Emotional', emoji: '💛' },
-            { label: 'Night Reflection', emoji: '🌙' },
-            { label: 'Growth', emoji: '🌱' },
-          ].map((t) => (
-            <Badge key={t.label} variant="secondary" className="font-body text-xs px-3 py-1">
-              {t.emoji} {t.label}
+
+        {/* Couple badge */}
+        {isInCouple && (
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="font-lato text-xs bg-warm-sand/30 text-warm-brown border-warm-sand/40">
+              💑 Couple Mode
             </Badge>
-          ))}
-        </div>
+          </div>
+        )}
+
+        {/* Content */}
+        {viewMode === 'partner' && isInCouple ? (
+          <PartnerJournalSection partnerName={partnerName} />
+        ) : (
+          <Tabs defaultValue="daily" className="w-full">
+            <TabsList className="bg-warm-cream/60 border border-warm-sand/30 rounded-xl p-1 mb-4 flex flex-wrap gap-1 h-auto">
+              <TabsTrigger
+                value="daily"
+                className="flex items-center gap-1.5 font-lato text-sm data-[state=active]:bg-white data-[state=active]:text-warm-terracotta data-[state=active]:shadow-sm rounded-lg px-4 py-2"
+              >
+                <Calendar className="w-4 h-4" />
+                Daily
+              </TabsTrigger>
+              <TabsTrigger
+                value="emotional"
+                className="flex items-center gap-1.5 font-lato text-sm data-[state=active]:bg-white data-[state=active]:text-warm-terracotta data-[state=active]:shadow-sm rounded-lg px-4 py-2"
+              >
+                <Heart className="w-4 h-4" />
+                Emotional
+              </TabsTrigger>
+              <TabsTrigger
+                value="night"
+                className="flex items-center gap-1.5 font-lato text-sm data-[state=active]:bg-white data-[state=active]:text-warm-terracotta data-[state=active]:shadow-sm rounded-lg px-4 py-2"
+              >
+                <Moon className="w-4 h-4" />
+                Night Reflection
+              </TabsTrigger>
+              <TabsTrigger
+                value="growth"
+                className="flex items-center gap-1.5 font-lato text-sm data-[state=active]:bg-white data-[state=active]:text-warm-terracotta data-[state=active]:shadow-sm rounded-lg px-4 py-2"
+              >
+                <Sprout className="w-4 h-4" />
+                Growth
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="daily">
+              <DailyJournalTab />
+            </TabsContent>
+            <TabsContent value="emotional">
+              <EmotionalJournalTab />
+            </TabsContent>
+            <TabsContent value="night">
+              <NightReflectionTab />
+            </TabsContent>
+            <TabsContent value="growth">
+              <GrowthJournalTab />
+            </TabsContent>
+          </Tabs>
+        )}
       </div>
-
-      {/* Tabs */}
-      <Tabs defaultValue="daily" className="w-full">
-        <TabsList className="grid grid-cols-4 w-full mb-6 rounded-2xl bg-secondary/60 p-1 h-auto">
-          <TabsTrigger
-            value="daily"
-            className="flex items-center gap-1.5 rounded-xl py-2.5 text-xs sm:text-sm font-body font-medium data-[state=active]:bg-card data-[state=active]:shadow-warm data-[state=active]:text-primary"
-          >
-            <BookOpen className="w-4 h-4 shrink-0" />
-            <span className="hidden sm:inline">Daily</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="emotional"
-            className="flex items-center gap-1.5 rounded-xl py-2.5 text-xs sm:text-sm font-body font-medium data-[state=active]:bg-card data-[state=active]:shadow-warm data-[state=active]:text-primary"
-          >
-            <Heart className="w-4 h-4 shrink-0" />
-            <span className="hidden sm:inline">Emotional</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="night"
-            className="flex items-center gap-1.5 rounded-xl py-2.5 text-xs sm:text-sm font-body font-medium data-[state=active]:bg-card data-[state=active]:shadow-warm data-[state=active]:text-primary"
-          >
-            <Moon className="w-4 h-4 shrink-0" />
-            <span className="hidden sm:inline">Night</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="growth"
-            className="flex items-center gap-1.5 rounded-xl py-2.5 text-xs sm:text-sm font-body font-medium data-[state=active]:bg-card data-[state=active]:shadow-warm data-[state=active]:text-primary"
-          >
-            <Sprout className="w-4 h-4 shrink-0" />
-            <span className="hidden sm:inline">Growth</span>
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="daily">
-          <DailyJournalTab />
-        </TabsContent>
-        <TabsContent value="emotional">
-          <EmotionalJournalTab />
-        </TabsContent>
-        <TabsContent value="night">
-          <NightReflectionTab />
-        </TabsContent>
-        <TabsContent value="growth">
-          <GrowthJournalTab />
-        </TabsContent>
-      </Tabs>
     </div>
   );
 }

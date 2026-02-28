@@ -173,10 +173,11 @@ export default function MonthlyPlanner() {
   const partnerPrincipal = getPartnerPrincipal(couple ?? null, myPrincipalStr);
   const hasPartner = !!partnerPrincipal;
 
-  const { data: myEntries = [], isLoading: myLoading } = useGetMonthlyEntries(myPrincipal);
+  // Hooks take no arguments — data is fetched for the caller automatically
+  const { data: myEntries = [], isLoading: myLoading } = useGetMonthlyEntries();
   const myEntry = myEntries.find(e => Number(e.year) === year && Number(e.month) === month);
 
-  const { data: partnerEntries = [], isLoading: partnerLoading } = useGetPartnerMonthlyEntries(partnerPrincipal);
+  const { data: partnerEntries = [], isLoading: partnerLoading } = useGetPartnerMonthlyEntries();
   const partnerEntry = partnerEntries.find(e => Number(e.year) === year && Number(e.month) === month);
 
   const addEntry = useAddMonthlyEntry();
@@ -421,7 +422,7 @@ function MyMonthlyPlanForm({
           >+ Add Date</button>
         </div>
         {importantDates.length === 0 ? (
-          <p className="text-muted-foreground text-sm italic">No important dates added yet</p>
+          <p className="text-sm text-muted-foreground italic">No important dates added yet.</p>
         ) : (
           <div className="space-y-3">
             {importantDates.map((d, i) => (
@@ -429,14 +430,22 @@ function MyMonthlyPlanForm({
                 <input
                   type="date"
                   value={new Date(Number(d.date)).toISOString().split('T')[0]}
-                  onChange={e => setImportantDates(importantDates.map((item, idx) => idx === i ? { ...item, date: BigInt(new Date(e.target.value).getTime()) } : item))}
+                  onChange={e => {
+                    const updated = [...importantDates];
+                    updated[i] = { ...updated[i], date: BigInt(new Date(e.target.value).getTime()) };
+                    setImportantDates(updated);
+                  }}
                   className="bg-background border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
                 <input
                   type="text"
                   value={d.labelText}
-                  onChange={e => setImportantDates(importantDates.map((item, idx) => idx === i ? { ...item, labelText: e.target.value } : item))}
-                  placeholder="Label"
+                  onChange={e => {
+                    const updated = [...importantDates];
+                    updated[i] = { ...updated[i], labelText: e.target.value };
+                    setImportantDates(updated);
+                  }}
+                  placeholder="Event label..."
                   className="flex-1 bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
                 <button onClick={() => setImportantDates(importantDates.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-destructive text-lg leading-none">×</button>
@@ -453,19 +462,20 @@ function MyMonthlyPlanForm({
           <h3 className="font-playfair text-lg font-semibold text-foreground">Budget</h3>
         </div>
         <div className="space-y-4">
-          <div>
-            <label className="text-sm text-muted-foreground mb-1 block">Income</label>
+          <div className="flex items-center gap-3">
+            <label className="text-sm text-muted-foreground w-20 shrink-0">Income</label>
             <input
               type="number"
               value={income}
               onChange={e => setIncome(Number(e.target.value))}
-              className="w-full bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              min={0}
+              className="flex-1 bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
           <div>
-            <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center justify-between mb-2">
               <label className="text-sm text-muted-foreground">Expenses</label>
-              <button onClick={() => setExpenses([...expenses, ''])} className="text-xs text-primary hover:underline">+ Add</button>
+              <button onClick={() => setExpenses([...expenses, ''])} className="text-sm text-primary hover:underline">+ Add</button>
             </div>
             <div className="space-y-2">
               {expenses.map((exp, i) => (
@@ -474,7 +484,7 @@ function MyMonthlyPlanForm({
                     type="text"
                     value={exp}
                     onChange={e => setExpenses(expenses.map((ex, idx) => idx === i ? e.target.value : ex))}
-                    placeholder="e.g. Rent $1200"
+                    placeholder={`Expense ${i + 1}`}
                     className="flex-1 bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                   />
                   {expenses.length > 1 && (
@@ -485,10 +495,11 @@ function MyMonthlyPlanForm({
             </div>
           </div>
           <div>
-            <label className="text-sm text-muted-foreground mb-1 block">Notes</label>
+            <label className="text-sm text-muted-foreground block mb-2">Budget Notes</label>
             <textarea
               value={budgetNotes}
               onChange={e => setBudgetNotes(e.target.value)}
+              placeholder="Any budget notes..."
               rows={2}
               className="w-full bg-background border border-border rounded-xl px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
             />
@@ -500,22 +511,30 @@ function MyMonthlyPlanForm({
       <div className="bg-card rounded-2xl p-6 shadow-warm border border-border">
         <div className="flex items-center gap-2 mb-4">
           <Smile className="w-5 h-5 text-primary" />
-          <h3 className="font-playfair text-lg font-semibold text-foreground">Daily Mood Tracker</h3>
+          <h3 className="font-playfair text-lg font-semibold text-foreground">Mood Tracker</h3>
         </div>
         <div className="grid grid-cols-7 gap-2">
           {Array.from({ length: daysInMonth }, (_, i) => (
             <div key={i} className="flex flex-col items-center gap-1">
               <span className="text-xs text-muted-foreground">{i + 1}</span>
-              <select
-                value={moodTracker[i] || ''}
-                onChange={e => setMoodTracker(moodTracker.map((m, idx) => idx === i ? e.target.value : m))}
-                className="w-8 h-8 text-center bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary/30 cursor-pointer"
-              >
-                <option value="">·</option>
-                {MOOD_EMOJIS.map(emoji => (
-                  <option key={emoji} value={emoji}>{emoji}</option>
-                ))}
-              </select>
+              <div className="relative group">
+                <span className="text-xl cursor-pointer">{moodTracker[i] || '·'}</span>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:flex flex-wrap gap-1 bg-card border border-border rounded-xl p-2 shadow-warm z-10 w-32">
+                  {MOOD_EMOJIS.map(emoji => (
+                    <button
+                      key={emoji}
+                      onClick={() => {
+                        const updated = [...moodTracker];
+                        updated[i] = moodTracker[i] === emoji ? '' : emoji;
+                        setMoodTracker(updated);
+                      }}
+                      className="text-lg hover:scale-125 transition-transform"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           ))}
         </div>
@@ -523,32 +542,37 @@ function MyMonthlyPlanForm({
 
       {/* Reflection */}
       <div className="bg-card rounded-2xl p-6 shadow-warm border border-border">
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-2 mb-4">
           <BookOpen className="w-5 h-5 text-primary" />
           <h3 className="font-playfair text-lg font-semibold text-foreground">Monthly Reflection</h3>
         </div>
         <textarea
           value={reflection}
           onChange={e => setReflection(e.target.value)}
-          placeholder="What do you want to reflect on this month?"
+          placeholder="How did this month go? What did you accomplish? What would you do differently?"
           rows={4}
           className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
         />
       </div>
 
-      {/* Save */}
-      <button
-        onClick={onSave}
-        disabled={isSaving}
-        className="w-full bg-primary text-primary-foreground rounded-xl py-3 font-semibold hover:bg-primary/90 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
-      >
-        {isSaving ? (
-          <>
-            <span className="w-4 h-4 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full animate-spin" />
-            Saving...
-          </>
-        ) : 'Save Monthly Plan'}
-      </button>
+      {/* Save Button */}
+      <div className="flex justify-end">
+        <button
+          onClick={onSave}
+          disabled={isSaving}
+          className="bg-primary text-primary-foreground px-8 py-3 rounded-2xl font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
+        >
+          {isSaving ? (
+            <>
+              <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              Saving...
+            </>
+          ) : 'Save Monthly Plan'}
+        </button>
+      </div>
     </div>
   );
 }

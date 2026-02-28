@@ -161,12 +161,11 @@ export default function YearlyPlanner() {
   const partnerPrincipal = getPartnerPrincipal(couple ?? null, myPrincipalStr);
   const hasPartner = !!partnerPrincipal;
 
-  // My entries
-  const { data: myEntries = [], isLoading: myLoading } = useGetYearlyEntries(myPrincipal);
+  // Hooks take no arguments — data is fetched for the caller automatically
+  const { data: myEntries = [], isLoading: myLoading } = useGetYearlyEntries();
   const myEntry = myEntries.find(e => Number(e.year) === year);
 
-  // Partner entries
-  const { data: partnerEntries = [], isLoading: partnerLoading } = useGetPartnerYearlyEntries(partnerPrincipal);
+  const { data: partnerEntries = [], isLoading: partnerLoading } = useGetPartnerYearlyEntries();
   const partnerEntry = partnerEntries.find(e => Number(e.year) === year);
 
   // Mutations
@@ -449,13 +448,13 @@ function MyYearlyPlanForm({
       <div className="bg-card rounded-2xl p-6 shadow-warm border border-border">
         <div className="flex items-center gap-2 mb-4">
           <BarChart2 className="w-5 h-5 text-primary" />
-          <h3 className="font-playfair text-lg font-semibold text-foreground">Monthly Habit Tracker</h3>
+          <h3 className="font-playfair text-lg font-semibold text-foreground">12-Month Habit Tracker</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
               <tr>
-                <th className="text-left py-1 pr-3 text-muted-foreground font-medium min-w-[120px]">Habit</th>
+                <th className="text-left py-1 pr-3 text-muted-foreground font-medium">Habit</th>
                 {MONTHS.map(m => (
                   <th key={m} className="text-center py-1 px-1 text-muted-foreground font-medium">{m}</th>
                 ))}
@@ -477,9 +476,9 @@ function MyYearlyPlanForm({
                     <td key={mi} className="text-center py-2 px-1">
                       <button
                         onClick={() => toggleHabit(hi, mi)}
-                        className={`w-5 h-5 rounded-full border transition-colors ${habit.monthlyCheckIns[mi] ? 'bg-primary border-primary' : 'border-muted-foreground/40 hover:border-primary'}`}
+                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center mx-auto transition-colors ${habit.monthlyCheckIns[mi] ? 'bg-primary border-primary' : 'border-muted-foreground/40 hover:border-primary'}`}
                       >
-                        {habit.monthlyCheckIns[mi] && <span className="text-white text-xs flex items-center justify-center h-full">✓</span>}
+                        {habit.monthlyCheckIns[mi] && <span className="text-white text-xs">✓</span>}
                       </button>
                     </td>
                   ))}
@@ -490,36 +489,39 @@ function MyYearlyPlanForm({
         </div>
       </div>
 
-      {/* Reflection */}
+      {/* Year-End Reflection */}
       <div className="bg-card rounded-2xl p-6 shadow-warm border border-border">
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-2 mb-4">
           <BookOpen className="w-5 h-5 text-primary" />
           <h3 className="font-playfair text-lg font-semibold text-foreground">Year-End Reflection</h3>
         </div>
         <textarea
           value={reflection}
           onChange={e => setReflection(e.target.value)}
-          placeholder="What do you hope to reflect on at the end of this year?"
-          rows={4}
+          placeholder="What did you accomplish this year? What are you most proud of? What will you do differently next year?"
+          rows={5}
           className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
         />
       </div>
 
       {/* Save Button */}
-      <button
-        onClick={onSave}
-        disabled={isSaving}
-        className="w-full bg-primary text-primary-foreground rounded-xl py-3 font-semibold hover:bg-primary/90 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
-      >
-        {isSaving ? (
-          <>
-            <span className="w-4 h-4 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full animate-spin" />
-            Saving...
-          </>
-        ) : (
-          'Save Yearly Plan'
-        )}
-      </button>
+      <div className="flex justify-end">
+        <button
+          onClick={onSave}
+          disabled={isSaving}
+          className="bg-primary text-primary-foreground px-8 py-3 rounded-2xl font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
+        >
+          {isSaving ? (
+            <>
+              <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              Saving...
+            </>
+          ) : 'Save Yearly Plan'}
+        </button>
+      </div>
     </div>
   );
 }

@@ -16,6 +16,10 @@ export interface Budget {
   'notes' : string,
 }
 export interface Couple { 'partner1' : Principal, 'partner2' : Principal }
+export type CoupleCreateError = { 'partnerAlreadyLinked' : null } |
+  { 'callerAlreadyLinked' : null } |
+  { 'unauthorized' : null } |
+  { 'anonymousNotPermitted' : null };
 export interface DailyJournalEntry {
   'body' : string,
   'date' : bigint,
@@ -133,13 +137,14 @@ export interface YearlyEntry {
 }
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
-  'addDailyPlannerEntry' : ActorMethod<[DailyPlannerEntry], undefined>,
   'addMonthlyEntry' : ActorMethod<[MonthlyEntry], undefined>,
-  'addVisionBoardEntry' : ActorMethod<[VisionBoardEntry], undefined>,
   'addWeeklyEntry' : ActorMethod<[WeeklyEntry], undefined>,
   'addYearlyEntry' : ActorMethod<[YearlyEntry], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
-  'createCouple' : ActorMethod<[Principal, Principal], undefined>,
+  'createCouple' : ActorMethod<
+    [Principal, Principal],
+    [] | [CoupleCreateError]
+  >,
   'createOrUpdateDailyJournal' : ActorMethod<[DailyJournalEntry], undefined>,
   'createOrUpdateEmotionalJournal' : ActorMethod<
     [EmotionalJournalEntry],
@@ -155,65 +160,74 @@ export interface _SERVICE {
   'deleteVisionBoardEntry' : ActorMethod<[bigint], undefined>,
   'deleteWeeklyEntry' : ActorMethod<[bigint, bigint], undefined>,
   'deleteYearlyEntry' : ActorMethod<[bigint], undefined>,
+  'dissolveCouple' : ActorMethod<[], boolean>,
   'getAllCouples' : ActorMethod<[], Array<Couple>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getCouple' : ActorMethod<[Principal], [] | [Couple]>,
   'getDailyJournals' : ActorMethod<[], Array<DailyJournalEntry>>,
+  'getDailyJournalsForOwner' : ActorMethod<
+    [Principal],
+    Array<DailyJournalEntry>
+  >,
   'getDailyJournalsForUser' : ActorMethod<
     [Principal],
     Array<DailyJournalEntry>
   >,
+  'getDailyPlannerEntries' : ActorMethod<[], Array<DailyPlannerEntry>>,
   'getDailyQuote' : ActorMethod<[bigint], string>,
   'getEmotionalJournals' : ActorMethod<[], Array<EmotionalJournalEntry>>,
-  'getEmotionalJournalsForUser' : ActorMethod<
+  'getEmotionalJournalsForOwner' : ActorMethod<
     [Principal],
     Array<EmotionalJournalEntry>
   >,
   'getGrowthJournals' : ActorMethod<[], Array<GrowthJournalEntry>>,
-  'getGrowthJournalsForUser' : ActorMethod<
+  'getGrowthJournalsForOwner' : ActorMethod<
     [Principal],
     Array<GrowthJournalEntry>
   >,
   'getMonthlyEntries' : ActorMethod<[], Array<MonthlyEntry>>,
   'getNightReflections' : ActorMethod<[], Array<NightReflectionJournalEntry>>,
-  'getNightReflectionsForUser' : ActorMethod<
+  'getNightReflectionsForOwner' : ActorMethod<
     [Principal],
     Array<NightReflectionJournalEntry>
   >,
-  'getOwnerDailyPlannerEntries' : ActorMethod<
-    [Principal],
-    Array<DailyPlannerEntry>
-  >,
   'getOwnerMonthlyEntries' : ActorMethod<[Principal], Array<MonthlyEntry>>,
-  'getOwnerVisionBoardEntries' : ActorMethod<
-    [Principal],
-    Array<VisionBoardEntry>
-  >,
   'getOwnerWeeklyEntries' : ActorMethod<[Principal], Array<WeeklyEntry>>,
   'getOwnerYearlyEntries' : ActorMethod<[Principal], Array<YearlyEntry>>,
-  'getPartnerSpecificDailyPlannerEntries' : ActorMethod<
-    [Principal],
-    Array<DailyPlannerEntry>
+  'getPartnerDailyJournals' : ActorMethod<[], Array<DailyJournalEntry>>,
+  'getPartnerDailyPlannerEntries' : ActorMethod<[], Array<DailyPlannerEntry>>,
+  'getPartnerDailyPlannerEntryForDate' : ActorMethod<
+    [bigint],
+    [] | [DailyPlannerEntry]
   >,
-  'getPartnerSpecificMonthlyEntries' : ActorMethod<
-    [Principal],
-    Array<MonthlyEntry>
+  'getPartnerEmotionalJournals' : ActorMethod<[], Array<EmotionalJournalEntry>>,
+  'getPartnerGrowthJournals' : ActorMethod<[], Array<GrowthJournalEntry>>,
+  'getPartnerJournals' : ActorMethod<
+    [],
+    {
+      'growth' : Array<GrowthJournalEntry>,
+      'night' : Array<NightReflectionJournalEntry>,
+      'emotional' : Array<EmotionalJournalEntry>,
+      'daily' : Array<DailyJournalEntry>,
+    }
   >,
-  'getPartnerSpecificWeeklyEntries' : ActorMethod<
-    [Principal],
-    Array<WeeklyEntry>
+  'getPartnerMonthlyEntries' : ActorMethod<[], Array<MonthlyEntry>>,
+  'getPartnerNightReflections' : ActorMethod<
+    [],
+    Array<NightReflectionJournalEntry>
   >,
-  'getPartnerSpecificYearlyEntries' : ActorMethod<
-    [Principal],
-    Array<YearlyEntry>
-  >,
+  'getPartnerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getPartnerVisionBoardEntries' : ActorMethod<[], Array<VisionBoardEntry>>,
+  'getPartnerWeeklyEntries' : ActorMethod<[], Array<WeeklyEntry>>,
+  'getPartnerYearlyEntries' : ActorMethod<[], Array<YearlyEntry>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
+  'getVisionBoardEntries' : ActorMethod<[], Array<VisionBoardEntry>>,
   'getWeeklyEntries' : ActorMethod<[], Array<WeeklyEntry>>,
-  'getYearlyEntries' : ActorMethod<[], Array<YearlyEntry>>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'saveDailyPlannerEntry' : ActorMethod<[DailyPlannerEntry], undefined>,
+  'saveVisionBoardEntry' : ActorMethod<[VisionBoardEntry], undefined>,
   'updateMonthlyEntry' : ActorMethod<[bigint, bigint, MonthlyEntry], undefined>,
   'updateVisionBoardProgress' : ActorMethod<[bigint, bigint], undefined>,
   'updateWaterIntake' : ActorMethod<[bigint, bigint], undefined>,

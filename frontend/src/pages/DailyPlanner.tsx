@@ -2,8 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import {
   useGetDailyPlannerEntries,
-  useAddDailyPlannerEntry,
+  useSaveDailyPlannerEntry,
   useUpdateWaterIntake,
+  useGetCouple,
+  usePartnerDailyPlannerForDate,
+  useGetPartnerUserProfile,
 } from '../hooks/useQueries';
 import type { DailyPlannerEntry, ScheduleItem, Task } from '../backend';
 import { Button } from '@/components/ui/button';
@@ -12,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   CalendarDays,
   Plus,
@@ -24,6 +28,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ListTodo,
+  Heart,
+  User,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -61,19 +67,187 @@ const MOODS = [
   { emoji: '🥰', label: 'Grateful' },
 ];
 
+// ─── Partner Read-Only View ───────────────────────────────────────────────────
+
+interface PartnerPlannerViewProps {
+  entry: DailyPlannerEntry | null | undefined;
+  isLoading: boolean;
+  partnerName: string;
+}
+
+function PartnerPlannerView({ entry, isLoading, partnerName }: PartnerPlannerViewProps) {
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => <Skeleton key={i} className="h-32 rounded-2xl" />)}
+      </div>
+    );
+  }
+
+  if (!entry) {
+    return (
+      <div className="card-warm p-10 flex flex-col items-center justify-center gap-3 text-center">
+        <Heart className="w-10 h-10 text-primary/40" />
+        <p className="font-display text-lg text-muted-foreground">
+          {partnerName} hasn't added an entry for this day yet.
+        </p>
+        <p className="font-body text-sm text-muted-foreground/70">
+          Check back later or navigate to another date.
+        </p>
+      </div>
+    );
+  }
+
+  const completedCount = entry.tasks.filter((t) => t.isComplete).length;
+
+  return (
+    <div className="space-y-5">
+      {/* Mood */}
+      {entry.moodEmoji && (
+        <div className="card-warm p-5 space-y-3">
+          <h2 className="section-title">Mood 🌈</h2>
+          <div className="flex items-center gap-3">
+            <span className="text-4xl">{entry.moodEmoji}</span>
+            <span className="font-body text-muted-foreground">
+              {MOODS.find((m) => m.emoji === entry.moodEmoji)?.label ?? entry.moodEmoji}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Tasks */}
+      {entry.tasks.length > 0 && (
+        <div className="card-warm p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <h2 className="section-title">Tasks ✅</h2>
+            <span className="text-xs font-body text-muted-foreground bg-secondary/50 px-2 py-0.5 rounded-full">
+              {completedCount}/{entry.tasks.length} done
+            </span>
+          </div>
+          <div className="space-y-2">
+            {entry.tasks.map((task, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <div className={`w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center ${task.isComplete ? 'bg-primary border-primary' : 'border-border'}`}>
+                  {task.isComplete && <span className="text-white text-xs">✓</span>}
+                </div>
+                <span className={`font-body text-sm ${task.isComplete ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                  {task.description}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Schedule */}
+      {entry.schedule.length > 0 && (
+        <div className="card-warm p-5 space-y-4">
+          <h2 className="section-title">Schedule Timeline 🕒</h2>
+          <div className="space-y-2">
+            {entry.schedule.map((item, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 shrink-0 min-w-[80px]">
+                  <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span className="font-body text-sm font-medium text-primary">{item.timeBlock}</span>
+                </div>
+                <span className="font-body text-sm text-foreground">{item.activity}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Water Intake */}
+      <div className="card-warm p-5 space-y-3">
+        <h2 className="section-title">Water Intake 💧</h2>
+        <div className="flex items-center gap-3">
+          <Droplets className="w-5 h-5 text-blue-400" />
+          <span className="font-display text-2xl font-bold text-foreground">{Number(entry.waterIntake)}</span>
+          <span className="font-body text-muted-foreground text-sm">glasses</span>
+        </div>
+        <div className="flex gap-1">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div
+              key={i}
+              className={`w-4 h-4 rounded-full border-2 transition-colors ${
+                i < Number(entry.waterIntake)
+                  ? 'bg-blue-400 border-blue-400'
+                  : 'bg-transparent border-border'
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Gratitude */}
+      {entry.gratitudeEntries.length > 0 && (
+        <div className="card-warm p-5 space-y-4">
+          <h2 className="section-title">Gratitude 🙏</h2>
+          <div className="space-y-2">
+            {entry.gratitudeEntries.map((g, i) => (
+              <div key={i} className="flex items-start gap-3">
+                <span className="text-lg shrink-0">{(['✨', '🌸', '💛'] as const)[i] ?? '💫'}</span>
+                <p className="font-body text-sm text-foreground">{g}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Notes */}
+      {entry.notes && (
+        <div className="card-warm p-5 space-y-3">
+          <h2 className="section-title">Notes 📝</h2>
+          <p className="font-body text-sm text-foreground whitespace-pre-wrap">{entry.notes}</p>
+        </div>
+      )}
+
+      {/* Mini Journal */}
+      {entry.journalEntry && (
+        <div className="card-warm p-5 space-y-3">
+          <h2 className="section-title">Mini Journal ✍️</h2>
+          <p className="font-body text-sm text-foreground whitespace-pre-wrap leading-relaxed">{entry.journalEntry}</p>
+        </div>
+      )}
+
+      {/* Empty state when entry exists but all fields are empty */}
+      {!entry.moodEmoji &&
+        entry.tasks.length === 0 &&
+        entry.schedule.length === 0 &&
+        Number(entry.waterIntake) === 0 &&
+        entry.gratitudeEntries.length === 0 &&
+        !entry.notes &&
+        !entry.journalEntry && (
+          <div className="card-warm p-8 text-center">
+            <p className="font-body text-muted-foreground italic">This entry appears to be empty.</p>
+          </div>
+        )}
+    </div>
+  );
+}
+
 // ─── Daily Planner Page ───────────────────────────────────────────────────────
 
 export default function DailyPlanner() {
   const { identity } = useInternetIdentity();
+
   const { data: allEntries = [], isLoading } = useGetDailyPlannerEntries();
-  const addEntry = useAddDailyPlannerEntry();
+  const saveEntry = useSaveDailyPlannerEntry();
   const updateWater = useUpdateWaterIntake();
+  const { data: couple } = useGetCouple();
+  const { data: partnerProfile } = useGetPartnerUserProfile();
+
+  const isInCouple = !!couple;
+  const partnerName = partnerProfile?.displayName || partnerProfile?.name || 'Your Partner';
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const journalRef = useRef<HTMLTextAreaElement>(null);
 
   const dateKey = dateToKey(selectedDate);
   const existingEntry = allEntries.find((e) => e.date === dateKey);
+
+  // Partner data for selected date
+  const { data: partnerEntry, isLoading: partnerLoading } = usePartnerDailyPlannerForDate(dateKey);
 
   // Form state
   const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
@@ -83,7 +257,6 @@ export default function DailyPlanner() {
   const [moodEmoji, setMoodEmoji] = useState('');
   const [gratitude, setGratitude] = useState(['', '', '']);
   const [journalEntry, setJournalEntry] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
 
   // Load existing entry when date changes
   useEffect(() => {
@@ -110,8 +283,9 @@ export default function DailyPlanner() {
 
   if (!identity) return null;
 
+  const isSaving = saveEntry.isPending;
+
   const handleSave = async () => {
-    setIsSaving(true);
     const entry: DailyPlannerEntry = {
       date: dateKey,
       schedule,
@@ -123,17 +297,11 @@ export default function DailyPlanner() {
       journalEntry,
     };
     try {
-      await addEntry.mutateAsync(entry);
+      await saveEntry.mutateAsync(entry);
       toast.success('Entry saved! ✨');
     } catch (err: unknown) {
       const error = err as Error;
-      if (error?.message?.includes('already')) {
-        toast.info('Entry updated.');
-      } else {
-        toast.error('Failed to save entry.');
-      }
-    } finally {
-      setIsSaving(false);
+      toast.error(error?.message || 'Failed to save entry. Please try again.');
     }
   };
 
@@ -185,62 +353,10 @@ export default function DailyPlanner() {
 
   const completedCount = tasks.filter((t) => t.isComplete).length;
 
-  return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-3xl sm:text-4xl font-bold text-foreground">
-            Daily Planner 📅
-          </h1>
-          <p className="font-body text-muted-foreground mt-1">Plan, reflect, and grow — one day at a time.</p>
-        </div>
-        <Button
-          onClick={handleSave}
-          disabled={isSaving}
-          className="font-body font-semibold rounded-2xl shadow-warm"
-        >
-          {isSaving ? (
-            <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>
-          ) : (
-            <><Save className="w-4 h-4 mr-2" /> Save Entry</>
-          )}
-        </Button>
-      </div>
+  // ─── My Planner Content ───────────────────────────────────────────────────
 
-      {/* Date Picker */}
-      <div className="card-warm p-4 flex items-center justify-between">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setSelectedDate(addDays(selectedDate, -1))}
-          className="rounded-xl"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </Button>
-        <div className="text-center">
-          <div className="flex items-center gap-2 justify-center">
-            <CalendarDays className="w-4 h-4 text-primary" />
-            <span className="font-display text-lg font-semibold text-foreground">
-              {formatDateDisplay(selectedDate)}
-            </span>
-          </div>
-          {existingEntry && (
-            <span className="text-xs font-body text-primary bg-primary/10 px-2 py-0.5 rounded-full mt-1 inline-block">
-              Entry exists ✓
-            </span>
-          )}
-        </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setSelectedDate(addDays(selectedDate, 1))}
-          className="rounded-xl"
-        >
-          <ChevronRight className="w-5 h-5" />
-        </Button>
-      </div>
-
+  const myPlannerContent = (
+    <>
       {isLoading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-32 rounded-2xl" />)}
@@ -269,7 +385,7 @@ export default function DailyPlanner() {
             </div>
           </div>
 
-          {/* Tasks — Unlimited */}
+          {/* Tasks */}
           <div className="card-warm p-5 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -431,7 +547,7 @@ export default function DailyPlanner() {
             <div className="space-y-3">
               {gratitude.map((g, i) => (
                 <div key={i} className="flex items-center gap-3">
-                  <span className="text-lg shrink-0">{['✨', '🌸', '💛'][i]}</span>
+                  <span className="text-lg shrink-0">{(['✨', '🌸', '💛'] as const)[i]}</span>
                   <Input
                     placeholder={`I'm grateful for...`}
                     value={g}
@@ -489,6 +605,114 @@ export default function DailyPlanner() {
             </Button>
           </div>
         </div>
+      )}
+    </>
+  );
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 animate-fade-in">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-display text-3xl sm:text-4xl font-bold text-foreground">
+            Daily Planner 📅
+          </h1>
+          <p className="font-body text-muted-foreground mt-1">Plan, reflect, and grow — one day at a time.</p>
+        </div>
+        {!isInCouple && (
+          <Button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="font-body font-semibold rounded-2xl shadow-warm"
+          >
+            {isSaving ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>
+            ) : (
+              <><Save className="w-4 h-4 mr-2" /> Save Entry</>
+            )}
+          </Button>
+        )}
+      </div>
+
+      {/* Date Picker */}
+      <div className="card-warm p-4 flex items-center justify-between">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setSelectedDate(addDays(selectedDate, -1))}
+          className="rounded-xl"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </Button>
+        <div className="text-center">
+          <div className="flex items-center gap-2 justify-center">
+            <CalendarDays className="w-4 h-4 text-primary" />
+            <span className="font-display text-lg font-semibold text-foreground">
+              {formatDateDisplay(selectedDate)}
+            </span>
+          </div>
+          {existingEntry && (
+            <span className="text-xs font-body text-primary bg-primary/10 px-2 py-0.5 rounded-full mt-1 inline-block">
+              Entry exists ✓
+            </span>
+          )}
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setSelectedDate(addDays(selectedDate, 1))}
+          className="rounded-xl"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </Button>
+      </div>
+
+      {/* Tabs: My Planner / Partner's Planner */}
+      {isInCouple ? (
+        <Tabs defaultValue="mine" className="w-full">
+          <TabsList className="w-full mb-4">
+            <TabsTrigger value="mine" className="flex-1 gap-2">
+              <User className="w-4 h-4" />
+              My Planner
+            </TabsTrigger>
+            <TabsTrigger value="partner" className="flex-1 gap-2">
+              <Heart className="w-4 h-4" />
+              {partnerName}'s Planner
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="mine" className="mt-0">
+            {/* Save button inside tab for couple mode */}
+            <div className="flex justify-end mb-4">
+              <Button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="font-body font-semibold rounded-2xl shadow-warm"
+              >
+                {isSaving ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>
+                ) : (
+                  <><Save className="w-4 h-4 mr-2" /> Save Entry</>
+                )}
+              </Button>
+            </div>
+            {myPlannerContent}
+          </TabsContent>
+
+          <TabsContent value="partner" className="mt-0">
+            <div className="mb-4 flex items-center gap-2 text-sm font-body text-muted-foreground bg-secondary/30 rounded-xl px-4 py-2">
+              <Heart className="w-4 h-4 text-primary shrink-0" />
+              <span>Viewing <strong>{partnerName}</strong>'s planner for this day — read only.</span>
+            </div>
+            <PartnerPlannerView
+              entry={partnerEntry}
+              isLoading={partnerLoading}
+              partnerName={partnerName}
+            />
+          </TabsContent>
+        </Tabs>
+      ) : (
+        myPlannerContent
       )}
     </div>
   );

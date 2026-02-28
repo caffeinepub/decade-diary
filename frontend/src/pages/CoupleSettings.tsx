@@ -1,12 +1,20 @@
 import { useState } from 'react';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
-import { useGetCouple, useCreateCouple, useGetCallerUserProfile } from '../hooks/useQueries';
+import {
+  useGetCouple,
+  useCreateCouple,
+  useDissolveCouple,
+  useGetCallerUserProfile,
+  CoupleCreateErrorException,
+} from '../hooks/useQueries';
 import { useQueryClient } from '@tanstack/react-query';
 import { Principal } from '@dfinity/principal';
+import { CoupleCreateError } from '../backend';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,8 +25,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Heart, Link2, Link2Off, Copy, Check, Loader2, Users } from 'lucide-react';
+import { Heart, Link2, Link2Off, Copy, Check, Loader2, Users, AlertTriangle, Info } from 'lucide-react';
 import { toast } from 'sonner';
+
+type ConnectError =
+  | { kind: 'callerAlreadyLinked' }
+  | { kind: 'partnerAlreadyLinked' }
+  | { kind: 'invalidPrincipal' }
+  | { kind: 'generic'; message: string }
+  | null;
 
 export default function CoupleSettings() {
   const { identity } = useInternetIdentity();
@@ -26,10 +41,13 @@ export default function CoupleSettings() {
   const { data: couple, isLoading: coupleLoading } = useGetCouple();
   const { data: userProfile } = useGetCallerUserProfile();
   const createCouple = useCreateCouple();
+  const dissolveCouple = useDissolveCouple();
 
   const [partnerPrincipal, setPartnerPrincipal] = useState('');
   const [disconnectOpen, setDisconnectOpen] = useState(false);
+  const [disconnectError, setDisconnectError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [connectError, setConnectError] = useState<ConnectError>(null);
 
   if (!identity) return null;
 
@@ -52,24 +70,71 @@ export default function CoupleSettings() {
   const handleConnect = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!partnerPrincipal.trim()) return;
+
+    setConnectError(null);
+
+    let partnerPrincipalObj: Principal;
+    try {
+      partnerPrincipalObj = Principal.fromText(partnerPrincipal.trim());
+    } catch {
+      setConnectError({ kind: 'invalidPrincipal' });
+      return;
+    }
+
     try {
       await createCouple.mutateAsync({
         partner1: Principal.fromText(myPrincipal),
-        partner2: Principal.fromText(partnerPrincipal.trim()),
+        partner2: partnerPrincipalObj,
       });
       toast.success('Couple connected! 💑 You can now share your journey together.');
       setPartnerPrincipal('');
+      setConnectError(null);
       queryClient.invalidateQueries({ queryKey: ['couple'] });
     } catch (err: unknown) {
-      const error = err as Error;
-      if (error?.message?.includes('already in a couple')) {
-        toast.error('One or both partners are already in a couple.');
-      } else if (error?.message?.includes('Invalid principal')) {
-        toast.error('Invalid principal ID. Please check and try again.');
+      if (err instanceof CoupleCreateErrorException) {
+        switch (err.variant) {
+          case CoupleCreateError.callerAlreadyLinked:
+            setConnectError({ kind: 'callerAlreadyLinked' });
+            break;
+          case CoupleCreateError.partnerAlreadyLinked:
+            setConnectError({ kind: 'partnerAlreadyLinked' });
+            break;
+          case CoupleCreateError.anonymousNotPermitted:
+            setConnectError({ kind: 'generic', message: 'Anonymous users cannot be linked. Please log in first.' });
+            break;
+          case CoupleCreateError.unauthorized:
+            setConnectError({ kind: 'generic', message: 'You are not authorized to perform this action.' });
+            break;
+          default:
+            setConnectError({ kind: 'generic', message: 'Failed to connect. Please try again.' });
+        }
       } else {
-        toast.error('Failed to connect. Please verify the principal ID and try again.');
+        const error = err as Error;
+        if (error?.message?.includes('Invalid principal')) {
+          setConnectError({ kind: 'invalidPrincipal' });
+        } else {
+          setConnectError({ kind: 'generic', message: 'Failed to connect. Please verify the principal ID and try again.' });
+        }
       }
     }
+  };
+
+  const handleDisconnect = async () => {
+    setDisconnectError(null);
+    try {
+      await dissolveCouple.mutateAsync();
+      setDisconnectOpen(false);
+      setPartnerPrincipal('');
+      setConnectError(null);
+      toast.success('Disconnected from partner. You can now connect with a new partner.');
+    } catch (err: unknown) {
+      const error = err as Error;
+      setDisconnectError(error?.message ?? 'Failed to disconnect. Please try again.');
+    }
+  };
+
+  const handleDisconnectAndRetry = () => {
+    setDisconnectOpen(true);
   };
 
   return (
@@ -134,7 +199,10 @@ export default function CoupleSettings() {
               <Button
                 variant="outline"
                 className="w-full font-body text-destructive border-destructive/30 hover:bg-destructive/5"
-                onClick={() => setDisconnectOpen(true)}
+                onClick={() => {
+                  setDisconnectError(null);
+                  setDisconnectOpen(true);
+                }}
               >
                 <Link2Off className="w-4 h-4 mr-2" />
                 Disconnect from Partner
@@ -184,6 +252,65 @@ export default function CoupleSettings() {
             <p className="text-sm font-body text-muted-foreground">
               Enter your partner's Principal ID to link your accounts and share your journey.
             </p>
+
+            {/* Inline error messages */}
+            {connectError && (
+              <div className="space-y-3">
+                {connectError.kind === 'callerAlreadyLinked' && (
+                  <Alert className="border-amber-500/40 bg-amber-50/60 dark:bg-amber-950/20">
+                    <AlertTriangle className="h-4 w-4 text-amber-600" />
+                    <AlertTitle className="font-display text-amber-800 dark:text-amber-300 text-sm">
+                      You're already in a couple
+                    </AlertTitle>
+                    <AlertDescription className="font-body text-amber-700 dark:text-amber-400 text-sm space-y-2">
+                      <p>Your account is already linked to another partner. You must disconnect your current couple before linking to a new partner.</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-2 font-body text-destructive border-destructive/30 hover:bg-destructive/5"
+                        onClick={handleDisconnectAndRetry}
+                      >
+                        <Link2Off className="w-3.5 h-3.5 mr-1.5" />
+                        Disconnect Current Couple
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {connectError.kind === 'partnerAlreadyLinked' && (
+                  <Alert className="border-rose-500/40 bg-rose-50/60 dark:bg-rose-950/20">
+                    <Info className="h-4 w-4 text-rose-600" />
+                    <AlertTitle className="font-display text-rose-800 dark:text-rose-300 text-sm">
+                      Partner is already linked
+                    </AlertTitle>
+                    <AlertDescription className="font-body text-rose-700 dark:text-rose-400 text-sm">
+                      The partner you entered is already in a couple with someone else. They must disconnect from their current partner first before you can link with them.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {connectError.kind === 'invalidPrincipal' && (
+                  <Alert variant="destructive" className="bg-destructive/5">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle className="font-display text-sm">Invalid Principal ID</AlertTitle>
+                    <AlertDescription className="font-body text-sm">
+                      The Principal ID you entered is not valid. Please double-check the ID — it should look like <code className="font-mono text-xs">xxxxx-xxxxx-xxxxx-xxxxx-cai</code>.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {connectError.kind === 'generic' && (
+                  <Alert variant="destructive" className="bg-destructive/5">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle className="font-display text-sm">Connection Failed</AlertTitle>
+                    <AlertDescription className="font-body text-sm">
+                      {connectError.message}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            )}
+
             <form onSubmit={handleConnect} className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="partnerPrincipal" className="label-warm">Partner's Principal ID</Label>
@@ -191,7 +318,10 @@ export default function CoupleSettings() {
                   id="partnerPrincipal"
                   placeholder="e.g. aaaaa-aa..."
                   value={partnerPrincipal}
-                  onChange={(e) => setPartnerPrincipal(e.target.value)}
+                  onChange={(e) => {
+                    setPartnerPrincipal(e.target.value);
+                    if (connectError) setConnectError(null);
+                  }}
                   className="font-mono text-sm"
                   required
                 />
@@ -230,25 +360,54 @@ export default function CoupleSettings() {
         </div>
       )}
 
-      {/* Disconnect Dialog */}
-      <AlertDialog open={disconnectOpen} onOpenChange={setDisconnectOpen}>
+      {/* Disconnect Confirmation Dialog */}
+      <AlertDialog open={disconnectOpen} onOpenChange={(open) => {
+        if (!dissolveCouple.isPending) {
+          setDisconnectOpen(open);
+          if (!open) setDisconnectError(null);
+        }
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="font-display">Disconnect from Partner?</AlertDialogTitle>
-            <AlertDialogDescription className="font-body">
-              This will remove the couple link. Your existing data will remain, but you'll no longer share entries with your partner. This action cannot be undone from the app.
+            <AlertDialogDescription className="font-body space-y-2">
+              <span className="block">
+                This will remove the couple link for <strong>both you and your partner</strong>. Your existing planner data will remain intact, but you'll no longer share entries.
+              </span>
+              <span className="block text-muted-foreground">
+                After disconnecting, you can connect with a new partner at any time.
+              </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
+
+          {disconnectError && (
+            <Alert variant="destructive" className="bg-destructive/5 mx-0">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle className="font-display text-sm">Disconnect Failed</AlertTitle>
+              <AlertDescription className="font-body text-sm">{disconnectError}</AlertDescription>
+            </Alert>
+          )}
+
           <AlertDialogFooter>
-            <AlertDialogCancel className="font-body">Cancel</AlertDialogCancel>
+            <AlertDialogCancel
+              className="font-body"
+              disabled={dissolveCouple.isPending}
+            >
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               className="font-body bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
-                toast.info('Please contact support to disconnect. This feature requires admin access.');
-                setDisconnectOpen(false);
+              onClick={(e) => {
+                e.preventDefault();
+                handleDisconnect();
               }}
+              disabled={dissolveCouple.isPending}
             >
-              Disconnect
+              {dissolveCouple.isPending ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Disconnecting...</>
+              ) : (
+                <><Link2Off className="w-4 h-4 mr-2" /> Yes, Disconnect</>
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -1,73 +1,42 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-28T03:59:08.836Z",
+  "generatedAt": "2026-02-28T07:53:28.876Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 6,
-    "implemented": 4,
+    "total": 3,
+    "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "In the YearlyPlanner page, add a partner-view tab or section that fetches and displays the partner's yearly planner entry (word of the year, major goals, vision image URLs, monthly habit tracker grid, and year-end reflection) as read-only content. The partner's data must be clearly distinguished from the current user's own data.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/YearlyPlanner.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/pages/YearlyPlanner.tsx"
-        ]
-      },
-      {
-        "id": "REQ-2",
-        "summary": "In the MonthlyPlanner page, add a partner-view tab or section that fetches and displays the partner's monthly planner entry (goals, important dates, budget entries, and mood tracker) for the currently selected month as read-only content.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/MonthlyPlanner.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/pages/MonthlyPlanner.tsx"
-        ]
-      },
-      {
-        "id": "REQ-3",
-        "summary": "In the WeeklyPlanner page, add a partner-view tab or section that fetches and displays the partner's weekly planner entry (priority tasks, habit tracker grid, todos, energy rating, and reflection) for the currently selected ISO week as read-only content.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/WeeklyPlanner.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/pages/WeeklyPlanner.tsx"
-        ]
-      },
-      {
-        "id": "REQ-4",
-        "summary": "In the DailyPlanner page, add a partner-view tab or section that fetches and displays the partner's daily planner entry (schedule items, tasks, notes, water intake, mood, gratitude entries, and journal entry) for the currently selected date as read-only content.",
-        "status": "missing",
-        "plannedFiles": [
-          "frontend/src/pages/DailyPlanner.tsx"
-        ],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-5",
-        "summary": "Ensure the backend exposes query functions that allow fetching another user's (partner's) yearly, monthly, weekly, and daily planner entries by principal ID. If these queries do not already exist, add them to the main actor with appropriate read-only access (no mutation allowed via these endpoints).",
+        "summary": "Add a backend endpoint that retrieves journal entries for a given user's partner, enforcing couple-based access control so only linked partners can read each other's journal data.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
-        "id": "REQ-6",
-        "summary": "Add React Query hooks in useQueries.ts for the new partner planner query functions (yearly, monthly, weekly, daily by partner principal), so the frontend components can consume partner data consistently with the existing query patterns.",
+        "id": "REQ-2",
+        "summary": "Add a React Query hook in useQueries.ts to fetch the partner's journal entries from the new backend endpoint, following the same pattern used for partner daily planner data.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/hooks/useQueries.ts"
         ],
         "matchedFiles": [
           "frontend/src/hooks/useQueries.ts"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Add a read-only partner journal view tab in JournalSection.tsx that displays the partner's journal entries across all four journal types (daily, emotional, night reflection, growth), consistent with the read-only partner view pattern used in DailyPlanner, WeeklyPlanner, MonthlyPlanner, and VisionBoard.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/JournalSection.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/JournalSection.tsx"
         ]
       }
     ]
@@ -78,12 +47,12 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
     "frontend/src/hooks/useQueries.ts",
-    "frontend/src/pages/CoupleSettings.tsx",
-    "frontend/src/pages/MonthlyPlanner.tsx",
-    "frontend/src/pages/VisionBoard.tsx",
-    "frontend/src/pages/WeeklyPlanner.tsx",
-    "frontend/src/pages/YearlyPlanner.tsx",
+    "frontend/src/pages/JournalSection.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",
