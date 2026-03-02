@@ -4,19 +4,19 @@
   "summary": "New project",
   "architectural_notes": [],
   "known_issues": [],
-  "isFixRequest": false,
-  "existing_features": [],
-  "new_feature_requests": [
+  "isFixRequest": true,
+  "existing_features": [
     {
-      "id": "AR-1",
-      "summary": "In the VisionBoard page, update only the instructional/helper text shown inside the 'Add Milestone' dialog or form to reflect the new instructions provided by the user. Do not change any layout, fields, logic, validation, state management, or styling of the milestone add flow — keep everything else exactly as it is in the current live version.",
+      "id": "feature-revert-or-correct-the-instructional-helper-text-inside-the-add-milestone-dialog-on-the-visionboard-page-to-match-exactly-what-the-user-originally-requested-the-current-text-does-not-reflect-the-user-s-original-instructions-remove-any-ai-assumed-phrasing-and-restore-the-text-to-the-user-s-original-wording",
+      "title": "Revert or correct the instructional/helper text inside the 'Add Milestone' dialog on the VisionBoard page to match exactly what the user originally requested. The current text does not reflect the user's original instructions — remove any AI-assumed phrasing and restore the text to the user's original wording.",
       "reqIds": [
         "REQ-1"
       ],
-      "status": "pending"
+      "version": 1
     }
   ],
-  "projectName": "Future Us",
+  "new_feature_requests": [],
+  "projectName": "Revert 'Add Milestone' dialog instructional text to user's original specification",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

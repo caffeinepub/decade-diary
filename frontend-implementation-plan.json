@@ -1,21 +1,21 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Update Milestone Add Instructions Text Only",
+  "title": "Revert 'Add Milestone' dialog instructional text to user's original specification",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Update only the instructional/helper text inside the 'Add Milestone' dialog in VisionBoard page to reflect new user-provided instructions, keeping all layout, fields, logic, validation, and styling unchanged",
+      "summary": "Revert or correct the instructional/helper text inside the 'Add Milestone' dialog on the VisionBoard page to match the user's original specification",
       "acceptanceCriteria": [
-        "The 'Add Milestone' dialog/form layout, fields, and functionality are identical to the current live version.",
-        "Only the instructional/descriptive text within the milestone add UI has been updated to match the user-provided instructions.",
-        "No other pages or components are affected."
+        "The 'Add Milestone' dialog instructional/helper text matches the user's original specification exactly",
+        "No other logic, layout, or styling in the VisionBoard page is changed",
+        "The dialog opens and closes correctly without errors"
       ],
       "file_operations": [
         {
           "path": "frontend/src/pages/VisionBoard.tsx",
           "operation": "modify",
-          "description": "Update only the instructional or helper text displayed within the 'Add Milestone' dialog or form section (e.g., label text, placeholder text, or helper descriptions) to match the new instructions provided by the user. Do not modify the dialog's layout, input fields, validation logic, state management, button handlers, or any styling. Keep the milestone add flow exactly as it exists in the current live version, changing only the text content that guides the user."
+          "description": "Locate the 'Add Milestone' dialog component within the VisionBoard page and revert or correct the instructional/helper text to match the user's original wording. Remove any AI-assumed phrasing. Ensure no changes are made to logic, layout, or styling—only update the text content of labels, placeholders, or helper text within the milestone dialog."
         }
       ]
     }

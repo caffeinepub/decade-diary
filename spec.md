@@ -1,9 +1,10 @@
 # Specification
 
 ## Summary
-**Goal:** Update only the instructional/helper text inside the "Add Milestone" dialog on the VisionBoard page, without changing anything else.
+**Goal:** Revert the instructional/helper text inside the "Add Milestone" dialog on the VisionBoard page to match the user's original specification.
 
 **Planned changes:**
-- Replace the instructional/descriptive text within the "Add Milestone" dialog to match the user-provided instructions
+- Remove AI-assumed phrasing from the "Add Milestone" dialog's instructional/helper text
+- Restore the text to exactly what the user originally specified
 
-**User-visible outcome:** The "Add Milestone" dialog displays updated instructional text while all fields, layout, validation, and functionality remain exactly as before.
+**User-visible outcome:** The "Add Milestone" dialog displays the correct instructional text as originally intended, with no other changes to the VisionBoard page.

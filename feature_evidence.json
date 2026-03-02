@@ -1,4 +1,24 @@
 {
   "kind": "feature_evidence_report",
-  "features": []
+  "features": [
+    {
+      "featureId": "feature-revert-or-correct-the-instructional-helper-text-inside-the-add-milestone-dialog-on-the-visionboard-page-to-match-exactly-what-the-user-originally-requested-the-current-text-does-not-reflect-the-user-s-original-instructions-remove-any-ai-assumed-phrasing-and-restore-the-text-to-the-user-s-original-wording",
+      "featureTitle": "Revert or correct the instructional/helper text inside the 'Add Milestone' dialog on the VisionBoard page to match exactly what the user originally requested. The current text does not reflect the user's original instructions — remove any AI-assumed phrasing and restore the text to the user's original wording.",
+      "files": [
+        "frontend/src/pages/VisionBoard.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    }
+  ]
 }

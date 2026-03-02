@@ -1,37 +1,35 @@
 {
   "kind": "build_request",
-  "title": "Update Milestone Add Instructions Text Only",
-  "projectName": "Future Us",
-  "priority": "normal",
+  "title": "Revert 'Add Milestone' dialog instructional text to user's original specification",
+  "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "In the VisionBoard page, update only the instructional/helper text shown inside the 'Add Milestone' dialog or form to reflect the new instructions provided by the user. Do not change any layout, fields, logic, validation, state management, or styling of the milestone add flow — keep everything else exactly as it is in the current live version.",
+      "text": "Revert or correct the instructional/helper text inside the 'Add Milestone' dialog on the VisionBoard page to match exactly what the user originally requested. The current text does not reflect the user's original instructions — remove any AI-assumed phrasing and restore the text to the user's original wording.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-1"
         ],
         "quotes": [
-          "Milestones add should remain same as current live version change only the instructions I gave to you"
+          "No it is not the way i told u"
         ]
       },
       "acceptanceCriteria": [
-        "The 'Add Milestone' dialog/form layout, fields, and functionality are identical to the current live version.",
-        "Only the instructional/descriptive text within the milestone add UI has been updated to match the user-provided instructions.",
-        "No other pages or components are affected."
+        "The 'Add Milestone' dialog instructional/helper text matches the user's original specification exactly",
+        "No other logic, layout, or styling in the VisionBoard page is changed",
+        "The dialog opens and closes correctly without errors"
       ]
     }
   ],
   "constraints": [
-    "Do not change the milestone add form fields, layout, validation, or logic.",
-    "Do not modify any backend files.",
-    "Do not alter any immutable frontend paths."
+    "Do not change any logic, layout, or styling in the VisionBoard page — only the instructional/helper text inside the 'Add Milestone' dialog",
+    "Do not modify any immutable frontend paths"
   ],
   "nonGoals": [
-    "Redesigning or restructuring the milestone add dialog.",
-    "Adding or removing form fields from the milestone flow.",
-    "Changing any other page or feature."
+    "Redesigning the VisionBoard page",
+    "Changing milestone creation logic",
+    "Modifying any other dialogs or components"
   ],
   "imageRequirements": {
     "required": [],
