@@ -1,21 +1,22 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Revert 'Add Milestone' dialog instructional text to user's original specification",
+  "title": "Change milestone input to use plus sign button like tasks",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Revert or correct the instructional/helper text inside the 'Add Milestone' dialog on the VisionBoard page to match the user's original specification",
+      "summary": "Replace one-per-line milestone input fields with a plus sign button interaction pattern that matches the task addition UI",
       "acceptanceCriteria": [
-        "The 'Add Milestone' dialog instructional/helper text matches the user's original specification exactly",
-        "No other logic, layout, or styling in the VisionBoard page is changed",
-        "The dialog opens and closes correctly without errors"
+        "Milestones section shows a single text input with a plus/add button, not pre-rendered rows for each milestone.",
+        "Clicking the plus button (or pressing Enter) appends the typed milestone to the list and clears the input field.",
+        "Existing saved milestones are displayed as a list with individual delete/remove controls.",
+        "The milestone add interaction is visually consistent with the task add pattern used elsewhere in the planner."
       ],
       "file_operations": [
         {
           "path": "frontend/src/pages/VisionBoard.tsx",
           "operation": "modify",
-          "description": "Locate the 'Add Milestone' dialog component within the VisionBoard page and revert or correct the instructional/helper text to match the user's original wording. Remove any AI-assumed phrasing. Ensure no changes are made to logic, layout, or styling—only update the text content of labels, placeholders, or helper text within the milestone dialog."
+          "description": "Replace the milestone input section to use a single text input field with a plus/add button instead of rendering one input row per milestone. Display existing milestones as a list with individual remove buttons. Match the interaction pattern used for task additions in DailyPlanner.tsx, WeeklyPlanner.tsx, and MonthlyPlanner.tsx, including Enter key support to append milestones. Ensure the new UI updates the local state and triggers the mutation to save changes to the backend."
         }
       ]
     }

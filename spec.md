@@ -1,10 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Revert the instructional/helper text inside the "Add Milestone" dialog on the VisionBoard page to match the user's original specification.
+**Goal:** Change the milestones input UI to use a plus button pattern (matching how tasks are added) instead of pre-rendered per-line input rows.
 
 **Planned changes:**
-- Remove AI-assumed phrasing from the "Add Milestone" dialog's instructional/helper text
-- Restore the text to exactly what the user originally specified
+- Replace the existing milestone input rows with a single text input field and a plus/add button
+- Clicking the plus button or pressing Enter appends the new milestone to the list and clears the input
+- Display existing/saved milestones as a list with individual remove controls
+- Match the visual style of the task add interaction pattern used elsewhere in the planner
 
-**User-visible outcome:** The "Add Milestone" dialog displays the correct instructional text as originally intended, with no other changes to the VisionBoard page.
+**User-visible outcome:** Users can add milestones by typing in a single input and clicking a plus button (just like tasks), rather than filling in pre-rendered rows.

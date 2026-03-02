@@ -1,7 +1,7 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-03-02T08:12:13.312Z",
+  "generatedAt": "2026-03-02T11:02:49.776Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
@@ -12,7 +12,7 @@
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Revert or correct the instructional/helper text inside the 'Add Milestone' dialog on the VisionBoard page to match exactly what the user originally requested. The current text does not reflect the user's original instructions — remove any AI-assumed phrasing and restore the text to the user's original wording.",
+        "summary": "Replace the one-per-line milestone input fields with a plus sign button interaction pattern that matches how tasks are added: display a text input field with a '+' or 'Add' button that appends a new milestone to the list on click, instead of rendering one input row per milestone by default.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/pages/VisionBoard.tsx"

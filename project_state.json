@@ -1,22 +1,30 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "New project",
+  "summary": "Project with milestones and tasks UI where milestones should be added via a plus sign (like tasks) rather than one per line.",
   "architectural_notes": [],
   "known_issues": [],
-  "isFixRequest": true,
+  "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-revert-or-correct-the-instructional-helper-text-inside-the-add-milestone-dialog-on-the-visionboard-page-to-match-exactly-what-the-user-originally-requested-the-current-text-does-not-reflect-the-user-s-original-instructions-remove-any-ai-assumed-phrasing-and-restore-the-text-to-the-user-s-original-wording",
-      "title": "Revert or correct the instructional/helper text inside the 'Add Milestone' dialog on the VisionBoard page to match exactly what the user originally requested. The current text does not reflect the user's original instructions — remove any AI-assumed phrasing and restore the text to the user's original wording.",
+      "id": "feature-replace-the-one-per-line-milestone-input-fields-with-a-plus-sign-button-interaction-pattern-that-matches-how-tasks-are-added-display-a-text-input-field-with-a-or-add-button-that-appends-a-new-milestone-to-the-list-on-click-instead-of-rendering-one-input-row-per-milestone-by-default",
+      "title": "Replace the one-per-line milestone input fields with a plus sign button interaction pattern that matches how tasks are added: display a text input field with a '+' or 'Add' button that appends a new milestone to the list on click, instead of rendering one input row per milestone by default.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     }
   ],
-  "new_feature_requests": [],
-  "projectName": "Revert 'Add Milestone' dialog instructional text to user's original specification",
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Milestones should be added via a plus sign button (like tasks) instead of one per line input",
+      "reqIds": [],
+      "status": "pending"
+    }
+  ],
+  "gameProjectType": "none",
+  "projectName": "Change milestone input to use plus sign button like tasks",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

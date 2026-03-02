@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Target, Trash2, Edit2, ChevronDown, ChevronUp, Star, Users, X } from 'lucide-react';
+import { Plus, Target, Trash2, Edit2, ChevronDown, ChevronUp, Star, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import {
@@ -182,6 +182,83 @@ function GoalCard({ entry, onEdit, onDelete, onProgressChange, readOnly = false 
   );
 }
 
+// ─── MilestoneInput ───────────────────────────────────────────────────────────
+
+interface MilestoneInputProps {
+  milestones: string[];
+  onChange: (milestones: string[]) => void;
+}
+
+function MilestoneInput({ milestones, onChange }: MilestoneInputProps) {
+  const [inputValue, setInputValue] = useState('');
+
+  const handleAdd = () => {
+    const trimmed = inputValue.trim();
+    if (!trimmed) return;
+    onChange([...milestones, trimmed]);
+    setInputValue('');
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAdd();
+    }
+  };
+
+  const handleRemove = (index: number) => {
+    onChange(milestones.filter((_, i) => i !== index));
+  };
+
+  return (
+    <div className="space-y-2">
+      {/* Input row */}
+      <div className="flex gap-2">
+        <Input
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Add a milestone…"
+          className="flex-1"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          onClick={handleAdd}
+          disabled={!inputValue.trim()}
+          className="flex-shrink-0"
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Milestone list */}
+      {milestones.length > 0 && (
+        <ul className="space-y-1.5">
+          {milestones.map((milestone, index) => (
+            <li
+              key={index}
+              className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2 text-sm"
+            >
+              <span className="text-primary flex-shrink-0">•</span>
+              <span className="flex-1 min-w-0 break-words">{milestone}</span>
+              <button
+                type="button"
+                onClick={() => handleRemove(index)}
+                className="flex-shrink-0 text-muted-foreground hover:text-destructive transition-colors"
+                aria-label="Remove milestone"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 // ─── GoalFormDialog ───────────────────────────────────────────────────────────
 
 interface GoalFormDialogProps {
@@ -197,7 +274,6 @@ function GoalFormDialog({ open, onClose, onSave, initial, isSaving }: GoalFormDi
   const [targetYear, setTargetYear] = useState(initial ? String(initial.targetYear) : String(new Date().getFullYear() + 1));
   const [whyThisMatters, setWhyThisMatters] = useState(initial?.whyThisMatters ?? '');
   const [milestones, setMilestones] = useState<string[]>(initial?.milestones ?? []);
-  const [newMilestone, setNewMilestone] = useState('');
   const [progress, setProgress] = useState(initial ? Number(initial.progressPercentage) : 0);
 
   // Reset form when dialog opens with new initial value
@@ -207,28 +283,9 @@ function GoalFormDialog({ open, onClose, onSave, initial, isSaving }: GoalFormDi
       setTargetYear(initial ? String(initial.targetYear) : String(new Date().getFullYear() + 1));
       setWhyThisMatters(initial?.whyThisMatters ?? '');
       setMilestones(initial?.milestones ?? []);
-      setNewMilestone('');
       setProgress(initial ? Number(initial.progressPercentage) : 0);
     }
   }, [open, initial]);
-
-  const handleAddMilestone = () => {
-    const trimmed = newMilestone.trim();
-    if (!trimmed) return;
-    setMilestones((prev) => [...prev, trimmed]);
-    setNewMilestone('');
-  };
-
-  const handleRemoveMilestone = (index: number) => {
-    setMilestones((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleMilestoneKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleAddMilestone();
-    }
-  };
 
   const handleSave = () => {
     const entry: VisionBoardEntry = {
@@ -297,43 +354,7 @@ function GoalFormDialog({ open, onClose, onSave, initial, isSaving }: GoalFormDi
           {/* Milestones */}
           <div className="space-y-1.5">
             <Label>Milestones</Label>
-            {milestones.length > 0 && (
-              <ul className="space-y-1 mb-2">
-                {milestones.map((m, i) => (
-                  <li key={i} className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-1.5 text-sm">
-                    <span className="text-primary">•</span>
-                    <span className="flex-1">{m}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveMilestone(i)}
-                      className="text-muted-foreground hover:text-destructive transition-colors"
-                      aria-label="Remove milestone"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <div className="flex gap-2">
-              <Input
-                value={newMilestone}
-                onChange={(e) => setNewMilestone(e.target.value)}
-                onKeyDown={handleMilestoneKeyDown}
-                placeholder="Add a milestone…"
-                className="flex-1"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={handleAddMilestone}
-                disabled={!newMilestone.trim()}
-                aria-label="Add milestone"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
+            <MilestoneInput milestones={milestones} onChange={setMilestones} />
           </div>
 
           {/* Progress */}
@@ -408,7 +429,7 @@ function GoalGrid({ entries, isLoading, onEdit, onDelete, onProgressChange, onAd
         </p>
         <p className="text-muted-foreground text-sm mb-6">
           {readOnly
-            ? 'Your partner hasn\'t added any goals yet.'
+            ? "Your partner hasn't added any goals yet."
             : 'Start building your vision by adding your first long-term goal.'}
         </p>
         {!readOnly && (
@@ -515,15 +536,12 @@ export default function VisionBoard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="max-w-5xl mx-auto px-4 py-8">
+      <main className="max-w-6xl mx-auto px-4 py-8">
         {/* Page Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-display font-bold text-foreground flex items-center gap-2">
-              <Target className="h-8 w-8 text-primary" />
-              Vision Board
-            </h1>
-            <p className="text-muted-foreground mt-1">Your long-term goals and aspirations</p>
+            <h1 className="text-3xl font-bold font-display text-foreground">Vision Board</h1>
+            <p className="text-muted-foreground mt-1">Map out your long-term goals and track your progress</p>
           </div>
           <Button onClick={handleAddNew} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
@@ -531,36 +549,33 @@ export default function VisionBoard() {
           </Button>
         </div>
 
-        {/* Stats Row */}
+        {/* Stats Bar */}
         {entries.length > 0 && (
-          <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
             <div className="bg-card border border-border rounded-xl p-4 text-center">
-              <p className="text-3xl font-bold text-primary">{entries.length}</p>
-              <p className="text-sm text-muted-foreground mt-1">Total Goals</p>
+              <p className="text-2xl font-bold text-primary">{entries.length}</p>
+              <p className="text-xs text-muted-foreground mt-1">Total Goals</p>
             </div>
             <div className="bg-card border border-border rounded-xl p-4 text-center">
-              <p className="text-3xl font-bold text-primary">{avgProgress}%</p>
-              <p className="text-sm text-muted-foreground mt-1">Avg Progress</p>
+              <p className="text-2xl font-bold text-primary">{avgProgress}%</p>
+              <p className="text-xs text-muted-foreground mt-1">Avg. Progress</p>
             </div>
-            <div className="bg-card border border-border rounded-xl p-4 text-center">
-              <p className="text-3xl font-bold text-primary">
-                {topCategory ? CATEGORY_EMOJIS[topCategory] : '🎯'}
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                {topCategory ? CATEGORY_LABELS[topCategory] : 'No focus yet'}
-              </p>
-            </div>
+            {topCategory && (
+              <div className="bg-card border border-border rounded-xl p-4 text-center col-span-2 sm:col-span-1">
+                <p className="text-2xl">{CATEGORY_EMOJIS[topCategory]}</p>
+                <p className="text-xs text-muted-foreground mt-1">Top Category</p>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Main Content */}
+        {/* Goals Grid — with optional partner tab */}
         {hasPartner ? (
           <Tabs defaultValue="mine">
             <TabsList className="mb-6">
               <TabsTrigger value="mine">My Goals</TabsTrigger>
-              <TabsTrigger value="partner" className="flex items-center gap-1">
-                <Users className="h-3.5 w-3.5" />
-                {partnerProfile.displayName || partnerProfile.name}'s Goals
+              <TabsTrigger value="partner">
+                {partnerProfile?.displayName ?? partnerProfile?.name ?? "Partner"}'s Goals
               </TabsTrigger>
             </TabsList>
 
@@ -579,8 +594,8 @@ export default function VisionBoard() {
               <GoalGrid
                 entries={partnerEntries}
                 isLoading={false}
-                readOnly
                 onAddNew={() => {}}
+                readOnly
               />
             </TabsContent>
           </Tabs>
@@ -608,8 +623,8 @@ export default function VisionBoard() {
         isSaving={saveEntry.isPending}
       />
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={(v) => { if (!v) handleDeleteCancel(); }}>
+      {/* Delete Confirmation */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Goal</AlertDialogTitle>

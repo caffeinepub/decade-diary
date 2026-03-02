@@ -6,9 +6,11 @@ import Int "mo:core/Int";
 import Order "mo:core/Order";
 import Array "mo:core/Array";
 
+
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
 
+// Enable data migration via the with clause transformation
 
 actor {
   //------------------------- Authorization Setup ----------------------
@@ -1085,4 +1087,3 @@ actor {
     };
   };
 };
-

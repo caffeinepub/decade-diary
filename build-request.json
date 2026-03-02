@@ -1,35 +1,36 @@
 {
   "kind": "build_request",
-  "title": "Revert 'Add Milestone' dialog instructional text to user's original specification",
-  "priority": "high",
+  "title": "Change milestone input to use plus sign button like tasks",
+  "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Revert or correct the instructional/helper text inside the 'Add Milestone' dialog on the VisionBoard page to match exactly what the user originally requested. The current text does not reflect the user's original instructions — remove any AI-assumed phrasing and restore the text to the user's original wording.",
+      "text": "Replace the one-per-line milestone input fields with a plus sign button interaction pattern that matches how tasks are added: display a text input field with a '+' or 'Add' button that appends a new milestone to the list on click, instead of rendering one input row per milestone by default.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-4"
         ],
         "quotes": [
-          "No it is not the way i told u"
+          "I want the milestones to be add by plus sign like task not one per line"
         ]
       },
       "acceptanceCriteria": [
-        "The 'Add Milestone' dialog instructional/helper text matches the user's original specification exactly",
-        "No other logic, layout, or styling in the VisionBoard page is changed",
-        "The dialog opens and closes correctly without errors"
+        "Milestones section shows a single text input with a plus/add button, not pre-rendered rows for each milestone.",
+        "Clicking the plus button (or pressing Enter) appends the typed milestone to the list and clears the input field.",
+        "Existing saved milestones are displayed as a list with individual delete/remove controls.",
+        "The milestone add interaction is visually consistent with the task add pattern used elsewhere in the planner."
       ]
     }
   ],
   "constraints": [
-    "Do not change any logic, layout, or styling in the VisionBoard page — only the instructional/helper text inside the 'Add Milestone' dialog",
-    "Do not modify any immutable frontend paths"
+    "Do not change the backend data model or API for milestones.",
+    "Do not modify any files under frontend/src/hooks/ or frontend/src/components/ui."
   ],
   "nonGoals": [
-    "Redesigning the VisionBoard page",
-    "Changing milestone creation logic",
-    "Modifying any other dialogs or components"
+    "Changing how tasks are added.",
+    "Modifying any other planner sections beyond the milestones input UI.",
+    "Backend schema changes."
   ],
   "imageRequirements": {
     "required": [],
