@@ -2,10 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-add-a-react-query-hook-in-usequeries-ts-to-fetch-the-partner-s-journal-entries-from-the-new-backend-endpoint-following-the-same-pattern-used-for-partner-daily-planner-data",
-      "featureTitle": "Add a React Query hook in useQueries.ts to fetch the partner's journal entries from the new backend endpoint, following the same pattern used for partner daily planner data.",
+      "featureId": "feature-remove-any-hard-coded-maximum-cap-on-the-number-of-goals-a-user-can-add-in-the-vision-board-section-allowing-unlimited-goals-to-be-created",
+      "featureTitle": "Remove any hard-coded maximum cap on the number of goals a user can add in the Vision Board section, allowing unlimited goals to be created.",
       "files": [
-        "frontend/src/hooks/useQueries.ts"
+        "frontend/src/pages/VisionBoard.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -16,26 +16,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-2"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-a-read-only-partner-journal-view-tab-in-journalsection-tsx-that-displays-the-partner-s-journal-entries-across-all-four-journal-types-daily-emotional-night-reflection-growth-consistent-with-the-read-only-partner-view-pattern-used-in-dailyplanner-weeklyplanner-monthlyplanner-and-visionboard",
-      "featureTitle": "Add a read-only partner journal view tab in JournalSection.tsx that displays the partner's journal entries across all four journal types (daily, emotional, night reflection, growth), consistent with the read-only partner view pattern used in DailyPlanner, WeeklyPlanner, MonthlyPlanner, and VisionBoard.",
-      "files": [
-        "frontend/src/pages/JournalSection.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-3"
+        "REQ-1"
       ],
       "confidence": "high"
     }

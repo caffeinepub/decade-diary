@@ -1,39 +1,22 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Allow partners to view each other's journal entries",
+  "title": "Remove vision board goal limit",
   "requirements": [
     {
-      "id": "REQ-2",
-      "summary": "Add a React Query hook to fetch the partner's journal entries from the backend",
+      "id": "REQ-1",
+      "summary": "Remove any hard-coded maximum cap on the number of goals a user can add in the Vision Board section, allowing unlimited goals to be created.",
       "acceptanceCriteria": [
-        "A useQuery hook exists that fetches partner journal entries.",
-        "The hook is only active when the user is in a coupled state.",
-        "Loading and error states are handled."
+        "Users can add more goals than any previously enforced limit in the Vision Board section",
+        "No error message, disabled state, or UI block appears when trying to add additional goals beyond any former cap",
+        "Existing goals are unaffected after the limit is removed",
+        "The 'Add Goal' button remains functional regardless of how many goals already exist"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useQueries.ts",
+          "path": "frontend/src/pages/VisionBoard.tsx",
           "operation": "modify",
-          "description": "Add a useGetPartnerJournals hook that calls the backend getPartnerJournals method, following the same pattern as useGetPartnerDailyPlannerEntries. The hook should be enabled only when the user has a partner (couple state exists). It returns all four journal types (daily, emotional, night reflection, growth) in a single query. Include proper loading and error state handling using TanStack Query."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Add a read-only partner journal view tab in JournalSection that displays the partner's journal entries across all four journal types",
-      "acceptanceCriteria": [
-        "A 'Partner's Journal' tab or toggle appears in JournalSection only when the user is linked to a partner.",
-        "All four journal types are viewable in read-only mode from the partner's perspective.",
-        "No edit or save controls are shown in the partner view.",
-        "Date navigation works in the partner view to browse different entries.",
-        "The partner view is visually consistent with other partner view tabs in the app."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/JournalSection.tsx",
-          "operation": "modify",
-          "description": "Add a read-only partner journal view following the established pattern from DailyPlanner, WeeklyPlanner, MonthlyPlanner, and VisionBoard. Add a view mode toggle or tab that switches between 'My Journal' and 'Partner's Journal' (visible only when in a couple). When in partner view mode, fetch journal entries using the new useGetPartnerJournals hook and display all four journal types (daily, emotional, night reflection, growth) in read-only cards or sections. Hide all save/edit buttons in partner view. Ensure date navigation works to browse partner entries by date. Use consistent styling with the existing partner view pattern, including the couple mode badge or visual indicator. Filter partner entries by the currently selected date to show only relevant entries."
+          "description": "Remove any hard-coded limit on the number of vision board goals that can be created. Search for and eliminate any conditional logic that disables the 'Add Goal' button, shows error messages, or prevents goal creation based on the current number of goals. Ensure the button remains enabled and functional regardless of how many goals already exist. Verify that no maxGoals constant or similar variable is being used to cap the goal count in this component."
         }
       ]
     }

@@ -1,24 +1,18 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "A shared daily planner and journal app where partners can view each other's daily planner and journal entries.",
+  "summary": "Couples journaling app with vision board feature. User requested removal of goal limit in vision board section.",
   "architectural_notes": [],
-  "known_issues": [],
-  "isFixRequest": false,
+  "known_issues": [
+    "Vision board section has a hard-coded cap on the number of goals a user can add"
+  ],
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-add-a-react-query-hook-in-usequeries-ts-to-fetch-the-partner-s-journal-entries-from-the-new-backend-endpoint-following-the-same-pattern-used-for-partner-daily-planner-data",
-      "title": "Add a React Query hook in useQueries.ts to fetch the partner's journal entries from the new backend endpoint, following the same pattern used for partner daily planner data.",
+      "id": "feature-remove-any-hard-coded-maximum-cap-on-the-number-of-goals-a-user-can-add-in-the-vision-board-section-allowing-unlimited-goals-to-be-created",
+      "title": "Remove any hard-coded maximum cap on the number of goals a user can add in the Vision Board section, allowing unlimited goals to be created.",
       "reqIds": [
-        "REQ-2"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-a-read-only-partner-journal-view-tab-in-journalsection-tsx-that-displays-the-partner-s-journal-entries-across-all-four-journal-types-daily-emotional-night-reflection-growth-consistent-with-the-read-only-partner-view-pattern-used-in-dailyplanner-weeklyplanner-monthlyplanner-and-visionboard",
-      "title": "Add a read-only partner journal view tab in JournalSection.tsx that displays the partner's journal entries across all four journal types (daily, emotional, night reflection, growth), consistent with the read-only partner view pattern used in DailyPlanner, WeeklyPlanner, MonthlyPlanner, and VisionBoard.",
-      "reqIds": [
-        "REQ-3"
+        "REQ-1"
       ],
       "version": 1
     }
@@ -26,15 +20,15 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Allow partners to view each other's journal entries",
+      "summary": "Remove goal limit in vision board section to allow unlimited goals",
       "reqIds": [],
       "status": "pending"
     },
     {
-      "id": "AR-2",
-      "summary": "Add a backend endpoint that retrieves journal entries for a given user's partner, enforcing couple-based access control so only linked partners can read each other's journal data.",
+      "id": "AR-3",
+      "summary": "If the backend Motoko actor enforces a maximum number of vision board goals per user, remove or eliminate that cap so the backend accepts and stores an unlimited number of goals.",
       "reqIds": [
-        "REQ-1"
+        "REQ-2"
       ],
       "status": "pending"
     }

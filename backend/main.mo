@@ -10,7 +10,9 @@ import Array "mo:core/Array";
 import Iter "mo:core/Iter";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
+import Migration "migration";
 
+(with migration = Migration.run)
 actor {
   //------------------------- Authorization Setup ----------------------
   let accessControlState = AccessControl.initState();
@@ -45,14 +47,6 @@ actor {
     #personalGrowth;
     #travel;
     #spiritual;
-  };
-
-  public type VisionBoardEntry = {
-    category : GoalCategory;
-    targetYear : Int;
-    milestones : [Text];
-    whyThisMatters : Text;
-    progressPercentage : Nat;
   };
 
   public type Task = {
@@ -126,10 +120,6 @@ actor {
     dailyCheckIns : [Bool];
   };
 
-  public type Quote = {
-    quoteText : Text;
-  };
-
   //--------------------------- Journal Types --------------------------
 
   public type EmotionTag = {
@@ -192,36 +182,47 @@ actor {
     isPublic : Bool;
   };
 
+  public type Quote = {
+    quoteText : Text;
+  };
+
+  public type VisionBoardEntry = {
+    category : GoalCategory;
+    targetYear : Int;
+    milestones : [Text];
+    whyThisMatters : Text;
+    progressPercentage : Nat;
+  };
+
   //------------------------- State -----------------------
 
   let userProfiles = Map.empty<Principal, UserProfile>();
   let couples = Map.empty<Principal, Couple>();
-  let visionBoardEntries = Map.empty<Principal, List.List<VisionBoardEntry>>();
+
   let dailyPlannerEntries = Map.empty<Principal, List.List<DailyPlannerEntry>>();
   let yearlyEntries = Map.empty<Principal, List.List<YearlyEntry>>();
   let monthlyEntries = Map.empty<Principal, List.List<MonthlyEntry>>();
   let weeklyEntries = Map.empty<Principal, List.List<WeeklyEntry>>();
-
   let dailyJournalEntries = Map.empty<Principal, List.List<DailyJournalEntry>>();
   let emotionalJournalEntries = Map.empty<Principal, List.List<EmotionalJournalEntry>>();
   let nightReflectionEntries = Map.empty<Principal, List.List<NightReflectionJournalEntry>>();
   let growthJournalEntries = Map.empty<Principal, List.List<GrowthJournalEntry>>();
 
   let quotes = [
-    "The best vision is insight. – Malcolm Forbes",
+    "The best vision is insight. -- Malcolm Forbes",
     "Dream big, start small, act now.",
-    "Your life does not get better by chance, it gets better by change. – Jim Rohn",
-    "Success is the sum of small efforts, repeated day in and day out. – Robert Collier",
+    "Your life does not get better by chance, it gets better by change. -- Jim Rohn",
+    "Success is the sum of small efforts, repeated day in and day out. -- Robert Collier",
     "Clarity about your future creates motivation in your present.",
-    "It's never too late to be what you might have been. – George Eliot",
+    "It's never too late to be what you might have been. -- George Eliot",
     "Make your vision so clear that your fears become irrelevant.",
-    "Motivation is what gets you started. Habit is what keeps you going. – Jim Ryun",
+    "Motivation is what gets you started. Habit is what keeps you going. -- Jim Ryun",
     "Your dreams are worth fighting for.",
-    "The future belongs to those who believe in the beauty of their dreams. – Eleanor Roosevelt",
+    "The future belongs to those who believe in the beauty of their dreams. -- Eleanor Roosevelt",
     "Go the extra mile. It's never crowded.",
     "What you focus on expands.",
-    "Action is the foundational key to all success. – Pablo Picasso",
-    "A goal without a plan is just a wish. – Antoine de Saint-Exupéry",
+    "Action is the foundational key to all success. -- Pablo Picasso",
+    "A goal without a plan is just a wish. -- Antoine de Saint-Exupéry",
     "The only limits in life are the ones you make.",
     "Progress, not perfection.",
     "Every accomplishment starts with the decision to try.",
@@ -229,16 +230,18 @@ actor {
     "Your only limit is you.",
     "Do something today that your future self will thank you for.",
     "Small steps every day lead to big results.",
-    "Discipline is the bridge between goals and accomplishment. – Jim Rohn",
-    "The secret of getting ahead is getting started. – Mark Twain",
+    "Discipline is the bridge between goals and accomplishment. -- Jim Rohn",
+    "The secret of getting ahead is getting started. -- Mark Twain",
     "Live your vision, love your life.",
     "Persistence guarantees that results are inevitable.",
     "Don't just wish for it, work for it.",
     "Your potential is endless.",
     "Focus on the possibilities, not the obstacles.",
-    "The journey of a thousand miles begins with one step. – Lao Tzu",
-    "Let your vision be greater than your fears:"
+    "The journey of a thousand miles begins with one step. -- Lao Tzu",
+    "Let your vision be greater than your fears."
   ];
+
+  let visionBoardEntries = Map.empty<Principal, List.List<VisionBoardEntry>>();
 
   //------------------------- Helper Functions ------------------------
 
@@ -344,7 +347,7 @@ actor {
     if (partner1.isAnonymous() or partner2.isAnonymous()) {
       return ?#anonymousNotPermitted;
     };
-    if (caller != partner1 and caller != partner2 and not AccessControl.isAdmin(accessControlState, caller)) {
+    if (partner1 == partner2 and caller != partner1 and not AccessControl.isAdmin(accessControlState, caller)) {
       return ?#unauthorized;
     };
 
@@ -563,11 +566,8 @@ actor {
       case (null) { List.empty<VisionBoardEntry>() };
       case (?existing) { existing };
     };
-    let filteredEntries = entries.filter(
-      func(e : VisionBoardEntry) : Bool { e.targetYear != entry.targetYear }
-    );
-    filteredEntries.add(entry);
-    visionBoardEntries.add(caller, filteredEntries);
+    entries.add(entry);
+    visionBoardEntries.add(caller, entries);
   };
 
   public query ({ caller }) func getVisionBoardEntries() : async [VisionBoardEntry] {
