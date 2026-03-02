@@ -3,16 +3,13 @@ import List "mo:core/List";
 import Principal "mo:core/Principal";
 import Runtime "mo:core/Runtime";
 import Int "mo:core/Int";
-import Nat "mo:core/Nat";
 import Order "mo:core/Order";
-import Text "mo:core/Text";
 import Array "mo:core/Array";
-import Iter "mo:core/Iter";
+
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
-import Migration "migration";
 
-(with migration = Migration.run)
+
 actor {
   //------------------------- Authorization Setup ----------------------
   let accessControlState = AccessControl.initState();
@@ -187,6 +184,7 @@ actor {
   };
 
   public type VisionBoardEntry = {
+    id : Nat;
     category : GoalCategory;
     targetYear : Int;
     milestones : [Text];
@@ -558,7 +556,7 @@ actor {
 
   //------------------- Vision Board Management ----------------------
 
-  public shared ({ caller }) func saveVisionBoardEntry(entry : VisionBoardEntry) : async () {
+  public shared ({ caller }) func saveOrUpdateVisionBoardEntry(entry : VisionBoardEntry) : async () {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
       Runtime.trap("Unauthorized: Only users can save vision board entries");
     };
@@ -566,8 +564,13 @@ actor {
       case (null) { List.empty<VisionBoardEntry>() };
       case (?existing) { existing };
     };
-    entries.add(entry);
-    visionBoardEntries.add(caller, entries);
+
+    let filteredEntries = entries.filter(
+      func(e) { e.id != entry.id }
+    );
+
+    filteredEntries.add(entry);
+    visionBoardEntries.add(caller, filteredEntries);
   };
 
   public query ({ caller }) func getVisionBoardEntries() : async [VisionBoardEntry] {
@@ -580,7 +583,7 @@ actor {
     };
   };
 
-  public shared ({ caller }) func updateVisionBoardProgress(targetYear : Int, progress : Nat) : async () {
+  public shared ({ caller }) func updateVisionBoardProgress(entryId : Nat, progress : Nat) : async () {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
       Runtime.trap("Unauthorized: Only users can update vision board entries");
     };
@@ -589,7 +592,7 @@ actor {
       case (?existing) {
         existing.map<VisionBoardEntry, VisionBoardEntry>(
           func(entry) {
-            if (entry.targetYear == targetYear) {
+            if (entry.id == entryId) {
               {
                 entry with progressPercentage = progress;
               };
@@ -601,7 +604,7 @@ actor {
     visionBoardEntries.add(caller, updatedEntries);
   };
 
-  public shared ({ caller }) func deleteVisionBoardEntry(targetYear : Int) : async () {
+  public shared ({ caller }) func deleteVisionBoardEntry(goalId : Nat) : async () {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
       Runtime.trap("Unauthorized: Only users can delete vision board entries");
     };
@@ -609,7 +612,7 @@ actor {
       case (null) { Runtime.trap("No vision board entries found") };
       case (?existing) {
         existing.filter(
-          func(entry : VisionBoardEntry) : Bool { entry.targetYear != targetYear }
+          func(entry : VisionBoardEntry) : Bool { entry.id != goalId }
         );
       };
     };
@@ -1082,3 +1085,4 @@ actor {
     };
   };
 };
+

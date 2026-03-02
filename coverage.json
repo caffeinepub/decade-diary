@@ -1,43 +1,30 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-03-02T05:09:04.134Z",
+  "generatedAt": "2026-03-02T06:15:57.493Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 2,
-    "implemented": 1,
+    "total": 1,
+    "implemented": 0,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Remove any hard-coded maximum cap on the number of goals a user can add in the Vision Board section, allowing unlimited goals to be created.",
-        "status": "implemented",
+        "summary": "In the VisionBoard page, update only the instructional/helper text shown inside the 'Add Milestone' dialog or form to reflect the new instructions provided by the user. Do not change any layout, fields, logic, validation, state management, or styling of the milestone add flow — keep everything else exactly as it is in the current live version.",
+        "status": "missing",
         "plannedFiles": [
           "frontend/src/pages/VisionBoard.tsx"
         ],
-        "matchedFiles": [
-          "frontend/src/pages/VisionBoard.tsx"
-        ]
-      },
-      {
-        "id": "REQ-2",
-        "summary": "If the backend Motoko actor enforces a maximum number of vision board goals per user, remove or eliminate that cap so the backend accepts and stores an unlimited number of goals.",
-        "status": "unknown",
-        "plannedFiles": [],
         "matchedFiles": []
       }
     ]
   },
   "changedFiles": [
-    "backend/main.mo",
-    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
-    "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/pages/VisionBoard.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

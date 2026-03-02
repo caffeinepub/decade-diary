@@ -1,24 +1,4 @@
 {
   "kind": "feature_evidence_report",
-  "features": [
-    {
-      "featureId": "feature-remove-any-hard-coded-maximum-cap-on-the-number-of-goals-a-user-can-add-in-the-vision-board-section-allowing-unlimited-goals-to-be-created",
-      "featureTitle": "Remove any hard-coded maximum cap on the number of goals a user can add in the Vision Board section, allowing unlimited goals to be created.",
-      "files": [
-        "frontend/src/pages/VisionBoard.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-1"
-      ],
-      "confidence": "high"
-    }
-  ]
+  "features": []
 }

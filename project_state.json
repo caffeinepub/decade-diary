@@ -1,39 +1,21 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Couples journaling app with vision board feature. User requested removal of goal limit in vision board section.",
+  "summary": "New project",
   "architectural_notes": [],
-  "known_issues": [
-    "Vision board section has a hard-coded cap on the number of goals a user can add"
-  ],
-  "isFixRequest": true,
-  "existing_features": [
-    {
-      "id": "feature-remove-any-hard-coded-maximum-cap-on-the-number-of-goals-a-user-can-add-in-the-vision-board-section-allowing-unlimited-goals-to-be-created",
-      "title": "Remove any hard-coded maximum cap on the number of goals a user can add in the Vision Board section, allowing unlimited goals to be created.",
-      "reqIds": [
-        "REQ-1"
-      ],
-      "version": 1
-    }
-  ],
+  "known_issues": [],
+  "isFixRequest": false,
+  "existing_features": [],
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Remove goal limit in vision board section to allow unlimited goals",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-3",
-      "summary": "If the backend Motoko actor enforces a maximum number of vision board goals per user, remove or eliminate that cap so the backend accepts and stores an unlimited number of goals.",
+      "summary": "In the VisionBoard page, update only the instructional/helper text shown inside the 'Add Milestone' dialog or form to reflect the new instructions provided by the user. Do not change any layout, fields, logic, validation, state management, or styling of the milestone add flow — keep everything else exactly as it is in the current live version.",
       "reqIds": [
-        "REQ-2"
+        "REQ-1"
       ],
       "status": "pending"
     }
   ],
-  "gameProjectType": "none",
   "projectName": "Future Us",
   "clarification_mode": "instant",
   "clarification_rounds": 0

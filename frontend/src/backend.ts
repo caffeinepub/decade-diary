@@ -150,6 +150,7 @@ export interface YearlyEntry {
     visionImages: Array<string>;
 }
 export interface VisionBoardEntry {
+    id: bigint;
     progressPercentage: bigint;
     targetYear: bigint;
     category: GoalCategory;
@@ -252,7 +253,7 @@ export interface backendInterface {
     createOrUpdateNightReflection(entry: NightReflectionJournalEntry): Promise<void>;
     deleteDailyPlannerEntry(date: bigint): Promise<void>;
     deleteMonthlyEntry(year: bigint, month: bigint): Promise<void>;
-    deleteVisionBoardEntry(targetYear: bigint): Promise<void>;
+    deleteVisionBoardEntry(goalId: bigint): Promise<void>;
     deleteWeeklyEntry(year: bigint, weekNumber: bigint): Promise<void>;
     deleteYearlyEntry(year: bigint): Promise<void>;
     dissolveCouple(): Promise<boolean>;
@@ -298,9 +299,9 @@ export interface backendInterface {
     isCallerAdmin(): Promise<boolean>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     saveDailyPlannerEntry(entry: DailyPlannerEntry): Promise<void>;
-    saveVisionBoardEntry(entry: VisionBoardEntry): Promise<void>;
+    saveOrUpdateVisionBoardEntry(entry: VisionBoardEntry): Promise<void>;
     updateMonthlyEntry(year: bigint, month: bigint, updatedEntry: MonthlyEntry): Promise<void>;
-    updateVisionBoardProgress(targetYear: bigint, progress: bigint): Promise<void>;
+    updateVisionBoardProgress(entryId: bigint, progress: bigint): Promise<void>;
     updateWaterIntake(date: bigint, intake: bigint): Promise<void>;
     updateWeeklyEntry(year: bigint, weekNumber: bigint, updatedEntry: WeeklyEntry): Promise<void>;
     updateYearlyEntry(year: bigint, updatedEntry: YearlyEntry): Promise<void>;
@@ -1055,17 +1056,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async saveVisionBoardEntry(arg0: VisionBoardEntry): Promise<void> {
+    async saveOrUpdateVisionBoardEntry(arg0: VisionBoardEntry): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.saveVisionBoardEntry(to_candid_VisionBoardEntry_n35(this._uploadFile, this._downloadFile, arg0));
+                const result = await this.actor.saveOrUpdateVisionBoardEntry(to_candid_VisionBoardEntry_n35(this._uploadFile, this._downloadFile, arg0));
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.saveVisionBoardEntry(to_candid_VisionBoardEntry_n35(this._uploadFile, this._downloadFile, arg0));
+            const result = await this.actor.saveOrUpdateVisionBoardEntry(to_candid_VisionBoardEntry_n35(this._uploadFile, this._downloadFile, arg0));
             return result;
         }
     }
@@ -1243,12 +1244,14 @@ function from_candid_record_n29(_uploadFile: (file: ExternalBlob) => Promise<Uin
     };
 }
 function from_candid_record_n32(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    id: bigint;
     progressPercentage: bigint;
     targetYear: bigint;
     category: _GoalCategory;
     whyThisMatters: string;
     milestones: Array<string>;
 }): {
+    id: bigint;
     progressPercentage: bigint;
     targetYear: bigint;
     category: GoalCategory;
@@ -1256,6 +1259,7 @@ function from_candid_record_n32(_uploadFile: (file: ExternalBlob) => Promise<Uin
     milestones: Array<string>;
 } {
     return {
+        id: value.id,
         progressPercentage: value.progressPercentage,
         targetYear: value.targetYear,
         category: from_candid_GoalCategory_n33(_uploadFile, _downloadFile, value.category),
@@ -1403,12 +1407,14 @@ function to_candid_record_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8
     };
 }
 function to_candid_record_n36(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    id: bigint;
     progressPercentage: bigint;
     targetYear: bigint;
     category: GoalCategory;
     whyThisMatters: string;
     milestones: Array<string>;
 }): {
+    id: bigint;
     progressPercentage: bigint;
     targetYear: bigint;
     category: _GoalCategory;
@@ -1416,6 +1422,7 @@ function to_candid_record_n36(_uploadFile: (file: ExternalBlob) => Promise<Uint8
     milestones: Array<string>;
 } {
     return {
+        id: value.id,
         progressPercentage: value.progressPercentage,
         targetYear: value.targetYear,
         category: to_candid_GoalCategory_n37(_uploadFile, _downloadFile, value.category),

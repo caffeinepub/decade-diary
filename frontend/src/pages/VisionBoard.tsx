@@ -1,33 +1,15 @@
-import { useState } from 'react';
-import { useInternetIdentity } from '../hooks/useInternetIdentity';
-import {
-  useGetVisionBoardEntries,
-  useSaveVisionBoardEntry,
-  useUpdateVisionBoardProgress,
-  useDeleteVisionBoardEntry,
-  useGetCouple,
-  useGetPartnerVisionBoardEntries,
-} from '../hooks/useQueries';
-import { GoalCategory, type VisionBoardEntry } from '../backend';
+import React, { useState } from 'react';
+import { Plus, Target, TrendingUp, Trash2, Edit2, ChevronDown, ChevronUp, Star, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -39,223 +21,237 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Plus,
-  Target,
-  Trash2,
-  Edit3,
-  Users,
-  Heart,
-  Loader2,
-  TrendingUp,
-  Star,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { Principal } from '@dfinity/principal';
+  useGetVisionBoardEntries,
+  useGetPartnerVisionBoardEntries,
+  useSaveVisionBoardEntry,
+  useUpdateVisionBoardProgress,
+  useDeleteVisionBoardEntry,
+} from '../hooks/useQueries';
+import { GoalCategory, type VisionBoardEntry } from '../backend';
+import { useGetPartnerUserProfile } from '../hooks/useQueries';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Category helpers ─────────────────────────────────────────────────────────
 
 const CATEGORY_LABELS: Record<GoalCategory, string> = {
-  [GoalCategory.career]: '💼 Career',
-  [GoalCategory.financial]: '💰 Financial',
-  [GoalCategory.health]: '💪 Health',
-  [GoalCategory.relationship]: '❤️ Relationship',
-  [GoalCategory.personalGrowth]: '🌱 Personal Growth',
-  [GoalCategory.travel]: '✈️ Travel',
-  [GoalCategory.spiritual]: '🙏 Spiritual',
+  [GoalCategory.career]: 'Career',
+  [GoalCategory.financial]: 'Financial',
+  [GoalCategory.health]: 'Health',
+  [GoalCategory.relationship]: 'Relationship',
+  [GoalCategory.personalGrowth]: 'Personal Growth',
+  [GoalCategory.travel]: 'Travel',
+  [GoalCategory.spiritual]: 'Spiritual',
 };
 
 const CATEGORY_COLORS: Record<GoalCategory, string> = {
-  [GoalCategory.career]: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-  [GoalCategory.financial]: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-  [GoalCategory.health]: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
-  [GoalCategory.relationship]: 'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300',
-  [GoalCategory.personalGrowth]: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
-  [GoalCategory.travel]: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-  [GoalCategory.spiritual]: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
+  [GoalCategory.career]: 'bg-blue-100 text-blue-800',
+  [GoalCategory.financial]: 'bg-green-100 text-green-800',
+  [GoalCategory.health]: 'bg-red-100 text-red-800',
+  [GoalCategory.relationship]: 'bg-pink-100 text-pink-800',
+  [GoalCategory.personalGrowth]: 'bg-purple-100 text-purple-800',
+  [GoalCategory.travel]: 'bg-yellow-100 text-yellow-800',
+  [GoalCategory.spiritual]: 'bg-indigo-100 text-indigo-800',
 };
 
-const CURRENT_YEAR = new Date().getFullYear();
-const YEAR_OPTIONS = Array.from({ length: 11 }, (_, i) => CURRENT_YEAR + i);
+const CATEGORY_EMOJIS: Record<GoalCategory, string> = {
+  [GoalCategory.career]: '💼',
+  [GoalCategory.financial]: '💰',
+  [GoalCategory.health]: '❤️',
+  [GoalCategory.relationship]: '💑',
+  [GoalCategory.personalGrowth]: '🌱',
+  [GoalCategory.travel]: '✈️',
+  [GoalCategory.spiritual]: '🕊️',
+};
 
-// ─── Helper ───────────────────────────────────────────────────────────────────
-
-function getPartnerPrincipal(
-  couple: { partner1: Principal; partner2: Principal } | null | undefined,
-  myPrincipal: string
-): Principal | undefined {
-  if (!couple) return undefined;
-  const p1 = couple.partner1.toString();
-  const p2 = couple.partner2.toString();
-  if (p1 === myPrincipal) return couple.partner2;
-  if (p2 === myPrincipal) return couple.partner1;
-  return undefined;
-}
-
-// ─── Goal Card ────────────────────────────────────────────────────────────────
+// ─── GoalCard ─────────────────────────────────────────────────────────────────
 
 interface GoalCardProps {
   entry: VisionBoardEntry;
-  isOwner: boolean;
   onEdit?: (entry: VisionBoardEntry) => void;
-  onDelete?: (targetYear: bigint) => void;
-  onProgressUpdate?: (targetYear: bigint, progress: number) => void;
+  onDelete?: (id: bigint) => void;
+  onProgressChange?: (id: bigint, progress: number) => void;
+  readOnly?: boolean;
 }
 
-function GoalCard({ entry, isOwner, onEdit, onDelete, onProgressUpdate }: GoalCardProps) {
-  const progress = Number(entry.progressPercentage);
+function GoalCard({ entry, onEdit, onDelete, onProgressChange, readOnly = false }: GoalCardProps) {
+  const [expanded, setExpanded] = useState(false);
+  const [localProgress, setLocalProgress] = useState(Number(entry.progressPercentage));
+
+  const handleProgressCommit = (value: number[]) => {
+    const newProgress = value[0];
+    setLocalProgress(newProgress);
+    onProgressChange?.(entry.id, newProgress);
+  };
 
   return (
-    <div className="bg-card rounded-2xl p-5 shadow-warm border border-border space-y-4">
+    <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden transition-all hover:shadow-md">
       {/* Header */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap mb-1">
-            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${CATEGORY_COLORS[entry.category as GoalCategory]}`}>
-              {CATEGORY_LABELS[entry.category as GoalCategory]}
-            </span>
-            <Badge variant="outline" className="text-xs font-body">
-              {Number(entry.targetYear)}
-            </Badge>
+      <div className="p-4 pb-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-2xl flex-shrink-0">{CATEGORY_EMOJIS[entry.category]}</span>
+            <div className="min-w-0">
+              <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full mb-1 ${CATEGORY_COLORS[entry.category]}`}>
+                {CATEGORY_LABELS[entry.category]}
+              </span>
+              <p className="text-sm text-muted-foreground">Target: {String(entry.targetYear)}</p>
+            </div>
           </div>
-        </div>
-        {isOwner && (
-          <div className="flex items-center gap-1 shrink-0">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-muted-foreground hover:text-foreground"
-              onClick={() => onEdit?.(entry)}
-            >
-              <Edit3 className="w-3.5 h-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-muted-foreground hover:text-destructive"
-              onClick={() => onDelete?.(entry.targetYear)}
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {/* Why This Matters */}
-      {entry.whyThisMatters && (
-        <p className="text-sm font-body text-foreground leading-relaxed">{entry.whyThisMatters}</p>
-      )}
-
-      {/* Milestones */}
-      {entry.milestones.length > 0 && (
-        <div className="space-y-1.5">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Milestones</p>
-          <ul className="space-y-1">
-            {entry.milestones.map((m, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm font-body text-foreground">
-                <Star className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
-                <span>{m}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Progress */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Progress</span>
-          <span className="text-sm font-bold text-primary">{progress}%</span>
-        </div>
-        <Progress value={progress} className="h-2" />
-        {isOwner && (
-          <div className="flex gap-1 flex-wrap">
-            {[0, 25, 50, 75, 100].map((p) => (
-              <button
-                key={p}
-                onClick={() => onProgressUpdate?.(entry.targetYear, p)}
-                className={`text-xs px-2 py-0.5 rounded-full border transition-colors font-body ${
-                  progress === p
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'border-border text-muted-foreground hover:border-primary hover:text-primary'
-                }`}
+          {!readOnly && (
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                onClick={() => onEdit?.(entry)}
               >
-                {p}%
-              </button>
-            ))}
+                <Edit2 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                onClick={() => onDelete?.(entry.id)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Progress */}
+        <div className="mt-3">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs text-muted-foreground">Progress</span>
+            <span className="text-xs font-semibold text-primary">{localProgress}%</span>
           </div>
-        )}
+          {readOnly ? (
+            <Progress value={localProgress} className="h-2" />
+          ) : (
+            <Slider
+              value={[localProgress]}
+              min={0}
+              max={100}
+              step={5}
+              onValueChange={(v) => setLocalProgress(v[0])}
+              onValueCommit={handleProgressCommit}
+              className="mt-1"
+            />
+          )}
+        </div>
       </div>
+
+      {/* Why this matters */}
+      {entry.whyThisMatters && (
+        <div className="px-4 pb-3">
+          <p className="text-sm text-foreground/80 italic">"{entry.whyThisMatters}"</p>
+        </div>
+      )}
+
+      {/* Milestones toggle */}
+      {entry.milestones.length > 0 && (
+        <div className="border-t border-border">
+          <button
+            className="w-full flex items-center justify-between px-4 py-2 text-xs text-muted-foreground hover:bg-muted/50 transition-colors"
+            onClick={() => setExpanded(!expanded)}
+          >
+            <span className="flex items-center gap-1">
+              <Star className="h-3 w-3" />
+              {entry.milestones.length} milestone{entry.milestones.length !== 1 ? 's' : ''}
+            </span>
+            {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          </button>
+          {expanded && (
+            <ul className="px-4 pb-3 space-y-1">
+              {entry.milestones.map((m, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm">
+                  <span className="text-primary mt-0.5">•</span>
+                  <span>{m}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
-// ─── Goal Form Dialog ─────────────────────────────────────────────────────────
+// ─── GoalFormDialog ───────────────────────────────────────────────────────────
 
 interface GoalFormDialogProps {
   open: boolean;
   onClose: () => void;
-  onSave: (entry: VisionBoardEntry) => Promise<void>;
+  onSave: (entry: VisionBoardEntry) => void;
   initial?: VisionBoardEntry | null;
-  isSaving: boolean;
+  isSaving?: boolean;
 }
 
 function GoalFormDialog({ open, onClose, onSave, initial, isSaving }: GoalFormDialogProps) {
-  const [category, setCategory] = useState<GoalCategory>(initial?.category as GoalCategory ?? GoalCategory.personalGrowth);
-  const [targetYear, setTargetYear] = useState(initial ? Number(initial.targetYear) : CURRENT_YEAR + 1);
+  const [category, setCategory] = useState<GoalCategory>(initial?.category ?? GoalCategory.personalGrowth);
+  const [targetYear, setTargetYear] = useState(initial ? String(initial.targetYear) : String(new Date().getFullYear() + 1));
   const [whyThisMatters, setWhyThisMatters] = useState(initial?.whyThisMatters ?? '');
-  const [milestones, setMilestones] = useState<string[]>(initial?.milestones ?? ['']);
-  const [progressPercentage, setProgressPercentage] = useState(initial ? Number(initial.progressPercentage) : 0);
+  const [milestonesText, setMilestonesText] = useState(initial?.milestones.join('\n') ?? '');
+  const [progress, setProgress] = useState(initial ? Number(initial.progressPercentage) : 0);
 
-  // Reset when dialog opens with new initial
-  useState(() => {
-    if (initial) {
-      setCategory(initial.category as GoalCategory);
-      setTargetYear(Number(initial.targetYear));
-      setWhyThisMatters(initial.whyThisMatters);
-      setMilestones(initial.milestones.length > 0 ? [...initial.milestones] : ['']);
-      setProgressPercentage(Number(initial.progressPercentage));
-    } else {
-      setCategory(GoalCategory.personalGrowth);
-      setTargetYear(CURRENT_YEAR + 1);
-      setWhyThisMatters('');
-      setMilestones(['']);
-      setProgressPercentage(0);
+  // Reset form when dialog opens with new initial value
+  React.useEffect(() => {
+    if (open) {
+      setCategory(initial?.category ?? GoalCategory.personalGrowth);
+      setTargetYear(initial ? String(initial.targetYear) : String(new Date().getFullYear() + 1));
+      setWhyThisMatters(initial?.whyThisMatters ?? '');
+      setMilestonesText(initial?.milestones.join('\n') ?? '');
+      setProgress(initial ? Number(initial.progressPercentage) : 0);
     }
-  });
+  }, [open, initial]);
 
-  const handleSave = async () => {
+  const handleSave = () => {
+    const milestones = milestonesText
+      .split('\n')
+      .map((m) => m.trim())
+      .filter(Boolean);
+
     const entry: VisionBoardEntry = {
+      id: initial?.id ?? BigInt(Date.now()),
       category,
-      targetYear: BigInt(targetYear),
+      targetYear: BigInt(parseInt(targetYear) || new Date().getFullYear() + 1),
       whyThisMatters,
-      milestones: milestones.filter((m) => m.trim()),
-      progressPercentage: BigInt(progressPercentage),
+      milestones,
+      progressPercentage: BigInt(progress),
     };
-    await onSave(entry);
+
+    onSave(entry);
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle className="font-display text-xl">
-            {initial ? 'Edit Goal' : 'Add New Goal'}
-          </DialogTitle>
+          <DialogTitle>{initial ? 'Edit Goal' : 'Add New Goal'}</DialogTitle>
+          <DialogDescription>
+            {initial ? 'Update your vision board goal.' : 'Add a new long-term goal to your vision board.'}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           {/* Category */}
           <div className="space-y-1.5">
-            <Label className="label-warm">Category</Label>
+            <Label>Category</Label>
             <Select value={category} onValueChange={(v) => setCategory(v as GoalCategory)}>
-              <SelectTrigger className="font-body">
+              <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {Object.entries(CATEGORY_LABELS).map(([val, label]) => (
-                  <SelectItem key={val} value={val} className="font-body">{label}</SelectItem>
+                {Object.values(GoalCategory).map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {CATEGORY_EMOJIS[cat]} {CATEGORY_LABELS[cat]}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -263,101 +259,66 @@ function GoalFormDialog({ open, onClose, onSave, initial, isSaving }: GoalFormDi
 
           {/* Target Year */}
           <div className="space-y-1.5">
-            <Label className="label-warm">Target Year</Label>
-            <Select value={String(targetYear)} onValueChange={(v) => setTargetYear(Number(v))}>
-              <SelectTrigger className="font-body">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {YEAR_OPTIONS.map((y) => (
-                  <SelectItem key={y} value={String(y)} className="font-body">{y}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>Target Year</Label>
+            <Input
+              type="number"
+              value={targetYear}
+              onChange={(e) => setTargetYear(e.target.value)}
+              min={new Date().getFullYear()}
+              max={2100}
+            />
           </div>
 
           {/* Why This Matters */}
           <div className="space-y-1.5">
-            <Label className="label-warm">Why This Matters</Label>
+            <Label>Why This Matters</Label>
             <Textarea
               value={whyThisMatters}
               onChange={(e) => setWhyThisMatters(e.target.value)}
-              placeholder="Describe why this goal is important to you..."
-              className="font-body resize-none"
-              rows={3}
+              placeholder="What motivates you toward this goal?"
+              rows={2}
             />
           </div>
 
           {/* Milestones */}
-          <div className="space-y-2">
-            <Label className="label-warm">Milestones</Label>
-            {milestones.map((m, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <Input
-                  value={m}
-                  onChange={(e) => {
-                    const updated = [...milestones];
-                    updated[i] = e.target.value;
-                    setMilestones(updated);
-                  }}
-                  placeholder={`Milestone ${i + 1}...`}
-                  className="font-body flex-1"
-                />
-                {milestones.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
-                    onClick={() => setMilestones(milestones.filter((_, idx) => idx !== i))}
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
-                )}
-              </div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setMilestones([...milestones, ''])}
-              className="font-body text-xs"
-            >
-              <Plus className="w-3 h-3 mr-1" /> Add Milestone
-            </Button>
+          <div className="space-y-1.5">
+            <Label>Milestones (one per line)</Label>
+            <Textarea
+              value={milestonesText}
+              onChange={(e) => setMilestonesText(e.target.value)}
+              placeholder="e.g. Save first $10k&#10;Open investment account&#10;Reach $50k"
+              rows={3}
+            />
           </div>
 
           {/* Progress */}
           <div className="space-y-1.5">
-            <Label className="label-warm">Current Progress: {progressPercentage}%</Label>
-            <div className="flex gap-2 flex-wrap">
-              {[0, 10, 25, 50, 75, 90, 100].map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => setProgressPercentage(p)}
-                  className={`text-xs px-2.5 py-1 rounded-full border transition-colors font-body ${
-                    progressPercentage === p
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'border-border text-muted-foreground hover:border-primary hover:text-primary'
-                  }`}
-                >
-                  {p}%
-                </button>
-              ))}
+            <div className="flex items-center justify-between">
+              <Label>Current Progress</Label>
+              <span className="text-sm font-semibold text-primary">{progress}%</span>
             </div>
+            <Slider
+              value={[progress]}
+              min={0}
+              max={100}
+              step={5}
+              onValueChange={(v) => setProgress(v[0])}
+            />
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} className="font-body" disabled={isSaving}>
+          <Button variant="outline" onClick={onClose} disabled={isSaving}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={isSaving || !whyThisMatters.trim()} className="font-body">
+          <Button onClick={handleSave} disabled={isSaving}>
             {isSaving ? (
-              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>
+              <span className="flex items-center gap-2">
+                <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                Saving…
+              </span>
             ) : (
-              initial ? 'Update Goal' : 'Add Goal'
+              'Save Goal'
             )}
           </Button>
         </DialogFooter>
@@ -366,24 +327,233 @@ function GoalFormDialog({ open, onClose, onSave, initial, isSaving }: GoalFormDi
   );
 }
 
-// ─── Goals Grid ───────────────────────────────────────────────────────────────
+// ─── VisionBoard Page ─────────────────────────────────────────────────────────
 
-interface GoalsGridProps {
-  entries: VisionBoardEntry[];
-  isLoading: boolean;
-  isOwner: boolean;
-  onEdit?: (entry: VisionBoardEntry) => void;
-  onDelete?: (targetYear: bigint) => void;
-  onProgressUpdate?: (targetYear: bigint, progress: number) => void;
-  onAddGoal?: () => void;
+export default function VisionBoard() {
+  const { data: entries = [], isLoading } = useGetVisionBoardEntries();
+  const { data: partnerEntries = [] } = useGetPartnerVisionBoardEntries();
+  const { data: partnerProfile } = useGetPartnerUserProfile();
+
+  const saveEntry = useSaveVisionBoardEntry();
+  const updateProgress = useUpdateVisionBoardProgress();
+  const deleteEntry = useDeleteVisionBoardEntry();
+
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<VisionBoardEntry | null>(null);
+
+  // Delete confirmation state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<bigint | null>(null);
+
+  const hasPartner = !!partnerProfile;
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
+
+  const handleAddNew = () => {
+    setEditingEntry(null);
+    setFormOpen(true);
+  };
+
+  const handleEdit = (entry: VisionBoardEntry) => {
+    setEditingEntry(entry);
+    setFormOpen(true);
+  };
+
+  const handleSave = async (entry: VisionBoardEntry) => {
+    await saveEntry.mutateAsync(entry);
+    setFormOpen(false);
+    setEditingEntry(null);
+  };
+
+  const handleDeleteRequest = (id: bigint) => {
+    setDeleteTargetId(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (deleteTargetId === null) return;
+    await deleteEntry.mutateAsync(deleteTargetId);
+    setDeleteDialogOpen(false);
+    setDeleteTargetId(null);
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setDeleteTargetId(null);
+  };
+
+  const handleProgressChange = async (id: bigint, progress: number) => {
+    await updateProgress.mutateAsync({ entryId: id, progress: BigInt(progress) });
+  };
+
+  // ── Stats ─────────────────────────────────────────────────────────────────
+
+  const avgProgress =
+    entries.length > 0
+      ? Math.round(entries.reduce((sum, e) => sum + Number(e.progressPercentage), 0) / entries.length)
+      : 0;
+
+  const categoryCounts = entries.reduce<Record<string, number>>((acc, e) => {
+    const key = e.category as string;
+    acc[key] = (acc[key] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  const topCategory = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1])[0]?.[0] as GoalCategory | undefined;
+
+  // ── Render ────────────────────────────────────────────────────────────────
+
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="max-w-5xl mx-auto px-4 py-8">
+        {/* Page Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-display font-bold text-foreground flex items-center gap-2">
+              <Target className="h-8 w-8 text-primary" />
+              Vision Board
+            </h1>
+            <p className="text-muted-foreground mt-1">Your long-term goals and aspirations</p>
+          </div>
+          <Button onClick={handleAddNew} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Add Goal
+          </Button>
+        </div>
+
+        {/* Stats Row */}
+        {entries.length > 0 && (
+          <div className="grid grid-cols-3 gap-4 mb-8">
+            <div className="bg-card border border-border rounded-xl p-4 text-center">
+              <p className="text-3xl font-bold text-primary">{entries.length}</p>
+              <p className="text-sm text-muted-foreground mt-1">Total Goals</p>
+            </div>
+            <div className="bg-card border border-border rounded-xl p-4 text-center">
+              <p className="text-3xl font-bold text-primary">{avgProgress}%</p>
+              <p className="text-sm text-muted-foreground mt-1">Avg Progress</p>
+            </div>
+            <div className="bg-card border border-border rounded-xl p-4 text-center">
+              <p className="text-3xl font-bold text-primary">
+                {topCategory ? CATEGORY_EMOJIS[topCategory] : '🎯'}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {topCategory ? CATEGORY_LABELS[topCategory] : 'No focus yet'}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Main Content */}
+        {hasPartner ? (
+          <Tabs defaultValue="mine">
+            <TabsList className="mb-6">
+              <TabsTrigger value="mine">My Goals</TabsTrigger>
+              <TabsTrigger value="partner" className="flex items-center gap-1">
+                <Users className="h-3.5 w-3.5" />
+                {partnerProfile.displayName || partnerProfile.name}'s Goals
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="mine">
+              <GoalGrid
+                entries={entries}
+                isLoading={isLoading}
+                onEdit={handleEdit}
+                onDelete={handleDeleteRequest}
+                onProgressChange={handleProgressChange}
+                onAddNew={handleAddNew}
+              />
+            </TabsContent>
+
+            <TabsContent value="partner">
+              <GoalGrid
+                entries={partnerEntries}
+                isLoading={false}
+                readOnly
+                onAddNew={() => {}}
+              />
+            </TabsContent>
+          </Tabs>
+        ) : (
+          <GoalGrid
+            entries={entries}
+            isLoading={isLoading}
+            onEdit={handleEdit}
+            onDelete={handleDeleteRequest}
+            onProgressChange={handleProgressChange}
+            onAddNew={handleAddNew}
+          />
+        )}
+      </main>
+
+      {/* Goal Form Dialog */}
+      <GoalFormDialog
+        open={formOpen}
+        onClose={() => {
+          setFormOpen(false);
+          setEditingEntry(null);
+        }}
+        onSave={handleSave}
+        initial={editingEntry}
+        isSaving={saveEntry.isPending}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={(v) => { if (!v) handleDeleteCancel(); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Goal</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this goal? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleDeleteCancel} disabled={deleteEntry.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={deleteEntry.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteEntry.isPending ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  Deleting…
+                </span>
+              ) : (
+                'Delete'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
 }
 
-function GoalsGrid({ entries, isLoading, isOwner, onEdit, onDelete, onProgressUpdate, onAddGoal }: GoalsGridProps) {
+// ─── GoalGrid ─────────────────────────────────────────────────────────────────
+
+interface GoalGridProps {
+  entries: VisionBoardEntry[];
+  isLoading: boolean;
+  onEdit?: (entry: VisionBoardEntry) => void;
+  onDelete?: (id: bigint) => void;
+  onProgressChange?: (id: bigint, progress: number) => void;
+  onAddNew: () => void;
+  readOnly?: boolean;
+}
+
+function GoalGrid({ entries, isLoading, onEdit, onDelete, onProgressChange, onAddNew, readOnly = false }: GoalGridProps) {
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-48 w-full rounded-2xl" />
+          <div key={i} className="bg-card border border-border rounded-xl p-4 animate-pulse">
+            <div className="h-4 bg-muted rounded w-1/2 mb-3" />
+            <div className="h-3 bg-muted rounded w-3/4 mb-2" />
+            <div className="h-2 bg-muted rounded w-full" />
+          </div>
         ))}
       </div>
     );
@@ -391,23 +561,20 @@ function GoalsGrid({ entries, isLoading, isOwner, onEdit, onDelete, onProgressUp
 
   if (entries.length === 0) {
     return (
-      <div className="text-center py-16 space-y-4">
-        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-          <Target className="w-8 h-8 text-primary" />
-        </div>
-        <div className="space-y-1">
-          <h3 className="font-display text-lg font-semibold text-foreground">
-            {isOwner ? 'No goals yet' : 'No goals shared yet'}
-          </h3>
-          <p className="font-body text-sm text-muted-foreground">
-            {isOwner
-              ? 'Start building your vision by adding your first long-term goal.'
-              : 'Your partner hasn\'t added any vision goals yet.'}
-          </p>
-        </div>
-        {isOwner && onAddGoal && (
-          <Button onClick={onAddGoal} className="font-body font-semibold rounded-2xl">
-            <Plus className="w-4 h-4 mr-2" /> Add Your First Goal
+      <div className="text-center py-16">
+        <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-foreground mb-2">
+          {readOnly ? 'No goals yet' : 'Start building your vision'}
+        </h3>
+        <p className="text-muted-foreground mb-6">
+          {readOnly
+            ? 'Your partner hasn\'t added any goals yet.'
+            : 'Add your first long-term goal to get started.'}
+        </p>
+        {!readOnly && (
+          <Button onClick={onAddNew} className="flex items-center gap-2 mx-auto">
+            <Plus className="h-4 w-4" />
+            Add Your First Goal
           </Button>
         )}
       </div>
@@ -416,259 +583,35 @@ function GoalsGrid({ entries, isLoading, isOwner, onEdit, onDelete, onProgressUp
 
   // Group by category
   const grouped = entries.reduce<Record<string, VisionBoardEntry[]>>((acc, entry) => {
-    const cat = entry.category as string;
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(entry);
+    const key = entry.category as string;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(entry);
     return acc;
   }, {});
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {Object.entries(grouped).map(([cat, catEntries]) => (
-        <div key={cat} className="space-y-3">
-          <h3 className="font-display text-base font-semibold text-foreground flex items-center gap-2">
-            {CATEGORY_LABELS[cat as GoalCategory] ?? cat}
-            <Badge variant="secondary" className="font-body text-xs">{catEntries.length}</Badge>
-          </h3>
+        <div key={cat}>
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-xl">{CATEGORY_EMOJIS[cat as GoalCategory]}</span>
+            <h2 className="text-lg font-semibold text-foreground">{CATEGORY_LABELS[cat as GoalCategory]}</h2>
+            <Badge variant="secondary" className="ml-1">{catEntries.length}</Badge>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {catEntries.map((entry, i) => (
+            {catEntries.map((entry) => (
               <GoalCard
-                key={`${cat}-${i}`}
+                key={String(entry.id)}
                 entry={entry}
-                isOwner={isOwner}
                 onEdit={onEdit}
                 onDelete={onDelete}
-                onProgressUpdate={onProgressUpdate}
+                onProgressChange={onProgressChange}
+                readOnly={readOnly}
               />
             ))}
           </div>
         </div>
       ))}
-    </div>
-  );
-}
-
-// ─── Main Page ────────────────────────────────────────────────────────────────
-
-export default function VisionBoard() {
-  const { identity } = useInternetIdentity();
-  const myPrincipal = identity?.getPrincipal();
-  const myPrincipalStr = myPrincipal?.toString() ?? '';
-
-  const { data: couple } = useGetCouple();
-  const partnerPrincipal = getPartnerPrincipal(couple ?? null, myPrincipalStr);
-  const hasPartner = !!partnerPrincipal;
-
-  const { data: entries = [], isLoading: myLoading } = useGetVisionBoardEntries();
-  const { data: partnerEntries = [], isLoading: partnerLoading } = useGetPartnerVisionBoardEntries();
-
-  const saveEntry = useSaveVisionBoardEntry();
-  const updateProgress = useUpdateVisionBoardProgress();
-  const deleteEntry = useDeleteVisionBoardEntry();
-
-  const [activeTab, setActiveTab] = useState<'mine' | 'partner'>('mine');
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingEntry, setEditingEntry] = useState<VisionBoardEntry | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<bigint | null>(null);
-  const [isSavingEntry, setIsSavingEntry] = useState(false);
-
-  if (!identity) return null;
-
-  const handleOpenAddDialog = () => {
-    setEditingEntry(null);
-    setDialogOpen(true);
-  };
-
-  const handleSaveEntry = async (entry: VisionBoardEntry) => {
-    setIsSavingEntry(true);
-    try {
-      await saveEntry.mutateAsync(entry);
-      toast.success(editingEntry ? 'Goal updated! 🎯' : 'Goal added! 🎯');
-      setDialogOpen(false);
-      setEditingEntry(null);
-    } catch {
-      toast.error('Failed to save goal. Please try again.');
-    } finally {
-      setIsSavingEntry(false);
-    }
-  };
-
-  const handleEdit = (entry: VisionBoardEntry) => {
-    setEditingEntry(entry);
-    setDialogOpen(true);
-  };
-
-  const handleDelete = async () => {
-    if (deleteTarget === null) return;
-    try {
-      await deleteEntry.mutateAsync(deleteTarget);
-      toast.success('Goal removed.');
-      setDeleteTarget(null);
-    } catch {
-      toast.error('Failed to delete goal.');
-    }
-  };
-
-  const handleProgressUpdate = async (targetYear: bigint, progress: number) => {
-    try {
-      await updateProgress.mutateAsync({ targetYear, progress: BigInt(progress) });
-    } catch {
-      toast.error('Failed to update progress.');
-    }
-  };
-
-  const totalProgress = entries.length > 0
-    ? Math.round(entries.reduce((sum, e) => sum + Number(e.progressPercentage), 0) / entries.length)
-    : 0;
-
-  const groupedEntries = entries.reduce<Record<string, VisionBoardEntry[]>>((acc, entry) => {
-    const cat = entry.category as string;
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(entry);
-    return acc;
-  }, {});
-
-  return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl sm:text-4xl font-bold text-foreground">
-            Vision Board 🎯
-          </h1>
-          <p className="font-body text-muted-foreground mt-1">
-            Map your long-term goals and track your journey.
-          </p>
-        </div>
-        {activeTab === 'mine' && (
-          <Button
-            onClick={handleOpenAddDialog}
-            className="font-body font-semibold rounded-2xl shadow-warm shrink-0"
-          >
-            <Plus className="w-4 h-4 mr-2" /> Add Goal
-          </Button>
-        )}
-      </div>
-
-      {/* Overall Progress */}
-      {entries.length > 0 && (
-        <div className="card-warm p-5 space-y-3">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-primary" />
-            <h2 className="section-title">Overall Progress</h2>
-            <span className="ml-auto font-bold text-primary text-lg">{totalProgress}%</span>
-          </div>
-          <Progress value={totalProgress} className="h-3" />
-          <p className="text-xs font-body text-muted-foreground">
-            {entries.length} goal{entries.length !== 1 ? 's' : ''} across {Object.keys(groupedEntries).length} categor{Object.keys(groupedEntries).length !== 1 ? 'ies' : 'y'}
-          </p>
-        </div>
-      )}
-
-      {/* Tabs (couple mode) or direct view */}
-      {hasPartner ? (
-        <div className="space-y-6">
-          {/* Tab switcher */}
-          <div className="flex gap-2 p-1 bg-muted rounded-xl">
-            <button
-              onClick={() => setActiveTab('mine')}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-body font-medium transition-colors ${
-                activeTab === 'mine'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Target className="w-4 h-4" />
-              My Goals
-              {entries.length > 0 && (
-                <Badge variant="secondary" className="text-xs font-body ml-1">{entries.length}</Badge>
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab('partner')}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-body font-medium transition-colors ${
-                activeTab === 'partner'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Heart className="w-4 h-4" />
-              Partner's Goals
-              {partnerEntries.length > 0 && (
-                <Badge variant="secondary" className="text-xs font-body ml-1">{partnerEntries.length}</Badge>
-              )}
-            </button>
-          </div>
-
-          {/* Tab content */}
-          {activeTab === 'mine' ? (
-            <GoalsGrid
-              entries={entries}
-              isLoading={myLoading}
-              isOwner={true}
-              onEdit={handleEdit}
-              onDelete={(targetYear) => setDeleteTarget(targetYear)}
-              onProgressUpdate={handleProgressUpdate}
-              onAddGoal={handleOpenAddDialog}
-            />
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 p-3 rounded-xl bg-muted/50 border border-border/40">
-                <Users className="w-4 h-4 text-muted-foreground shrink-0" />
-                <p className="text-sm font-body text-muted-foreground">
-                  Viewing your partner's vision board — read only.
-                </p>
-              </div>
-              <GoalsGrid
-                entries={partnerEntries}
-                isLoading={partnerLoading}
-                isOwner={false}
-              />
-            </div>
-          )}
-        </div>
-      ) : (
-        /* Solo view */
-        <GoalsGrid
-          entries={entries}
-          isLoading={myLoading}
-          isOwner={true}
-          onEdit={handleEdit}
-          onDelete={(targetYear) => setDeleteTarget(targetYear)}
-          onProgressUpdate={handleProgressUpdate}
-          onAddGoal={handleOpenAddDialog}
-        />
-      )}
-
-      {/* Goal Form Dialog */}
-      <GoalFormDialog
-        open={dialogOpen}
-        onClose={() => { setDialogOpen(false); setEditingEntry(null); }}
-        onSave={handleSaveEntry}
-        initial={editingEntry}
-        isSaving={isSavingEntry}
-      />
-
-      {/* Delete Confirmation */}
-      <AlertDialog open={deleteTarget !== null} onOpenChange={(o) => !o && setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="font-display">Delete Goal?</AlertDialogTitle>
-            <AlertDialogDescription className="font-body">
-              This will permanently remove this goal from your vision board. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="font-body">Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="font-body bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

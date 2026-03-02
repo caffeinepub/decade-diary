@@ -68,6 +68,7 @@ export interface YearlyEntry {
     visionImages: Array<string>;
 }
 export interface VisionBoardEntry {
+    id: bigint;
     progressPercentage: bigint;
     targetYear: bigint;
     category: GoalCategory;
@@ -169,7 +170,7 @@ export interface backendInterface {
     createOrUpdateNightReflection(entry: NightReflectionJournalEntry): Promise<void>;
     deleteDailyPlannerEntry(date: bigint): Promise<void>;
     deleteMonthlyEntry(year: bigint, month: bigint): Promise<void>;
-    deleteVisionBoardEntry(targetYear: bigint): Promise<void>;
+    deleteVisionBoardEntry(goalId: bigint): Promise<void>;
     deleteWeeklyEntry(year: bigint, weekNumber: bigint): Promise<void>;
     deleteYearlyEntry(year: bigint): Promise<void>;
     dissolveCouple(): Promise<boolean>;
@@ -215,9 +216,9 @@ export interface backendInterface {
     isCallerAdmin(): Promise<boolean>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     saveDailyPlannerEntry(entry: DailyPlannerEntry): Promise<void>;
-    saveVisionBoardEntry(entry: VisionBoardEntry): Promise<void>;
+    saveOrUpdateVisionBoardEntry(entry: VisionBoardEntry): Promise<void>;
     updateMonthlyEntry(year: bigint, month: bigint, updatedEntry: MonthlyEntry): Promise<void>;
-    updateVisionBoardProgress(targetYear: bigint, progress: bigint): Promise<void>;
+    updateVisionBoardProgress(entryId: bigint, progress: bigint): Promise<void>;
     updateWaterIntake(date: bigint, intake: bigint): Promise<void>;
     updateWeeklyEntry(year: bigint, weekNumber: bigint, updatedEntry: WeeklyEntry): Promise<void>;
     updateYearlyEntry(year: bigint, updatedEntry: YearlyEntry): Promise<void>;

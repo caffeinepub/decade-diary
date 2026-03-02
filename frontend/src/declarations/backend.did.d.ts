@@ -112,6 +112,7 @@ export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };
 export interface VisionBoardEntry {
+  'id' : bigint,
   'progressPercentage' : bigint,
   'targetYear' : bigint,
   'category' : GoalCategory,
@@ -227,7 +228,7 @@ export interface _SERVICE {
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'saveDailyPlannerEntry' : ActorMethod<[DailyPlannerEntry], undefined>,
-  'saveVisionBoardEntry' : ActorMethod<[VisionBoardEntry], undefined>,
+  'saveOrUpdateVisionBoardEntry' : ActorMethod<[VisionBoardEntry], undefined>,
   'updateMonthlyEntry' : ActorMethod<[bigint, bigint, MonthlyEntry], undefined>,
   'updateVisionBoardProgress' : ActorMethod<[bigint, bigint], undefined>,
   'updateWaterIntake' : ActorMethod<[bigint, bigint], undefined>,

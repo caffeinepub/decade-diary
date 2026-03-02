@@ -1,22 +1,21 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Remove vision board goal limit",
+  "title": "Update Milestone Add Instructions Text Only",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Remove any hard-coded maximum cap on the number of goals a user can add in the Vision Board section, allowing unlimited goals to be created.",
+      "summary": "Update only the instructional/helper text inside the 'Add Milestone' dialog in VisionBoard page to reflect new user-provided instructions, keeping all layout, fields, logic, validation, and styling unchanged",
       "acceptanceCriteria": [
-        "Users can add more goals than any previously enforced limit in the Vision Board section",
-        "No error message, disabled state, or UI block appears when trying to add additional goals beyond any former cap",
-        "Existing goals are unaffected after the limit is removed",
-        "The 'Add Goal' button remains functional regardless of how many goals already exist"
+        "The 'Add Milestone' dialog/form layout, fields, and functionality are identical to the current live version.",
+        "Only the instructional/descriptive text within the milestone add UI has been updated to match the user-provided instructions.",
+        "No other pages or components are affected."
       ],
       "file_operations": [
         {
           "path": "frontend/src/pages/VisionBoard.tsx",
           "operation": "modify",
-          "description": "Remove any hard-coded limit on the number of vision board goals that can be created. Search for and eliminate any conditional logic that disables the 'Add Goal' button, shows error messages, or prevents goal creation based on the current number of goals. Ensure the button remains enabled and functional regardless of how many goals already exist. Verify that no maxGoals constant or similar variable is being used to cap the goal count in this component."
+          "description": "Update only the instructional or helper text displayed within the 'Add Milestone' dialog or form section (e.g., label text, placeholder text, or helper descriptions) to match the new instructions provided by the user. Do not modify the dialog's layout, input fields, validation logic, state management, button handlers, or any styling. Keep the milestone add flow exactly as it exists in the current live version, changing only the text content that guides the user."
         }
       ]
     }

@@ -1,55 +1,37 @@
 {
   "kind": "build_request",
-  "title": "Remove vision board goal limit",
+  "title": "Update Milestone Add Instructions Text Only",
   "projectName": "Future Us",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Remove any hard-coded maximum cap on the number of goals a user can add in the Vision Board section, allowing unlimited goals to be created.",
+      "text": "In the VisionBoard page, update only the instructional/helper text shown inside the 'Add Milestone' dialog or form to reflect the new instructions provided by the user. Do not change any layout, fields, logic, validation, state management, or styling of the milestone add flow — keep everything else exactly as it is in the current live version.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-latest"
+          "msg-4"
         ],
         "quotes": [
-          "Remove the limit entirely"
+          "Milestones add should remain same as current live version change only the instructions I gave to you"
         ]
       },
       "acceptanceCriteria": [
-        "Users can add more goals than any previously enforced limit in the Vision Board section",
-        "No error message, disabled state, or UI block appears when trying to add additional goals beyond any former cap",
-        "Existing goals are unaffected after the limit is removed",
-        "The 'Add Goal' button remains functional regardless of how many goals already exist"
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "If the backend Motoko actor enforces a maximum number of vision board goals per user, remove or eliminate that cap so the backend accepts and stores an unlimited number of goals.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-latest"
-        ],
-        "quotes": [
-          "Remove the limit entirely"
-        ]
-      },
-      "acceptanceCriteria": [
-        "The backend accepts vision board goal additions beyond any previously enforced limit",
-        "No error or rejection is returned from the backend when adding goals above the former cap",
-        "Existing stored goals remain intact"
+        "The 'Add Milestone' dialog/form layout, fields, and functionality are identical to the current live version.",
+        "Only the instructional/descriptive text within the milestone add UI has been updated to match the user-provided instructions.",
+        "No other pages or components are affected."
       ]
     }
   ],
   "constraints": [
-    "Do not alter the data model or schema for vision board goals — only remove the count restriction",
-    "Do not modify any files under frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui"
+    "Do not change the milestone add form fields, layout, validation, or logic.",
+    "Do not modify any backend files.",
+    "Do not alter any immutable frontend paths."
   ],
   "nonGoals": [
-    "Pagination or lazy loading of goals",
-    "Any UI redesign of the Vision Board page",
-    "Changes to other sections (journal, planner, etc.)"
+    "Redesigning or restructuring the milestone add dialog.",
+    "Adding or removing form fields from the milestone flow.",
+    "Changing any other page or feature."
   ],
   "imageRequirements": {
     "required": [],

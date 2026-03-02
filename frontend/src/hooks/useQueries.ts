@@ -121,6 +121,7 @@ export function useCreateCouple() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['couple'] });
+      queryClient.invalidateQueries({ queryKey: ['partnerUserProfile'] });
     },
   });
 }
@@ -216,7 +217,7 @@ export function useSaveVisionBoardEntry() {
   return useMutation({
     mutationFn: async (entry: VisionBoardEntry) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.saveVisionBoardEntry(entry);
+      return actor.saveOrUpdateVisionBoardEntry(entry);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['visionBoardEntries'] });
@@ -232,9 +233,9 @@ export function useUpdateVisionBoardProgress() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ targetYear, progress }: { targetYear: bigint; progress: bigint }) => {
+    mutationFn: async ({ entryId, progress }: { entryId: bigint; progress: bigint }) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.updateVisionBoardProgress(targetYear, progress);
+      return actor.updateVisionBoardProgress(entryId, progress);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['visionBoardEntries'] });
@@ -247,9 +248,9 @@ export function useDeleteVisionBoardEntry() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (targetYear: bigint) => {
+    mutationFn: async (entryId: bigint) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.deleteVisionBoardEntry(targetYear);
+      return actor.deleteVisionBoardEntry(entryId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['visionBoardEntries'] });
@@ -288,7 +289,7 @@ export function useGetPartnerDailyPlannerEntries() {
   });
 }
 
-export function usePartnerDailyPlannerForDate(date: bigint) {
+export function useGetPartnerDailyPlannerForDate(date: bigint) {
   const { actor, isFetching } = useActor();
   const { data: couple } = useGetCouple();
 
@@ -303,6 +304,9 @@ export function usePartnerDailyPlannerForDate(date: bigint) {
     enabled: !!actor && !isFetching && hasPartner,
   });
 }
+
+// Alias for backward compatibility with DailyPlanner.tsx
+export const usePartnerDailyPlannerForDate = useGetPartnerDailyPlannerForDate;
 
 export function useSaveDailyPlannerEntry() {
   const { actor } = useActor();
@@ -694,29 +698,23 @@ export function useCreateOrUpdateGrowthJournal() {
   });
 }
 
-// ─── Partner Journals ─────────────────────────────────────────────────────────
-
-export function useGetPartnerJournals(enabled: boolean) {
+// Accept an optional argument for backward compatibility (JournalSection passes `true`)
+export function useGetPartnerJournals(_enabled?: boolean) {
   const { actor, isFetching } = useActor();
   const { data: couple } = useGetCouple();
 
   const hasPartner = !!couple;
 
-  return useQuery<{
-    daily: DailyJournalEntry[];
-    emotional: EmotionalJournalEntry[];
-    night: NightReflectionJournalEntry[];
-    growth: GrowthJournalEntry[];
-  }>({
+  return useQuery({
     queryKey: ['partnerJournals', couple?.partner1?.toString(), couple?.partner2?.toString()],
     queryFn: async () => {
-      if (!actor) return { daily: [], emotional: [], night: [], growth: [] };
+      if (!actor) throw new Error('Actor not available');
       try {
         return await actor.getPartnerJournals();
       } catch {
         return { daily: [], emotional: [], night: [], growth: [] };
       }
     },
-    enabled: !!actor && !isFetching && hasPartner && enabled,
+    enabled: !!actor && !isFetching && hasPartner,
   });
 }
