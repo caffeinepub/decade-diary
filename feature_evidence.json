@@ -2,8 +2,8 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-replace-the-one-per-line-milestone-input-fields-with-a-plus-sign-button-interaction-pattern-that-matches-how-tasks-are-added-display-a-text-input-field-with-a-or-add-button-that-appends-a-new-milestone-to-the-list-on-click-instead-of-rendering-one-input-row-per-milestone-by-default",
-      "featureTitle": "Replace the one-per-line milestone input fields with a plus sign button interaction pattern that matches how tasks are added: display a text input field with a '+' or 'Add' button that appends a new milestone to the list on click, instead of rendering one input row per milestone by default.",
+      "featureId": "feature-in-visionboard-tsx-ensure-all-milestone-points-for-each-goal-are-fully-visible-no-milestones-should-be-hidden-collapsed-or-truncated-all-milestone-items-must-be-rendered-in-the-list-regardless-of-count",
+      "featureTitle": "In VisionBoard.tsx, ensure all milestone points for each goal are fully visible — no milestones should be hidden, collapsed, or truncated. All milestone items must be rendered in the list regardless of count.",
       "files": [
         "frontend/src/pages/VisionBoard.tsx"
       ],
@@ -17,6 +17,25 @@
       ],
       "testIds": [
         "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-revert-the-visionboard-tsx-page-to-the-layout-interaction-patterns-and-visual-design-it-had-in-version-28-this-means-undoing-the-milestone-plus-button-interaction-pattern-introduced-in-version-36-and-restoring-the-original-milestone-input-fields-and-overall-vision-board-ui-as-it-appeared-in-version-28",
+      "featureTitle": "Revert the VisionBoard.tsx page to the layout, interaction patterns, and visual design it had in version 28. This means undoing the milestone plus-button interaction pattern (introduced in version 36) and restoring the original milestone input fields and overall vision board UI as it appeared in version 28.",
+      "files": [
+        "frontend/src/pages/VisionBoard.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
       ],
       "confidence": "high"
     }

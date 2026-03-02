@@ -1,30 +1,33 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Project with milestones and tasks UI where milestones should be added via a plus sign (like tasks) rather than one per line.",
+  "summary": "New project",
   "architectural_notes": [],
-  "known_issues": [],
-  "isFixRequest": false,
+  "known_issues": [
+    "Milestone points not all visible in version 36",
+    "Vision board changed from version 28 and needs to be reverted"
+  ],
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-replace-the-one-per-line-milestone-input-fields-with-a-plus-sign-button-interaction-pattern-that-matches-how-tasks-are-added-display-a-text-input-field-with-a-or-add-button-that-appends-a-new-milestone-to-the-list-on-click-instead-of-rendering-one-input-row-per-milestone-by-default",
-      "title": "Replace the one-per-line milestone input fields with a plus sign button interaction pattern that matches how tasks are added: display a text input field with a '+' or 'Add' button that appends a new milestone to the list on click, instead of rendering one input row per milestone by default.",
+      "id": "feature-in-visionboard-tsx-ensure-all-milestone-points-for-each-goal-are-fully-visible-no-milestones-should-be-hidden-collapsed-or-truncated-all-milestone-items-must-be-rendered-in-the-list-regardless-of-count",
+      "title": "In VisionBoard.tsx, ensure all milestone points for each goal are fully visible — no milestones should be hidden, collapsed, or truncated. All milestone items must be rendered in the list regardless of count.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
-    }
-  ],
-  "new_feature_requests": [
+    },
     {
-      "id": "AR-1",
-      "summary": "Milestones should be added via a plus sign button (like tasks) instead of one per line input",
-      "reqIds": [],
-      "status": "pending"
+      "id": "feature-revert-the-visionboard-tsx-page-to-the-layout-interaction-patterns-and-visual-design-it-had-in-version-28-this-means-undoing-the-milestone-plus-button-interaction-pattern-introduced-in-version-36-and-restoring-the-original-milestone-input-fields-and-overall-vision-board-ui-as-it-appeared-in-version-28",
+      "title": "Revert the VisionBoard.tsx page to the layout, interaction patterns, and visual design it had in version 28. This means undoing the milestone plus-button interaction pattern (introduced in version 36) and restoring the original milestone input fields and overall vision board UI as it appeared in version 28.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
     }
   ],
-  "gameProjectType": "none",
-  "projectName": "Change milestone input to use plus sign button like tasks",
+  "new_feature_requests": [],
+  "projectName": "Show all milestone points and revert vision board to version 28 layout",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

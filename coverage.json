@@ -1,18 +1,29 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-03-02T11:02:49.776Z",
+  "generatedAt": "2026-03-02T11:12:01.930Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 1,
-    "implemented": 1,
+    "total": 2,
+    "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Replace the one-per-line milestone input fields with a plus sign button interaction pattern that matches how tasks are added: display a text input field with a '+' or 'Add' button that appends a new milestone to the list on click, instead of rendering one input row per milestone by default.",
+        "summary": "In VisionBoard.tsx, ensure all milestone points for each goal are fully visible — no milestones should be hidden, collapsed, or truncated. All milestone items must be rendered in the list regardless of count.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/VisionBoard.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/VisionBoard.tsx"
+        ]
+      },
+      {
+        "id": "REQ-2",
+        "summary": "Revert the VisionBoard.tsx page to the layout, interaction patterns, and visual design it had in version 28. This means undoing the milestone plus-button interaction pattern (introduced in version 36) and restoring the original milestone input fields and overall vision board UI as it appeared in version 28.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/pages/VisionBoard.tsx"

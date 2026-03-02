@@ -1,12 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Change the milestones input UI to use a plus button pattern (matching how tasks are added) instead of pre-rendered per-line input rows.
+**Goal:** Revert the VisionBoard page to its version 28 layout and ensure all milestone points are fully visible.
 
 **Planned changes:**
-- Replace the existing milestone input rows with a single text input field and a plus/add button
-- Clicking the plus button or pressing Enter appends the new milestone to the list and clears the input
-- Display existing/saved milestones as a list with individual remove controls
-- Match the visual style of the task add interaction pattern used elsewhere in the planner
+- Revert `VisionBoard.tsx` to the layout, visual design, and interaction patterns from version 28, undoing changes introduced in version 36
+- Replace the plus-button milestone input pattern (from version 36) with the original per-line input field pattern from version 28
+- Ensure all milestone items for every goal are rendered in full — no hidden, collapsed, truncated, or "show more"-gated milestones
 
-**User-visible outcome:** Users can add milestones by typing in a single input and clicking a plus button (just like tasks), rather than filling in pre-rendered rows.
+**User-visible outcome:** The Vision Board page looks and behaves as it did in version 28, with all milestone points fully visible for each goal.

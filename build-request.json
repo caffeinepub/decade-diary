@@ -1,36 +1,55 @@
 {
   "kind": "build_request",
-  "title": "Change milestone input to use plus sign button like tasks",
+  "title": "Show all milestone points and revert vision board to version 28 layout",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Replace the one-per-line milestone input fields with a plus sign button interaction pattern that matches how tasks are added: display a text input field with a '+' or 'Add' button that appends a new milestone to the list on click, instead of rendering one input row per milestone by default.",
+      "text": "In VisionBoard.tsx, ensure all milestone points for each goal are fully visible — no milestones should be hidden, collapsed, or truncated. All milestone items must be rendered in the list regardless of count.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-1"
         ],
         "quotes": [
-          "I want the milestones to be add by plus sign like task not one per line"
+          "All milestone point should be visible"
         ]
       },
       "acceptanceCriteria": [
-        "Milestones section shows a single text input with a plus/add button, not pre-rendered rows for each milestone.",
-        "Clicking the plus button (or pressing Enter) appends the typed milestone to the list and clears the input field.",
-        "Existing saved milestones are displayed as a list with individual delete/remove controls.",
-        "The milestone add interaction is visually consistent with the task add pattern used elsewhere in the planner."
+        "Every milestone associated with a goal is displayed in the UI without any 'show more' toggle or item limit",
+        "Adding multiple milestones to a goal shows all of them rendered in the list",
+        "No milestone items are hidden or clipped due to overflow or conditional rendering"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Revert the VisionBoard.tsx page to the layout, interaction patterns, and visual design it had in version 28. This means undoing the milestone plus-button interaction pattern (introduced in version 36) and restoring the original milestone input fields and overall vision board UI as it appeared in version 28.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "revert the vision board as it was in version 28"
+        ]
+      },
+      "acceptanceCriteria": [
+        "The vision board page layout matches the version 28 design, not the version 36 changes",
+        "Milestone input uses the original per-line input field pattern from version 28, not the plus-button pattern introduced in version 36",
+        "All goal categories, cards, and controls appear and behave as they did in version 28",
+        "The partner read-only tab remains functional after the revert"
       ]
     }
   ],
   "constraints": [
-    "Do not change the backend data model or API for milestones.",
-    "Do not modify any files under frontend/src/hooks/ or frontend/src/components/ui."
+    "Do not modify any files under frontend/src/hooks/ (immutable paths)",
+    "Do not modify files under frontend/src/components/ui/ (immutable paths)",
+    "Backend data model and API must remain unchanged — this is a frontend-only revert"
   ],
   "nonGoals": [
-    "Changing how tasks are added.",
-    "Modifying any other planner sections beyond the milestones input UI.",
-    "Backend schema changes."
+    "Reverting any other page besides VisionBoard.tsx",
+    "Changing backend milestone storage logic",
+    "Altering the plus-button pattern on any non-vision-board page (e.g., tasks in DailyPlanner)"
   ],
   "imageRequirements": {
     "required": [],

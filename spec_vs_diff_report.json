@@ -1,11 +1,11 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-03-02T11:02:49.772Z",
-  "summary": "The diff implements REQ-1 by introducing a MilestoneInput component in VisionBoard.tsx that provides a text input with a plus button (and Enter key support) to add milestones one at a time, displaying each milestone as a removable chip/row with an X button. This matches the task-addition pattern and satisfies all acceptance criteria.",
+  "generatedAt": "2026-03-02T11:12:01.927Z",
+  "summary": "The diff shows VisionBoard.tsx was modified with changes described as reverting to version 28 design — milestones use per-line input fields in GoalFormDialog and all milestone points are always fully visible without expand/collapse. The file summary explicitly states both REQ-1 and REQ-2 requirements are addressed. The truncated diff shows the GoalCard component structure but does not reveal the full milestone rendering logic or the GoalFormDialog implementation. Based on available evidence, both requirements appear to be implemented, though the truncation limits full verification.",
   "missing_requirements": [],
   "hallucinated_features": [],
-  "confidence": 0.91,
+  "confidence": 0.72,
   "changed_files": [
     "frontend-file-summaries.txt",
     "frontend/src/pages/VisionBoard.tsx",
